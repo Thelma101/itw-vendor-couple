@@ -23,16 +23,16 @@ export default function CoupleLayout() {
         sx={{ 
           bgcolor: 'white',
           borderBottom: '1px solid',
-          borderColor: 'grey.200',
+          borderColor: 'segmentColor.main',
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
+        <Toolbar sx={{ justifyContent: 'space-between', color: 'primary.main' }}>
           {/* Logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton sx={{ mr: 2, display: { md: 'none' } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', color: 'inherit' }}>
+            <IconButton color="inherit" sx={{ mr: 2, display: { md: 'none' } }}>
               <MenuIcon />
             </IconButton>
-            <Typography variant="h5" className="font-bold text-primary-600">
+            <Typography variant="h5" color="inherit" className="font-bold">
               ❤️ ithee wed
             </Typography>
           </Box>
@@ -42,9 +42,10 @@ export default function CoupleLayout() {
             {navItems.map((item) => (
               <Typography 
                 key={item}
-                variant="body2" 
-                className="text-gray-700 hover:text-primary-600 cursor-pointer font-medium"
-                sx={{ '&:hover': { color: 'primary.main' } }}
+                variant="body2"
+                color="inherit"
+                className="cursor-pointer font-medium"
+                sx={{ '&:hover': { color: 'primary.dark' } }}
               >
                 {item}
               </Typography>
@@ -54,17 +55,23 @@ export default function CoupleLayout() {
           {/* Right side actions */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button 
-              variant="contained" 
+              variant="text"
               sx={{ 
-                bgcolor: 'success.main',
-                '&:hover': { bgcolor: 'success.dark' },
+                // backgroundImage: 'linear-gradient(90deg, #00838F 0%, #00626b 100%)', // Primary gradient
+                bgcolor: 'primary.main',
+                color: 'white',
+                borderRadius: 0,
                 textTransform: 'none',
-                fontWeight: 600
+                fontWeight: 600,
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                  color: 'white',
+                }
               }}
             >
               Show work
             </Button>
-            <IconButton>
+            <IconButton color="inherit">
               <Badge badgeContent={3} color="error">
                 <Notifications />
               </Badge>

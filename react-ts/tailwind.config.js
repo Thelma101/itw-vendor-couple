@@ -21,6 +21,9 @@ export default {
           900: '#004148',
           DEFAULT: '#00838F',
         },
+
+        segment: '#CCFDF2',
+        
         // Accent gradient stops for buttons
         accentFrom: '#EB1948',
         accentTo: '#B52344',

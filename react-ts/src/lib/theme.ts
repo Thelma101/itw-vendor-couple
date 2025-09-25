@@ -8,6 +8,15 @@ const palette = {
     dark: '#00626b',
     contrastText: '#ffffff',
   },
+
+  segmentColor: {
+    main: '#CCFDF2',
+  },
+  
+  bgThemeColor: {
+    main: '#FFF6F9',
+  },
+
   success: { main: '#10b981', contrastText: '#ffffff' },
   warning: { main: '#f59e0b', contrastText: '#111827' },
   error: { main: '#ef4444', contrastText: '#ffffff' },
@@ -51,12 +60,18 @@ export const appTheme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: 8,
+          borderRadius: 3,
           fontWeight: 600,
           padding: '10px 18px',
         },
         containedPrimary: {
           backgroundImage: 'linear-gradient(90deg, #EB1948 0%, #B52344 100%)',
+          '&:hover': {
+            filter: 'brightness(0.95)',
+          },
+        },
+        containedSecondary: {
+          backgroundImage: 'linear-gradient(90deg, #00838F 0%, #00626b 100%)',
           '&:hover': {
             filter: 'brightness(0.95)',
           },
