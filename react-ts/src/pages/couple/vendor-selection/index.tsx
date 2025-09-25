@@ -1,5 +1,7 @@
 import { Box, Typography, Grid, Card, CardContent, Checkbox, FormControlLabel, List, ListItem } from '@mui/material'
 import { useState } from 'react'
+import { VendorBlankIcon } from '../../../components/icons/VendorBlankIcon'
+import { VendorBlank2Icon } from '../../../components/icons/VendorBlank2Icon'
 
 const vendorCategories = [
   'Venue',
@@ -86,82 +88,33 @@ export default function VendorSelection() {
             }}
           >
             {/* Icon */}
-            <Box sx={{ mb: 3 }}>
-              <Box
-                sx={{
-                  width: 80,
-                  height: 80,
-                  bgcolor: 'primary.50',
-                  borderRadius: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative'
+            <Box sx={{ mb: 3, position: 'relative', width: 80, height: 80 }}>
+              {/* First card (behind) - rotated -15deg */}
+              <Box 
+                sx={{ 
+                  position: 'absolute',
+                  top: 10,
+                  left: 0,
+                  transform: 'rotate(-5deg)',
+                  opacity: 1,
+                  zIndex: 2
                 }}
               >
-                <Box
-                  sx={{
-                    width: 60,
-                    height: 40,
-                    bgcolor: 'primary.100',
-                    borderRadius: 1,
-                    position: 'absolute',
-                    zIndex: 1
-                  }}
-                />
-                <Box
-                  sx={{
-                    width: 50,
-                    height: 30,
-                    bgcolor: 'primary.200',
-                    borderRadius: 1,
-                    position: 'absolute',
-                    zIndex: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 0.5
-                  }}
-                >
-                  <Typography variant="h6" className="text-primary-600">+</Typography>
-                  <Typography variant="h6" className="text-primary-600">-</Typography>
-
-                  <Box sx={{ mb: 3, position: 'relative', width: 80, height: 80 }}>
-
-                    <Box
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        bgcolor: 'primary.100',
-                        borderRadius: 1,
-                        position: 'absolute',
-                        transform: 'rotate(-15deg)',
-                        opacity: 1,
-                        zIndex: 1
-                      }}>
-
-                    </Box>
-                    <Box
-                      sx={{
-                        width: 20,
-                        height: 20,
-                        bgcolor: 'primary.main',
-                        borderRadius: '50%',
-                        opacity: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 2,
-                        flexDirection: 'column',
-                        gap: 0.5
-                      }}
-                    >
-
-                    </Box>
-
-                  </Box>
-                </Box>
+                <VendorBlankIcon width={60} height={60} />
+              </Box>
+              
+              {/* Second card (front) - rotated 15deg */}
+              <Box 
+                sx={{ 
+                  position: 'absolute',
+                  top: 10,
+                  left: 20,
+                  transform: 'rotate(5deg)',
+                  opacity: 1,
+                  zIndex: 1
+                }}
+              >
+                <VendorBlank2Icon width={60} height={60} />
               </Box>
             </Box>
 

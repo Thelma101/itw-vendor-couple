@@ -1,0 +1,37 @@
+import React from 'react'
+
+interface IconProps {
+  width?: number
+  height?: number
+  className?: string
+}
+
+export const VendorBlankIcon: React.FC<IconProps> = ({ 
+  width = 60, 
+  height = 60, 
+  className 
+}) => (
+  <svg 
+    width={width} 
+    height={height} 
+    viewBox="0 0 74 75" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <g clipPath="url(#clip0_1427_3719)">
+      <mask id="mask0_1427_3719" style={{maskType:'luminance'}} maskUnits="userSpaceOnUse" x="10" y="7" width="53" height="61">
+        <path d="M47.1753 8.80503L13.3679 17.8637C12.7275 18.0353 12.1814 18.4543 11.8499 19.0285C11.5184 19.6027 11.4286 20.2851 11.6002 20.9256L23.247 64.3922C23.4186 65.0327 23.8376 65.5787 24.4118 65.9102C24.9861 66.2418 25.6684 66.3316 26.3089 66.16L60.1163 57.1013C60.7567 56.9297 61.3028 56.5107 61.6343 55.9365C61.9658 55.3623 62.0557 54.6799 61.8841 54.0395L50.2372 10.5728C50.0656 9.93235 49.6466 9.3863 49.0724 9.05478C48.4982 8.72326 47.8158 8.63342 47.1753 8.80503Z" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M30.2297 46.9911L47.1334 42.4618M32.1708 54.2356L40.6227 51.9709M28.4387 30.6478L40.5128 27.4126M36.0933 35.0672L32.8581 22.9931" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </mask>
+      <g mask="url(#mask0_1427_3719)">
+        <path d="M0 16.2695L57.9555 0.740389L73.4847 58.6959L15.5291 74.2251L0 16.2695Z" fill="#8A8A8A"/>
+      </g>
+    </g>
+    <defs>
+      <clipPath id="clip0_1427_3719">
+        <rect width="60" height="60" fill="white" transform="translate(0 16.2695) rotate(-15)"/>
+      </clipPath>
+    </defs>
+  </svg>
+)
