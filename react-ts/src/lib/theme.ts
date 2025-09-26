@@ -12,7 +12,12 @@ const palette = {
   segmentColor: {
     main: '#CCFDF2',
   },
-  
+
+  callToAction: {
+    main: '#EB1948',
+    dark: '#B52344'
+  },
+
   bgThemeColor: {
     main: '#FFF6F9',
   },
