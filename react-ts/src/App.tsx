@@ -9,6 +9,7 @@ import Services from './pages/vendor/Services'
 import Availability from './pages/vendor/Availability'
 import Analytics from './pages/vendor/Analytics'
 import Settings from './pages/vendor/Settings'
+import HomePage from './pages/couple/HomePage'
 import VendorSelection from './pages/couple/vendor-selection'
 import VendorDetail from './pages/couple/vendor-detail'
 
@@ -32,7 +33,7 @@ export default function App() {
 
         {/* Couple Wedding Planning Routes */}
         <Route path="/couple" element={<CoupleLayout />}>
-          <Route index element={<Navigate to="/couple/vendor-selection" replace />} />
+          <Route index element={<HomePage />} />
           <Route path="vendor-selection" element={<VendorSelection />} />
           <Route path="vendor/:vendorId" element={<VendorDetail />} />
         </Route>

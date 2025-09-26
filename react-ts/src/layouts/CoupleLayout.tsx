@@ -1,18 +1,20 @@
 import { AppBar, Toolbar, Typography, Box, Button, IconButton, Avatar, Badge } from '@mui/material'
 import { Notifications, Menu as MenuIcon } from '@mui/icons-material'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 
 const navItems = [
-  'Create IV',
-  'Hire a vendor', 
-  'Plan Wedding',
-  'Your Wedding Website',
-  'Messages',
-  'Blog',
-  'Notification'
+  { label: 'Create IV', path: '/couple/create-iv' },
+  { label: 'Hire a vendor', path: '/couple/vendor-selection' },
+  { label: 'Plan Wedding', path: '/couple/plan-wedding' },
+  { label: 'Your Wedding Website', path: '/couple/wedding-website' },
+  { label: 'Messages', path: '/couple/messages' },
+  { label: 'Blog', path: '/couple/blog' },
+  { label: 'Notification', path: '/couple/notifications' }
 ]
 
 export default function CoupleLayout() {
+  const navigate = useNavigate()
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {/* Header */}
@@ -32,7 +34,13 @@ export default function CoupleLayout() {
             <IconButton color="inherit" sx={{ mr: 2, display: { md: 'none' } }}>
               <MenuIcon />
             </IconButton>
-            <Typography variant="h5" color="inherit" className="font-bold">
+            <Typography 
+              variant="h5" 
+              color="inherit" 
+              className="font-bold"
+              sx={{ cursor: 'pointer' }}
+              onClick={() => navigate('/couple')}
+            >
               ❤️ ithee wed
             </Typography>
           </Box>
@@ -41,13 +49,14 @@ export default function CoupleLayout() {
           <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3 }}>
             {navItems.map((item) => (
               <Typography 
-                key={item}
+                key={item.label}
                 variant="body2"
                 color="inherit"
                 className="cursor-pointer font-medium"
                 sx={{ '&:hover': { color: 'primary.dark' } }}
+                onClick={() => navigate(item.path)}
               >
-                {item}
+                {item.label}
               </Typography>
             ))}
           </Box>
