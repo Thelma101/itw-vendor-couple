@@ -10,6 +10,7 @@ import Availability from './pages/vendor/Availability'
 import Analytics from './pages/vendor/Analytics'
 import Settings from './pages/vendor/Settings'
 import VendorSelection from './pages/couple/vendor-selection'
+import VendorDetail from './pages/couple/vendor-detail'
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/couple" element={<CoupleLayout />}>
           <Route index element={<Navigate to="/couple/vendor-selection" replace />} />
           <Route path="vendor-selection" element={<VendorSelection />} />
+          <Route path="vendor/:vendorId" element={<VendorDetail />} />
         </Route>
       </Routes>
     </BrowserRouter>

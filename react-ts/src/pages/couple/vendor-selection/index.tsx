@@ -1,9 +1,10 @@
 import { Box, Typography, Grid, Card, CardContent, Checkbox, FormControlLabel, List, ListItem, Chip, Button, CardMedia, IconButton } from '@mui/material'
-import { useState } from 'react'
+import { Favorite, FavoriteBorder } from '@mui/icons-material'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { VendorBlankIcon } from '@/components/icons/VendorBlankIcon'
 import { VendorBlank2Icon } from '@/components/icons/VendorBlank2Icon'
-import { mockVendors, getVendorsByCategory, type Vendor } from '@/data/mockVendors'
-
+import { getVendorsByCategory } from '@/data/mockVendors'
 
 const vendorCategories = [
   'Venue',
@@ -22,12 +23,27 @@ const vendorCategories = [
 ]
 
 export default function VendorSelection() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [favourites, setFavorites] = useState<Record<string, boolean>>({});
-  const filteredVendors = getVendorsByCategory(
-    (activeCategory ? [activeCategory] : selectedCategories.length ? [selectedCategories[0]] : [])
-  )
+  const [showAll, setShowAll] = useState(false);
+  
+  // Restore state from navigation if coming back
+  useEffect(() => {
+    if (location.state) {
+      const { selectedCategories: savedCategories, activeCategory: savedActive, favourites: savedFavs } = location.state
+      if (savedCategories) setSelectedCategories(savedCategories)
+      if (savedActive) setActiveCategory(savedActive)
+      if (savedFavs) setFavorites(savedFavs)
+    }
+  }, [location.state])
+  
+  // Get filtered vendors based on active category or first selected
+  const currentCategory = activeCategory || (selectedCategories.length > 0 ? selectedCategories[0] : null)
+  const allFilteredVendors = currentCategory ? getVendorsByCategory([currentCategory]) : []
+  const displayedVendors = showAll ? allFilteredVendors : allFilteredVendors.slice(0, 10)
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategories(prev =>
@@ -35,19 +51,43 @@ export default function VendorSelection() {
         ? prev.filter(c => c !== category)
         : [...prev, category]
     )
+    // Set as active category when selected
+    if (!selectedCategories.includes(category)) {
+      setActiveCategory(category)
+    }
   }
-  const toggleFav = (id: string) => setFavorites(p => ({ ...p, [id]: !p[id] }))
+  
+  const toggleFav = (id: string) => {
+    setFavorites(p => ({ ...p, [id]: !p[id] }))
+  }
+  
+  const handleCardClick = (vendorId: string) => {
+    // Save current state to location state for back navigation
+    navigate(`/couple/vendor/${vendorId}`, {
+      state: {
+        returnTo: location.pathname,
+        selectedCategories,
+        activeCategory,
+        favourites
+      }
+    })
+  }
+
+  const handleViewAll = () => {
+    setShowAll(!showAll)
+  }
 
   return (
     <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }} gap={2} p={4} bgcolor={'bgThemeColor.main'}>
       {/* Left Sidebar - Vendor Categories */}
       <Box
         sx={{
-          width: 300,
+          width: { xs: '100%', md: 300 },
           bgcolor: 'white',
           border: '1px solid',
           borderColor: 'segmentColor.main',
-          p: 4
+          p: 4,
+          display: { xs: selectedCategories.length === 0 ? 'block' : 'none', md: 'block' }
         }}
       >
         <Typography variant="h6" className="font-bold text-gray-800 mb-4">
@@ -81,7 +121,7 @@ export default function VendorSelection() {
 
       {/* Main Content Area */}
       <Box sx={{
-        flexGrow: 1, p: 4, bgcolor: 'white', border: '1px solid', borderColor: 'segmentColor.main'
+        flexGrow: 1, height: '100%', p: 4, bgcolor: 'white', border: '1px solid', borderColor: 'segmentColor.main'
       }}>
         {selectedCategories.length === 0 ? (
           // No vendors selected state
@@ -136,15 +176,27 @@ export default function VendorSelection() {
         ) : (
           // Selected vendors display
           <Box>
+            {/* Fixed Header with View in Cart - doesn't move */}
             <Box sx={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgColor: 'white',
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              bgColor: 'white',
               borderBottom: '1px solid',
               width: '100%',
               borderColor: 'segmentColor.main',
+              position: 'sticky',
+              top: 0,
+              zIndex: 10,
+              p: 2
             }}>
               {/* Category tabs */}
               <Box sx={{
-                flexGrow: 1, gap: 3, mt: 2, mb: 3,
+                flexGrow: 1, 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: 1,
+                alignItems: 'center'
               }}>
                 {selectedCategories.map((category) => (
                   <Chip
@@ -152,41 +204,40 @@ export default function VendorSelection() {
                     label={category}
                     onClick={() => setActiveCategory(category)}
                     variant={activeCategory === category ? 'filled' : 'outlined'}
-                    // color={activeCategory === category ? 'callToAction.main' : 'default'}
                     sx={{
                       bgcolor: activeCategory === category ? 'callToAction.main' : 'primary.50',
                       color: activeCategory === category ? 'white' : 'primary.main',
                       borderRadius: '30px',
-                      margin: '5px',
                       border: '1px solid',
                       borderColor: 'segmentColor.main',
                     }}
                   />
                 ))}
               </Box>
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <Button variant="text"
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', ml: 2 }}>
+                <Button 
+                  variant="contained"
+                  color="primary"
                   sx={{
-                    borderRadius: '30px',
-                    // padding: '10px 18px',
+                    borderRadius: 8,
                     fontWeight: 600,
                     textTransform: 'none',
-                    bgcolor: "primary.main",
-                    color: 'white',
+                    minWidth: 120,
                     '&:hover': {
                       filter: 'brightness(0.95)',
                     },
                   }}
-                >View in Cart
+                >
+                  View in Cart
                 </Button>
               </Box>
             </Box>
 
             {/* Header with title and actions */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, mt: 2 }}>
               <Box>
                 <Typography variant="h4" className="font-bold">
-                  {filteredVendors.length} {selectedCategories[0]}s
+                  {allFilteredVendors.length} {currentCategory || 'Vendor'}s
                 </Typography>
                 <Typography variant="body1" className="text-gray-600">Lagos, Nigeria</Typography>
               </Box>
@@ -194,45 +245,100 @@ export default function VendorSelection() {
                 <Typography variant="body2" className="text-primary-600 cursor-pointer">Filter</Typography>
               </Box>
             </Box>
-            {/* </Box> */}
 
-            {/* Vendor grid */}
-            <Grid container spacing={3}>
-              {filteredVendors.map((venue) => (
-                <Grid key={venue.id} item xs={12} sm={6} md={4}>
-                  <Card sx={{ height: '100%' }}>
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={venue.image}
-                      alt={venue.name}
-                    />
-                    <CardContent>
-                      <Typography variant="h6" className="font-bold">{venue.name}</Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body1" className="text-primary-600 font-semibold">
-                          {venue.price}
+            {/* Vendor grid - 5 per row on desktop, responsive */}
+            <Grid container spacing={2}>
+              {displayedVendors.map((vendor) => (
+                <Grid key={vendor.id} item xs={6} sm={4} md={2.4} component="div">
+                  <Card 
+                    sx={{ 
+                      height: '100%', 
+                      cursor: 'pointer',
+                      border: '1px solid',
+                      borderColor: 'segmentColor.main',
+                      boxShadow: 'none',
+                      '&:hover': {
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                      }
+                    }}
+                    onClick={() => handleCardClick(vendor.id)}
+                  >
+                    <Box sx={{ position: 'relative' }}>
+                      <CardMedia
+                        component="img"
+                        height="170"
+                        width="170"
+                        image={vendor.image}
+                        alt={vendor.name}
+                        sx={{ 
+                          borderRadius: 0,
+                          width: '100%',
+                          height: 170,
+                          objectFit: 'cover'
+                        }}
+                      />
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleFav(vendor.id)
+                        }}
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          bgcolor: 'white',
+                          border: '1px solid',
+                          borderColor: 'segmentColor.main',
+                          '&:hover': { bgcolor: 'white' }
+                        }}
+                      >
+                        {favourites[vendor.id] ? (
+                          <Favorite sx={{ color: '#ef4444', fontSize: 20 }} />
+                        ) : (
+                          <FavoriteBorder sx={{ color: '#9ca3af', fontSize: 20 }} />
+                        )}
+                      </IconButton>
+                    </Box>
+                    <CardContent sx={{ p: 1.5 }}>
+                      <Typography variant="body2" className="font-bold" sx={{ fontSize: '0.875rem' }}>
+                        {vendor.name}
+                      </Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
+                        <Typography variant="body2" className="text-primary-600 font-semibold" sx={{ fontSize: '0.75rem' }}>
+                          {vendor.price}
                         </Typography>
-                        <IconButton>
-                          <span className={favourites[venue.id] ? 'text-red-500' : 'text-gray-400'}>♥</span>
-                        </IconButton>
+                        <Typography variant="caption" className="text-gray-500" sx={{ fontSize: '0.625rem' }}>
+                          {vendor.location}
+                        </Typography>
                       </Box>
                     </CardContent>
-                    {/* <Card>
-                      <IconButton>
-                        <span className={favourites[venue.id] ? 'text-red-500' : 'text-gray-400'}>♥</span>
-                      </IconButton>
-                    </Card> */}
                   </Card>
                 </Grid>
               ))}
             </Grid>
 
-            <Box sx={{ textAlign: 'center', mt: 4 }}>
-              <Typography variant="body2" className="text-primary-600 cursor-pointer">View All</Typography>
-            </Box>
+            {/* View All / Show Less button */}
+            {allFilteredVendors.length > 10 && (
+              <Box sx={{ textAlign: 'center', mt: 4 }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleViewAll}
+                  sx={{
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    textTransform: 'none',
+                    '&:hover': {
+                      borderColor: 'primary.dark',
+                      color: 'primary.dark',
+                    }
+                  }}
+                >
+                  {showAll ? 'Show Less' : `View All ${allFilteredVendors.length} Vendors`}
+                </Button>
+              </Box>
+            )}
           </Box>
-
         )}
       </Box>
     </Box>
