@@ -97,19 +97,35 @@ export default function Footer() {
               <Typography variant="body2" sx={{ mb: 2, opacity: 0.9 }}>
                 Itheewed App is Available on
               </Typography>
-              <Box sx={{ 
-                display: 'inline-block', 
-                bgcolor: 'white', 
-                p: 2, 
-                borderRadius: 1,
-                textAlign: 'center'
-              }}>
-                <IconButton disabled>
-                  <QrCode sx={{ fontSize: 80, color: 'primary.main' }} />
-                </IconButton>
-                <Typography variant="caption" sx={{ color: 'primary.main', display: 'block' }}>
-                  Scan to download
-                </Typography>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: { xs: 'center', md: 'flex-end' } }}>
+                <Box sx={{ 
+                  display: 'inline-block', 
+                  bgcolor: 'white', 
+                  p: 2, 
+                  borderRadius: 1,
+                  textAlign: 'center'
+                }}>
+                  <IconButton disabled>
+                    <QrCode sx={{ fontSize: 60, color: 'primary.main' }} />
+                  </IconButton>
+                  <Typography variant="caption" sx={{ color: 'primary.main', display: 'block' }}>
+                    iOS
+                  </Typography>
+                </Box>
+                <Box sx={{ 
+                  display: 'inline-block', 
+                  bgcolor: 'white', 
+                  p: 2, 
+                  borderRadius: 1,
+                  textAlign: 'center'
+                }}>
+                  <IconButton disabled>
+                    <QrCode sx={{ fontSize: 60, color: 'primary.main' }} />
+                  </IconButton>
+                  <Typography variant="caption" sx={{ color: 'primary.main', display: 'block' }}>
+                    Android
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           </Grid>

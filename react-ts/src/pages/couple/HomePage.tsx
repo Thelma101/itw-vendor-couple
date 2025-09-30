@@ -123,20 +123,25 @@ export default function HomePage() {
               {/* Search Section */}
               <Box sx={{ bgcolor: 'white', p: 3, borderRadius: 2, color: 'black' }}>
                 {/* Search Type Toggle */}
+                <Typography variant="body2" sx={{ mb: 2, fontWeight: 600 }}>
+                  Search by
+                </Typography>
                 <ToggleButtonGroup
                   value={searchType}
                   exclusive
                   onChange={(_, value) => value && setSearchType(value)}
-                  sx={{ mb: 2, width: '100%' }}
+                  sx={{ mb: 3, width: '100%' }}
                 >
                   <ToggleButton 
                     value="category" 
                     sx={{ 
                       flex: 1,
-                      bgcolor: searchType === 'category' ? 'primary.main' : 'transparent',
-                      color: searchType === 'category' ? 'white' : 'primary.main',
+                      bgcolor: searchType === 'category' ? 'white' : 'transparent',
+                      color: searchType === 'category' ? 'primary.main' : 'white',
+                      border: '1px solid',
+                      borderColor: 'white',
                       '&:hover': {
-                        bgcolor: searchType === 'category' ? 'primary.dark' : 'primary.50'
+                        bgcolor: searchType === 'category' ? 'white' : 'rgba(255,255,255,0.1)'
                       }
                     }}
                   >
@@ -146,10 +151,12 @@ export default function HomePage() {
                     value="name" 
                     sx={{ 
                       flex: 1,
-                      bgcolor: searchType === 'name' ? 'primary.main' : 'transparent',
-                      color: searchType === 'name' ? 'white' : 'primary.main',
+                      bgcolor: searchType === 'name' ? '#EB1948' : 'transparent',
+                      color: searchType === 'name' ? 'white' : 'white',
+                      border: '1px solid',
+                      borderColor: 'white',
                       '&:hover': {
-                        bgcolor: searchType === 'name' ? 'primary.dark' : 'primary.50'
+                        bgcolor: searchType === 'name' ? '#B52344' : 'rgba(255,255,255,0.1)'
                       }
                     }}
                   >
@@ -157,32 +164,32 @@ export default function HomePage() {
                   </ToggleButton>
                 </ToggleButtonGroup>
 
-                {/* Search Input */}
-                {searchType === 'category' ? (
+                {/* Search Inputs - Side by Side */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                   <TextField
-                    select
                     fullWidth
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    placeholder="Select a category"
-                    SelectProps={{
-                      native: true,
+                    value={searchType === 'name' ? searchQuery : selectedCategory}
+                    onChange={(e) => {
+                      if (searchType === 'name') {
+                        setSearchQuery(e.target.value)
+                      } else {
+                        setSelectedCategory(e.target.value)
+                      }
                     }}
-                    sx={{ mb: 2 }}
-                  >
-                    <option value="">Select a category</option>
-                    {vendorCategories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </TextField>
-                ) : (
+                    placeholder={searchType === 'name' ? 'Regina Ugwenutshenimada' : 'Select a category'}
+                    select={searchType === 'category'}
+                    SelectProps={searchType === 'category' ? { native: true } : undefined}
+                    InputProps={searchType === 'name' ? {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Search />
+                        </InputAdornment>
+                      ),
+                    } : undefined}
+                  />
                   <TextField
                     fullWidth
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Enter vendor name"
+                    placeholder="Additional search criteria"
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -190,9 +197,8 @@ export default function HomePage() {
                         </InputAdornment>
                       ),
                     }}
-                    sx={{ mb: 2 }}
                   />
-                )}
+                </Box>
 
                 {/* Search Button */}
                 <Button
@@ -234,6 +240,17 @@ export default function HomePage() {
                     alt="Wedding Venue"
                     sx={{ borderRadius: 1 }}
                   />
+                  {/* Yellow Overlay */}
+                  <Box sx={{
+                    position: 'absolute',
+                    top: 10,
+                    right: 10,
+                    width: 20,
+                    height: 20,
+                    bgcolor: '#FFD700',
+                    borderRadius: '50%',
+                    zIndex: 4
+                  }} />
                 </Card>
 
                 {/* Second Image */}
@@ -252,6 +269,17 @@ export default function HomePage() {
                     alt="Wedding Ceremony"
                     sx={{ borderRadius: 1 }}
                   />
+                  {/* Yellow Overlay */}
+                  <Box sx={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    width: 16,
+                    height: 16,
+                    bgcolor: '#FFD700',
+                    borderRadius: '50%',
+                    zIndex: 3
+                  }} />
                 </Card>
 
                 {/* Third Image */}
@@ -270,6 +298,17 @@ export default function HomePage() {
                     alt="Wedding Band"
                     sx={{ borderRadius: 1 }}
                   />
+                  {/* Yellow Overlay */}
+                  <Box sx={{
+                    position: 'absolute',
+                    bottom: 8,
+                    right: 8,
+                    width: 14,
+                    height: 14,
+                    bgcolor: '#FFD700',
+                    borderRadius: '50%',
+                    zIndex: 2
+                  }} />
                 </Card>
               </Box>
             </Grid>
@@ -282,9 +321,14 @@ export default function HomePage() {
         {/* Hot Vendors Section */}
         <Box sx={{ mb: 6 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-            <Typography variant="h4" className="font-bold">
-              Hot Vendors
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="h4" className="font-bold" sx={{ color: '#EB1948' }}>
+                Hot
+              </Typography>
+              <Typography variant="h4" className="font-bold">
+                Vendors You Worked With
+              </Typography>
+            </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <IconButton size="small">
                 <NavigateBefore />
@@ -295,11 +339,13 @@ export default function HomePage() {
             </Box>
           </Box>
 
-          <Grid container spacing={3}>
+          {/* Horizontal Layout for Hot Vendors */}
+          <Box sx={{ display: 'flex', gap: 3, overflowX: 'auto', pb: 2 }}>
             {hotVendors.map((vendor) => (
-              <Grid key={vendor.id} item xs={12} sm={6} md={4}>
-                <Card sx={{ 
-                  height: '100%', 
+              <Card 
+                key={vendor.id} 
+                sx={{ 
+                  minWidth: 400,
                   cursor: 'pointer',
                   border: '1px solid',
                   borderColor: 'segmentColor.main',
@@ -309,77 +355,103 @@ export default function HomePage() {
                   }
                 }}
                 onClick={() => handleVendorClick(vendor.id)}
-                >
-                  <Box sx={{ position: 'relative' }}>
+              >
+                <Box sx={{ display: 'flex' }}>
+                  {/* Image Section */}
+                  <Box sx={{ position: 'relative', width: 200, height: 150 }}>
                     <CardMedia
                       component="img"
-                      height="200"
+                      height="150"
                       image={vendor.image}
                       alt={vendor.name}
-                      sx={{ borderRadius: 0 }}
+                      sx={{ borderRadius: 0, width: 200 }}
                     />
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleFavorite(vendor.id)
-                      }}
-                      size="small"
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        bgcolor: 'white',
-                        border: '1px solid',
-                        borderColor: 'segmentColor.main',
-                        '&:hover': { bgcolor: 'white' }
-                      }}
-                    >
-                      {favourites[vendor.id] ? (
-                        <Favorite sx={{ color: '#ef4444', fontSize: 20 }} />
-                      ) : (
-                        <FavoriteBorder sx={{ color: '#9ca3af', fontSize: 20 }} />
-                      )}
-                    </IconButton>
-                  </Box>
-                  <CardContent>
-                    <Typography variant="h6" className="font-bold">{vendor.name}</Typography>
-                    <Typography variant="body2" className="text-primary-600 mb-2">{vendor.category}</Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="body1" className="text-primary-600 font-semibold">
-                        Starting Price: {vendor.price}
-                      </Typography>
+                    <Box sx={{ 
+                      position: 'absolute', 
+                      top: 8, 
+                      right: 8, 
+                      display: 'flex', 
+                      gap: 1 
+                    }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        bgcolor: 'white', 
+                        px: 1, 
+                        py: 0.5, 
+                        borderRadius: 1 
+                      }}>
+                        <Star sx={{ fontSize: 16, color: '#FFD700', mr: 0.5 }} />
+                        <Typography variant="caption" className="font-bold">
+                          {vendor.rating}/5.0
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleFavorite(vendor.id)
+                        }}
+                        size="small"
+                        sx={{
+                          bgcolor: 'white',
+                          '&:hover': { bgcolor: 'white' }
+                        }}
+                      >
+                        {favourites[vendor.id] ? (
+                          <Favorite sx={{ color: '#ef4444', fontSize: 20 }} />
+                        ) : (
+                          <FavoriteBorder sx={{ color: '#9ca3af', fontSize: 20 }} />
+                        )}
+                      </IconButton>
                     </Box>
+                  </Box>
+
+                  {/* Content Section */}
+                  <Box sx={{ flex: 1, p: 2 }}>
+                    <Typography variant="h6" className="font-bold" sx={{ mb: 1 }}>
+                      {vendor.name}
+                    </Typography>
+                    <Typography variant="body2" className="text-primary-600 mb-2">
+                      Category | {vendor.category}
+                    </Typography>
+                    <Typography variant="body2" className="text-primary-600 font-semibold mb-1">
+                      Starting Price: {vendor.price}
+                    </Typography>
+                    <Typography variant="body2" className="text-gray-600 mb-1">
+                      Capacity: 500
+                    </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <LocationOn sx={{ fontSize: 16, color: 'grey.600', mr: 0.5 }} />
                       <Typography variant="body2" className="text-gray-600">
                         {vendor.location}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Rating value={vendor.rating} size="small" readOnly />
-                        <Typography variant="body2" sx={{ ml: 1 }}>
-                          {vendor.rating} ({vendor.reviewCount})
-                        </Typography>
-                      </Box>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        sx={{ textTransform: 'none' }}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleVendorClick(vendor.id)
-                        }}
-                      >
-                        Get in touch
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
+                    <Typography variant="body2" className="text-gray-600 mb-2">
+                      Negotiable?: Yes
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#EB1948',
+                        color: 'white',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        '&:hover': {
+                          bgcolor: '#B52344'
+                        }
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleVendorClick(vendor.id)
+                      }}
+                    >
+                      Get in touch →
+                    </Button>
+                  </Box>
+                </Box>
+              </Card>
             ))}
-          </Grid>
+          </Box>
         </Box>
 
         {/* Top Vendors for the Week */}
