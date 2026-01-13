@@ -34,7 +34,7 @@ export default function Footer() {
       <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
         <Grid container spacing={4} alignItems="center">
           {/* Logo */}
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Typography variant="h5" className="font-bold" sx={{ mb: 2 }}>
               ❤️ ithee wed
             </Typography>
@@ -44,7 +44,7 @@ export default function Footer() {
           </Grid>
 
           {/* Column 1 Links */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box>
               {footerLinks.column1.map((link, index) => (
                 <Link
@@ -68,7 +68,7 @@ export default function Footer() {
           </Grid>
 
           {/* Column 2 Links */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box>
               {footerLinks.column2.map((link, index) => (
                 <Link
@@ -92,7 +92,7 @@ export default function Footer() {
           </Grid>
 
           {/* App Download */}
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Box sx={{ textAlign: { xs: 'center', md: 'right' } }}>
               <Typography variant="body2" sx={{ mb: 2, opacity: 0.9 }}>
                 Itheewed App is Available on

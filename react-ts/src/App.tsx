@@ -1,43 +1,87 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import VendorDashboardLayout from './layouts/VendorDashboardLayout'
-import CoupleLayout from './layouts/CoupleLayout'
-import Overview from './pages/vendor/Overview'
-import Bookings from './pages/vendor/Bookings'
-import Messages from './pages/vendor/Messages'
-import Portfolio from './pages/vendor/Portfolio'
-import Services from './pages/vendor/Services'
-import Availability from './pages/vendor/Availability'
-import Analytics from './pages/vendor/Analytics'
-import Settings from './pages/vendor/Settings'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { ShortlistProvider } from './contexts/ShortlistContext'
+import { NotificationProvider } from './contexts/NotificationContext'
+import SelectVendors from './pages/couple/SelectVendors'
+import Shortlist from './pages/couple/Shortlist'
+import SearchResults from './pages/couple/SearchResults'
 import HomePage from './pages/couple/HomePage'
-import VendorSelection from './pages/couple/vendor-selection'
-import VendorDetail from './pages/couple/vendor-detail'
+import Dashboard from './pages/couple/Dashboard'
+import MyVendors from './pages/couple/MyVendors'
+import VendorProfile from './pages/couple/VendorProfile'
+import Messages from './pages/couple/Messages'
+import Booking from './pages/couple/Booking'
+import CoupleProfile from './pages/couple/Profile'
+import Checklist from './pages/couple/Checklist'
+import BudgetTracker from './pages/couple/BudgetTracker'
+import GuestList from './pages/couple/GuestList'
+import WeddingWebsite from './pages/couple/WeddingWebsite'
+import DayOfTimeline from './pages/couple/DayOfTimeline'
+import VendorCompare from './pages/couple/VendorCompare'
+import InspirationGallery from './pages/couple/InspirationGallery'
+import SeatingChart from './pages/couple/SeatingChart'
+import VendorDashboardLayout from './layouts/VendorDashboardLayout'
+import Gallery from './pages/vendor/Gallery'
+import AccountInformation from './pages/vendor/AccountInformation'
+import SubscriptionPage from './pages/vendor/SubscriptionPage'
+import PaymentMethod from './pages/vendor/PaymentMethod'
+import SecurityPage from './pages/vendor/SecurityPage'
+import SubscriptionSuccess from './pages/vendor/SubscriptionSuccess'
+import VendorOverview from './pages/vendor/Overview'
+import VendorAnalytics from './pages/vendor/Analytics'
+import VendorMessages from './pages/vendor/Messages'
+import VendorBookings from './pages/vendor/Bookings'
+import VendorServices from './pages/vendor/Services'
+import VendorAvailability from './pages/vendor/Availability'
+import VendorPortfolio from './pages/vendor/Portfolio'
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/couple" replace />} />
-        
-        {/* Vendor Dashboard Routes */}
-        <Route path="/vendor" element={<VendorDashboardLayout />}>
-          <Route index element={<Overview />} />
-          <Route path="bookings" element={<Bookings />} />
-          <Route path="messages" element={<Messages />} />
-          <Route path="portfolio" element={<Portfolio />} />
-          <Route path="services" element={<Services />} />
-          <Route path="availability" element={<Availability />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
+    <NotificationProvider>
+      <ShortlistProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<HomePage />} />
+            
+            {/* Couple Routes (after login) */}
+            <Route path="/couple/dashboard" element={<Dashboard />} />
+            <Route path="/couple/search-results" element={<SearchResults />} />
+            <Route path="/couple/select-vendors" element={<SelectVendors />} />
+            <Route path="/couple/vendor/:id" element={<VendorProfile />} />
+            <Route path="/couple/shortlist" element={<Shortlist />} />
+            <Route path="/couple/my-vendors" element={<MyVendors />} />
+            <Route path="/couple/messages" element={<Messages />} />
+            <Route path="/couple/booking" element={<Booking />} />
+            <Route path="/couple/profile" element={<CoupleProfile />} />
+            <Route path="/couple/checklist" element={<Checklist />} />
+            <Route path="/couple/budget" element={<BudgetTracker />} />
+            <Route path="/couple/guests" element={<GuestList />} />
+            <Route path="/couple/website" element={<WeddingWebsite />} />
+            <Route path="/couple/timeline" element={<DayOfTimeline />} />
+            <Route path="/couple/compare" element={<VendorCompare />} />
+            <Route path="/couple/inspiration" element={<InspirationGallery />} />
+            <Route path="/couple/seating" element={<SeatingChart />} />
 
-        {/* Couple Wedding Planning Routes */}
-        <Route path="/couple" element={<CoupleLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="vendor-selection" element={<VendorSelection />} />
-          <Route path="vendor/:vendorId" element={<VendorDetail />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+            {/* Vendor Dashboard Routes */}
+            <Route path="/vendor" element={<VendorDashboardLayout />}>
+              <Route index element={<VendorOverview />} />
+              <Route path="overview" element={<VendorOverview />} />
+              <Route path="analytics" element={<VendorAnalytics />} />
+              <Route path="messages" element={<VendorMessages />} />
+              <Route path="bookings" element={<VendorBookings />} />
+              <Route path="services" element={<VendorServices />} />
+              <Route path="availability" element={<VendorAvailability />} />
+              <Route path="portfolio" element={<VendorPortfolio />} />
+              <Route path="gallery" element={<Gallery />} />
+              <Route path="account" element={<AccountInformation />} />
+              <Route path="subscription" element={<SubscriptionPage />} />
+              <Route path="payment" element={<PaymentMethod />} />
+              <Route path="security" element={<SecurityPage />} />
+              <Route path="subscription/success" element={<SubscriptionSuccess />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ShortlistProvider>
+    </NotificationProvider>
   )
 }

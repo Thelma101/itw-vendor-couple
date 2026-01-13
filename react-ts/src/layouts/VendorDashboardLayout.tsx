@@ -1,131 +1,306 @@
-import { AppBar, Toolbar, Typography, Drawer, List, ListItemButton, ListItemText, Box, Avatar, IconButton, Badge } from '@mui/material'
-import { Link, useLocation, Outlet } from 'react-router-dom'
-import { Notifications, Settings, Menu as MenuIcon } from '@mui/icons-material'
-import clsx from 'clsx'
+import { Box, Typography, Button, Badge } from '@mui/material';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import LogoutIcon from '@mui/icons-material/Logout';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import EventIcon from '@mui/icons-material/Event';
+import ChatIcon from '@mui/icons-material/Chat';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 
-const navItems = [
-  { label: 'Dashboard', to: '/vendor', icon: '📊' },
-  { label: 'Bookings', to: '/vendor/bookings', icon: '📅' },
-  { label: 'Messages', to: '/vendor/messages', icon: '💬' },
-  { label: 'Portfolio', to: '/vendor/portfolio', icon: '🖼️' },
-  { label: 'Services', to: '/vendor/services', icon: '⚙️' },
-  { label: 'Availability', to: '/vendor/availability', icon: '📆' },
-  { label: 'Analytics', to: '/vendor/analytics', icon: '📈' },
-  { label: 'Settings', to: '/vendor/settings', icon: '⚙️' },
-]
+import PersonIcon from '@mui/icons-material/Person';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import PaymentIcon from '@mui/icons-material/Payment';
+import SecurityIcon from '@mui/icons-material/Security';
+import CardMembershipIcon from '@mui/icons-material/CardMembership';
+import WorkIcon from '@mui/icons-material/Work';
 
-export default function VendorDashboardLayout() {
-  const location = useLocation()
+const VendorDashboardLayout = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path || location.pathname === `/vendor${path}`;
+
+  const mainNavItems = [
+    { label: 'Overview', path: '/vendor', icon: <DashboardIcon /> },
+    { label: 'Bookings', path: '/vendor/bookings', icon: <EventIcon />, badge: 2 },
+    { label: 'Messages', path: '/vendor/messages', icon: <ChatIcon />, badge: 3 },
+    { label: 'Analytics', path: '/vendor/analytics', icon: <AnalyticsIcon /> },
+    { label: 'Services', path: '/vendor/services', icon: <WorkIcon /> },
+    { label: 'Availability', path: '/vendor/availability', icon: <CalendarMonthIcon /> },
+    { label: 'Portfolio', path: '/vendor/portfolio', icon: <PhotoLibraryIcon /> },
+  ];
+
+  const settingsNavItems = [
+    { label: 'Gallery', path: '/vendor/gallery', icon: <PhotoLibraryIcon /> },
+    { label: 'Account Information', path: '/vendor/account', icon: <PersonIcon /> },
+    { label: 'Subscription', path: '/vendor/subscription', icon: <CardMembershipIcon /> },
+    { label: 'Payment Method', path: '/vendor/payment', icon: <PaymentIcon /> },
+    { label: 'Security', path: '/vendor/security', icon: <SecurityIcon /> },
+  ];
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#FFF6F9' }}>
       {/* Sidebar */}
-      <Drawer 
-        variant="permanent" 
-        sx={{ 
-          width: 280, 
-          [`& .MuiDrawer-paper`]: { 
-            width: 280, 
-            boxSizing: 'border-box',
-            bgcolor: 'white',
-            borderRight: '1px solid',
-            borderColor: 'grey.200',
-          } 
+      <Box
+        sx={{
+          width: '390px',
+          bgcolor: 'white',
+          border: '1px solid #CCFDF2',
+          p: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'fixed',
+          height: '100vh',
+          overflowY: 'auto',
         }}
       >
-        {/* Logo/Brand */}
-        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'grey.200' }}>
-          <Typography variant="h5" className="font-bold text-primary-600">
-            I Thee Wed
+        {/* Profile Section */}
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Box
+            sx={{
+              width: '100px',
+              height: '100px',
+              borderRadius: '50%',
+              bgcolor: '#D9D9D9',
+              mx: 'auto',
+              mb: 2,
+              position: 'relative',
+              backgroundImage:
+                'url(https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            {/* Edit indicator */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                width: '17px',
+                height: '17px',
+                bgcolor: '#00838F',
+                borderRadius: '50%',
+                border: '2px solid white',
+              }}
+            />
+          </Box>
+          <Typography
+            sx={{
+              fontFamily: "'Open Sans', sans-serif",
+              fontWeight: 700,
+              fontSize: '20px',
+              color: '#002528',
+              mb: 3,
+            }}
+          >
+            Ogundare Taiwo
           </Typography>
-          <Typography variant="body2" className="text-gray-500">
-            Vendor Dashboard
-          </Typography>
+
+          {/* Stats */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-around', mb: 3 }}>
+            <Box>
+              <Typography
+                sx={{
+                  fontFamily: "'Open Sans', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '30px',
+                  color: '#002528',
+                }}
+              >
+                1079
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "'Open Sans', sans-serif",
+                  fontSize: '14px',
+                  color: '#AAA',
+                }}
+              >
+                Projects Completed
+              </Typography>
+            </Box>
+            <Box>
+              <Typography
+                sx={{
+                  fontFamily: "'Open Sans', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '30px',
+                  color: '#002528',
+                }}
+              >
+                100K
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "'Open Sans', sans-serif",
+                  fontSize: '14px',
+                  color: '#AAA',
+                }}
+              >
+                Projects Views
+              </Typography>
+            </Box>
+            <Box>
+              <Typography
+                sx={{
+                  fontFamily: "'Open Sans', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '30px',
+                  color: '#002528',
+                }}
+              >
+                800
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "'Open Sans', sans-serif",
+                  fontSize: '14px',
+                  color: '#AAA',
+                }}
+              >
+                Reviews
+              </Typography>
+            </Box>
+          </Box>
         </Box>
 
-        {/* Navigation */}
-        <List sx={{ px: 2, py: 2 }}>
-          {navItems.map(item => {
-            const active = location.pathname === item.to
-            return (
-              <ListItemButton 
-                key={item.to} 
-                component={Link} 
-                to={item.to} 
-                className={clsx(
-                  'rounded-lg mb-1',
-                  active ? 'bg-primary-50 text-primary-600' : 'text-gray-700 hover:bg-gray-50'
-                )}
+        {/* Divider */}
+        <Box sx={{ height: '1px', bgcolor: '#CCFDF2', mb: 2 }} />
+
+        {/* Main Navigation */}
+        <Box sx={{ flex: 1, overflow: 'auto' }}>
+          <Typography
+            sx={{
+              fontFamily: "'Open Sans', sans-serif",
+              fontSize: '12px',
+              color: '#AAA',
+              textTransform: 'uppercase',
+              letterSpacing: 1,
+              px: 2,
+              mb: 1,
+            }}
+          >
+            Main Menu
+          </Typography>
+          {mainNavItems.map((item) => (
+            <Box key={item.path}>
+              <Button
+                onClick={() => navigate(item.path)}
+                startIcon={item.icon}
                 sx={{
-                  '&.Mui-selected': {
-                    bgcolor: 'primary.50',
-                    color: 'primary.600',
-                    '&:hover': {
-                      bgcolor: 'primary.100',
-                    },
+                  width: '100%',
+                  justifyContent: 'flex-start',
+                  py: 1.5,
+                  px: 2,
+                  color: isActive(item.path) ? '#00838F' : '#002528',
+                  bgcolor: isActive(item.path) ? '#00838F10' : 'transparent',
+                  fontFamily: "'Open Sans', sans-serif",
+                  fontWeight: 600,
+                  fontSize: '15px',
+                  textTransform: 'none',
+                  borderRadius: 0,
+                  '&:hover': {
+                    bgcolor: '#00838F10',
+                    color: '#00838F',
                   },
                 }}
               >
-                <Box sx={{ mr: 2, fontSize: '1.2rem' }}>{item.icon}</Box>
-                <ListItemText 
-                  primary={item.label}
-                  primaryTypographyProps={{ 
-                    className: clsx(
-                      'font-medium',
-                      active ? 'text-primary-600' : 'text-gray-700'
-                    )
-                  }} 
-                />
-              </ListItemButton>
-            )
-          })}
-        </List>
-      </Drawer>
-
-      {/* Main Content */}
-      <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Top Header */}
-        <AppBar 
-          position="static" 
-          color="inherit" 
-          elevation={0} 
-          sx={{ 
-            bgcolor: 'white',
-            borderBottom: '1px solid',
-            borderColor: 'grey.200',
-          }}
-        >
-          <Toolbar sx={{ justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton sx={{ mr: 2, display: { md: 'none' } }}>
-                <MenuIcon />
-              </IconButton>
-              <Typography variant="h6" className="font-semibold text-gray-800">
-                Welcome back, Sarah! 👋
-              </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  {item.label}
+                  {item.badge && (
+                    <Badge
+                      badgeContent={item.badge}
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          bgcolor: '#EB1948',
+                          color: 'white',
+                        },
+                      }}
+                    />
+                  )}
+                </Box>
+              </Button>
             </Box>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <IconButton>
-                <Badge badgeContent={3} color="error">
-                  <Notifications />
-                </Badge>
-              </IconButton>
-              <IconButton>
-                <Settings />
-              </IconButton>
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                S
-              </Avatar>
-            </Box>
-          </Toolbar>
-        </AppBar>
+          ))}
 
-        {/* Page Content */}
-        <Box sx={{ flexGrow: 1, p: 3, bgcolor: 'grey.50' }}>
-          <Outlet />
+          <Box sx={{ height: '1px', bgcolor: '#CCFDF2', my: 2 }} />
+
+          <Typography
+            sx={{
+              fontFamily: "'Open Sans', sans-serif",
+              fontSize: '12px',
+              color: '#AAA',
+              textTransform: 'uppercase',
+              letterSpacing: 1,
+              px: 2,
+              mb: 1,
+            }}
+          >
+            Settings
+          </Typography>
+          {settingsNavItems.map((item) => (
+            <Box key={item.path}>
+              <Button
+                onClick={() => navigate(item.path)}
+                startIcon={item.icon}
+                sx={{
+                  width: '100%',
+                  justifyContent: 'flex-start',
+                  py: 1.5,
+                  px: 2,
+                  color: isActive(item.path) ? '#00838F' : '#002528',
+                  bgcolor: isActive(item.path) ? '#00838F10' : 'transparent',
+                  fontFamily: "'Open Sans', sans-serif",
+                  fontWeight: 600,
+                  fontSize: '15px',
+                  textTransform: 'none',
+                  borderRadius: 0,
+                  '&:hover': {
+                    bgcolor: '#00838F10',
+                    color: '#00838F',
+                  },
+                }}
+              >
+                {item.label}
+              </Button>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Logout */}
+        <Box sx={{ mt: 'auto', pt: 2 }}>
+          <Box sx={{ height: '1px', bgcolor: '#CCFDF2', mb: 2 }} />
+          <Button
+            startIcon={<LogoutIcon />}
+            sx={{
+              color: '#FA144A',
+              fontFamily: "'Open Sans', sans-serif",
+              fontWeight: 700,
+              fontSize: '18px',
+              textTransform: 'none',
+              '&:hover': {
+                bgcolor: 'transparent',
+              },
+            }}
+          >
+            Log out
+          </Button>
         </Box>
       </Box>
+
+      {/* Main Content */}
+      <Box
+        sx={{
+          flex: 1,
+          ml: '390px',
+          p: 4,
+        }}
+      >
+        <Outlet />
+      </Box>
     </Box>
-  )
-}
+  );
+};
+
+export default VendorDashboardLayout;
