@@ -1,5 +1,5 @@
-import { Box, Typography, Grid, Card, CardContent, Button, CardMedia, IconButton, Chip, Divider, Rating, Avatar } from '@mui/material'
-import { ArrowBack, Favorite, FavoriteBorder, Share, Phone, Message, LocationOn, Star, NavigateBefore, NavigateNext } from '@mui/icons-material'
+import { Box, Typography, Grid, Card, Button, CardMedia, IconButton, Chip, Rating, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, LinearProgress } from '@mui/material'
+import { ArrowBack, Favorite, FavoriteBorder, Share, Phone, Message, LocationOn, Star, NavigateBefore, NavigateNext, RateReview, ThumbUp, VerifiedUser } from '@mui/icons-material'
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { mockVendors, getVendorsByCategory, type Vendor } from '@/data/mockVendors'
@@ -13,6 +13,13 @@ export default function VendorDetail() {
   const [selectedImage, setSelectedImage] = useState(0)
   const [currentVendorIndex, setCurrentVendorIndex] = useState(0)
   const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([])
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
+  const [newReview, setNewReview] = useState({ rating: 5, comment: '', title: '' })
+  const [reviews, setReviews] = useState<Array<{ id: number; name: string; rating: number; comment: string; date: string; avatar: string; title?: string; helpful?: number; verified?: boolean }>>([
+    { id: 1, name: "Sarah Johnson", rating: 5, title: "Absolutely stunning venue!", comment: "The staff was amazing and everything went perfectly. Would highly recommend for any wedding.", date: "2 weeks ago", avatar: "SJ", helpful: 12, verified: true },
+    { id: 2, name: "Michael Chen", rating: 4, title: "Great experience overall", comment: "Great location and excellent service. A few minor hiccups but overall highly recommended!", date: "1 month ago", avatar: "MC", helpful: 8, verified: true },
+    { id: 3, name: "Amara Okafor", rating: 5, title: "Made our dream wedding a reality", comment: "From the first meeting to the big day, everything was perfect. The attention to detail was incredible.", date: "2 months ago", avatar: "AO", helpful: 15, verified: true },
+  ])
 
   // Mock vendor data with more details and complete addresses
   const vendorDetails = vendor ? {
@@ -21,35 +28,48 @@ export default function VendorDetail() {
     services: ["Wedding Ceremony", "Reception", "Cocktail Hour", "Bridal Suite", "Catering"],
     amenities: ["Parking", "Air Conditioning", "Sound System", "Lighting", "Restrooms", "Bridal Room"],
     capacity: "Up to 300 guests",
-    fullAddress: getFullAddress(vendor.location, vendor.category),
+    fullAddress: getFullAddress(vendor.location),
     images: [
       vendor.image,
       'https://images.unsplash.com/photo-1519167758481-83f2946fead6?w=600&h=400&fit=crop',
       'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop',
       'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&h=400&fit=crop'
     ],
-    reviews: [
-      {
-        id: 1,
-        name: "Sarah Johnson",
-        rating: 5,
-        comment: "Absolutely beautiful venue! The staff was amazing and everything went perfectly.",
-        date: "2 weeks ago",
-        avatar: "SJ"
-      },
-      {
-        id: 2,
-        name: "Michael Chen",
-        rating: 4,
-        comment: "Great location and excellent service. Highly recommended!",
-        date: "1 month ago",
-        avatar: "MC"
-      }
-    ]
   } : null
 
+  // Calculate rating breakdown
+  const ratingBreakdown = {
+    5: reviews.filter(r => r.rating === 5).length,
+    4: reviews.filter(r => r.rating === 4).length,
+    3: reviews.filter(r => r.rating === 3).length,
+    2: reviews.filter(r => r.rating === 2).length,
+    1: reviews.filter(r => r.rating === 1).length,
+  }
+  const avgRating = reviews.length > 0 ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length : 0
+
+  const handleSubmitReview = () => {
+    const review = {
+      id: Date.now(),
+      name: "You",
+      rating: newReview.rating,
+      title: newReview.title,
+      comment: newReview.comment,
+      date: "Just now",
+      avatar: "ME",
+      helpful: 0,
+      verified: false,
+    }
+    setReviews([review, ...reviews])
+    setNewReview({ rating: 5, comment: '', title: '' })
+    setReviewDialogOpen(false)
+  }
+
+  const handleHelpful = (reviewId: number) => {
+    setReviews(reviews.map(r => r.id === reviewId ? { ...r, helpful: (r.helpful || 0) + 1 } : r))
+  }
+
   // Helper function to get full address
-  function getFullAddress(location: string, category: string): string {
+  function getFullAddress(location: string): string {
     const addressMap: Record<string, string> = {
       'Ikeja, Lagos': '123 Allen Avenue, Ikeja, Lagos State, Nigeria',
       'Victoria Island, Lagos': '456 Ahmadu Bello Way, Victoria Island, Lagos State, Nigeria',
@@ -199,7 +219,7 @@ export default function VendorDetail() {
 
       <Grid container spacing={4}>
         {/* Left Column - Images and Details */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           {/* Main Image */}
           <Card sx={{ mb: 3, borderRadius: 2 }}>
             <CardMedia
@@ -274,21 +294,63 @@ export default function VendorDetail() {
             </Box>
           </Card>
 
-          {/* Reviews */}
+          {/* Reviews Section - Enhanced */}
           <Card sx={{ p: 3 }}>
-            <Typography variant="h6" className="font-bold" sx={{ mb: 2 }}>
-              Reviews ({vendor.reviewCount})
-            </Typography>
-            {vendorDetails.reviews.map((review) => (
-              <Box key={review.id} sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6" className="font-bold">
+                Reviews ({reviews.length})
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<RateReview />}
+                onClick={() => setReviewDialogOpen(true)}
+                sx={{ bgcolor: '#EB1948', '&:hover': { bgcolor: '#c41438' }, textTransform: 'none' }}
+              >
+                Write a Review
+              </Button>
+            </Box>
+
+            {/* Rating Summary */}
+            <Box sx={{ display: 'flex', gap: 4, mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h3" fontWeight={700} color="#00838F">{avgRating.toFixed(1)}</Typography>
+                <Rating value={avgRating} readOnly precision={0.1} />
+                <Typography variant="body2" color="text.secondary">{reviews.length} reviews</Typography>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                {[5, 4, 3, 2, 1].map(star => (
+                  <Box key={star} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Typography variant="body2" sx={{ width: 20 }}>{star}</Typography>
+                    <Star sx={{ fontSize: 16, color: '#F5A623' }} />
+                    <LinearProgress
+                      variant="determinate"
+                      value={reviews.length > 0 ? (ratingBreakdown[star as keyof typeof ratingBreakdown] / reviews.length) * 100 : 0}
+                      sx={{ flex: 1, height: 8, borderRadius: 4, bgcolor: '#e0e0e0', '& .MuiLinearProgress-bar': { bgcolor: '#F5A623' } }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ width: 20 }}>
+                      {ratingBreakdown[star as keyof typeof ratingBreakdown]}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+
+            {/* Individual Reviews */}
+            {reviews.map((review) => (
+              <Box key={review.id} sx={{ mb: 3, pb: 3, borderBottom: '1px solid #eee' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
+                  <Avatar sx={{ mr: 2, bgcolor: review.name === 'You' ? '#EB1948' : '#00838F' }}>
                     {review.avatar}
                   </Avatar>
-                  <Box>
-                    <Typography variant="subtitle2" className="font-bold">
-                      {review.name}
-                    </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="subtitle2" fontWeight={600}>
+                        {review.name}
+                      </Typography>
+                      {review.verified && (
+                        <Chip icon={<VerifiedUser sx={{ fontSize: 14 }} />} label="Verified Booking" size="small" sx={{ height: 20, fontSize: 10, bgcolor: '#e8f5e9', color: '#2e7d32' }} />
+                      )}
+                    </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Rating value={review.rating} size="small" readOnly />
                       <Typography variant="caption" sx={{ ml: 1, color: 'grey.600' }}>
@@ -297,17 +359,75 @@ export default function VendorDetail() {
                     </Box>
                   </Box>
                 </Box>
-                <Typography variant="body2" sx={{ ml: 7 }}>
+                {review.title && (
+                  <Typography variant="subtitle2" fontWeight={600} sx={{ ml: 7, mb: 0.5 }}>
+                    {review.title}
+                  </Typography>
+                )}
+                <Typography variant="body2" sx={{ ml: 7, color: 'text.secondary' }}>
                   {review.comment}
                 </Typography>
-                <Divider sx={{ mt: 2 }} />
+                <Box sx={{ ml: 7, mt: 1 }}>
+                  <Button
+                    size="small"
+                    startIcon={<ThumbUp sx={{ fontSize: 14 }} />}
+                    onClick={() => handleHelpful(review.id)}
+                    sx={{ textTransform: 'none', color: 'text.secondary' }}
+                  >
+                    Helpful ({review.helpful || 0})
+                  </Button>
+                </Box>
               </Box>
             ))}
           </Card>
+
+          {/* Write Review Dialog */}
+          <Dialog open={reviewDialogOpen} onClose={() => setReviewDialogOpen(false)} maxWidth="sm" fullWidth>
+            <DialogTitle>Write a Review</DialogTitle>
+            <DialogContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                <Box>
+                  <Typography gutterBottom>Your Rating</Typography>
+                  <Rating
+                    value={newReview.rating}
+                    onChange={(_, value) => setNewReview(prev => ({ ...prev, rating: value || 5 }))}
+                    size="large"
+                  />
+                </Box>
+                <TextField
+                  label="Review Title"
+                  fullWidth
+                  value={newReview.title}
+                  onChange={(e) => setNewReview(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Summarize your experience"
+                />
+                <TextField
+                  label="Your Review"
+                  fullWidth
+                  multiline
+                  rows={4}
+                  value={newReview.comment}
+                  onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
+                  placeholder="Tell others about your experience with this vendor..."
+                />
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setReviewDialogOpen(false)}>Cancel</Button>
+              <Button
+                variant="contained"
+                onClick={handleSubmitReview}
+                disabled={!newReview.comment}
+                sx={{ bgcolor: '#00838F', '&:hover': { bgcolor: '#006670' } }}
+              >
+                Submit Review
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Grid>
 
         {/* Right Column - Booking Card */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ p: 3, position: 'sticky', top: 20 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h5" className="font-bold text-primary-600">

@@ -249,7 +249,7 @@ export default function VendorSelection() {
             {/* Vendor grid - 5 per row on desktop, responsive */}
             <Grid container spacing={2}>
               {displayedVendors.map((vendor) => (
-                <Grid key={vendor.id} item xs={6} sm={4} md={2.4} component="div">
+                <Grid key={vendor.id} size={{ xs: 6, sm: 4, md: 2.4 }}>
                   <Card 
                     sx={{ 
                       height: '100%', 
