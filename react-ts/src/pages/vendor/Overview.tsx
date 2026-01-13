@@ -64,7 +64,7 @@ export default function Overview() {
       {/* KPI Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {kpis.map((kpi, index) => (
-          <Grid key={index} item xs={12} sm={6} lg={3}>
+          <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
             <Card sx={{ height: '100%', position: 'relative', overflow: 'visible' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
@@ -109,7 +109,7 @@ export default function Overview() {
       {/* Content Grid */}
       <Grid container spacing={3}>
         {/* Recent Bookings */}
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -145,7 +145,7 @@ export default function Overview() {
         </Grid>
 
         {/* Recent Messages */}
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -190,3 +190,5 @@ export default function Overview() {
     </Box>
   )
 }
+
+
