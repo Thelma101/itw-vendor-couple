@@ -33,6 +33,11 @@ import VendorBookings from './pages/vendor/Bookings'
 import VendorServices from './pages/vendor/Services'
 import VendorAvailability from './pages/vendor/Availability'
 import VendorPortfolio from './pages/vendor/Portfolio'
+import Leads from './pages/vendor/Leads'
+import Reviews from './pages/vendor/Reviews'
+import Promotions from './pages/vendor/Promotions'
+import TeamManagement from './pages/vendor/TeamManagement'
+import BusinessInsights from './pages/vendor/BusinessInsights'
 
 export default function App() {
   return (
@@ -72,6 +77,11 @@ export default function App() {
               <Route path="services" element={<VendorServices />} />
               <Route path="availability" element={<VendorAvailability />} />
               <Route path="portfolio" element={<VendorPortfolio />} />
+              <Route path="leads" element={<Leads />} />
+              <Route path="reviews" element={<Reviews />} />
+              <Route path="promotions" element={<Promotions />} />
+              <Route path="team" element={<TeamManagement />} />
+              <Route path="insights" element={<BusinessInsights />} />
               <Route path="gallery" element={<Gallery />} />
               <Route path="account" element={<AccountInformation />} />
               <Route path="subscription" element={<SubscriptionPage />} />

@@ -6,13 +6,17 @@ import EventIcon from '@mui/icons-material/Event';
 import ChatIcon from '@mui/icons-material/Chat';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
-
 import PersonIcon from '@mui/icons-material/Person';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import PaymentIcon from '@mui/icons-material/Payment';
 import SecurityIcon from '@mui/icons-material/Security';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import WorkIcon from '@mui/icons-material/Work';
+import LeaderboardIcon from '@mui/icons-material/Leaderboard';
+import StarIcon from '@mui/icons-material/Star';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import GroupsIcon from '@mui/icons-material/Groups';
+import InsightsIcon from '@mui/icons-material/Insights';
 
 const VendorDashboardLayout = () => {
   const navigate = useNavigate();
@@ -22,12 +26,17 @@ const VendorDashboardLayout = () => {
 
   const mainNavItems = [
     { label: 'Overview', path: '/vendor', icon: <DashboardIcon /> },
+    { label: 'Leads', path: '/vendor/leads', icon: <LeaderboardIcon />, badge: 5 },
     { label: 'Bookings', path: '/vendor/bookings', icon: <EventIcon />, badge: 2 },
     { label: 'Messages', path: '/vendor/messages', icon: <ChatIcon />, badge: 3 },
+    { label: 'Reviews', path: '/vendor/reviews', icon: <StarIcon /> },
     { label: 'Analytics', path: '/vendor/analytics', icon: <AnalyticsIcon /> },
+    { label: 'Business Insights', path: '/vendor/insights', icon: <InsightsIcon /> },
     { label: 'Services', path: '/vendor/services', icon: <WorkIcon /> },
+    { label: 'Promotions', path: '/vendor/promotions', icon: <LocalOfferIcon /> },
     { label: 'Availability', path: '/vendor/availability', icon: <CalendarMonthIcon /> },
     { label: 'Portfolio', path: '/vendor/portfolio', icon: <PhotoLibraryIcon /> },
+    { label: 'Team', path: '/vendor/team', icon: <GroupsIcon /> },
   ];
 
   const settingsNavItems = [
@@ -94,7 +103,7 @@ const VendorDashboardLayout = () => {
               mb: 3,
             }}
           >
-            Ogundare Taiwo
+            Thelma Akpata
           </Typography>
 
           {/* Stats */}

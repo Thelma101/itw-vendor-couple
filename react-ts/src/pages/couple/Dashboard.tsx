@@ -24,8 +24,8 @@ import { useShortlist } from '../../contexts/ShortlistContext';
 
 // Mock user data
 const userData = {
-  name: 'Sarah & Michael',
-  weddingDate: '2025-06-15',
+  name: 'Thelma & David',
+  weddingDate: '2026-06-15',
   daysUntilWedding: 154,
   avatar: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=200',
   location: 'Lagos, Nigeria'
