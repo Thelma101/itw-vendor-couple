@@ -4,6 +4,7 @@ import { NotificationProvider } from './contexts/NotificationContext'
 import SelectVendors from './pages/couple/SelectVendors'
 import Shortlist from './pages/couple/Shortlist'
 import SearchResults from './pages/couple/SearchResults'
+import EnhancedSearchResults from './pages/couple/EnhancedSearchResults'
 import HomePage from './pages/couple/HomePage'
 import Dashboard from './pages/couple/Dashboard'
 import MyVendors from './pages/couple/MyVendors'
@@ -51,6 +52,7 @@ export default function App() {
             {/* Couple Routes (after login) */}
             <Route path="/couple/dashboard" element={<Dashboard />} />
             <Route path="/couple/search-results" element={<SearchResults />} />
+            <Route path="/couple/search" element={<EnhancedSearchResults />} />
             <Route path="/couple/select-vendors" element={<SelectVendors />} />
             <Route path="/couple/vendor/:id" element={<VendorProfile />} />
             <Route path="/couple/shortlist" element={<Shortlist />} />

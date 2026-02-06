@@ -16,6 +16,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  InputAdornment,
 } from '@mui/material'
 import {
   Palette,
@@ -29,6 +30,10 @@ import {
   Check,
   PhotoCamera,
   Link as LinkIcon,
+  Public,
+  VisibilityOff,
+  Delete,
+  Close,
 } from '@mui/icons-material'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
@@ -105,18 +110,26 @@ export default function WeddingWebsite() {
     setWebsite(prev => ({ ...prev, ...updates }))
   }
 
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':')
+    const hour = parseInt(hours)
+    const ampm = hour >= 12 ? 'PM' : 'AM'
+    const hour12 = hour % 12 || 12
+    return `${hour12}:${minutes} ${ampm}`
+  }
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#FFF6F9' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#FFF6F9', display: 'flex', flexDirection: 'column' }}>
       <Nav />
       
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3, py: 4 }}>
+      <Box sx={{ flex: 1, px: 4, py: 4 }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
           <Box>
-            <Typography variant="h4" fontWeight={700} color="#1a1a1a" gutterBottom>
+            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 32, fontWeight: 700, color: '#002528' }}>
               Wedding Website
             </Typography>
-            <Typography color="text.secondary">
+            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, color: '#666', mt: 0.5 }}>
               Create a beautiful wedding website to share with your guests
             </Typography>
           </Box>
@@ -125,35 +138,102 @@ export default function WeddingWebsite() {
               variant="outlined"
               startIcon={<Visibility />}
               onClick={() => setPreviewOpen(true)}
-              sx={{ borderRadius: 2, textTransform: 'none' }}
+              sx={{ borderColor: '#00838F', color: '#00838F', borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
             >
               Preview
             </Button>
             <Button
               variant="contained"
               startIcon={<Share />}
-              sx={{ bgcolor: '#EB1948', '&:hover': { bgcolor: '#c41438' }, borderRadius: 2, textTransform: 'none' }}
+              sx={{ bgcolor: '#EB1948', '&:hover': { bgcolor: '#c41438' }, borderRadius: 2, textTransform: 'none', fontWeight: 600, px: 3 }}
             >
               Share
             </Button>
           </Box>
         </Box>
 
+        {/* Stats Cards Row */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 3, mb: 4 }}>
+          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Box sx={{ p: 1, bgcolor: website.published ? '#e8f5e9' : '#fff3e0', borderRadius: 2 }}>
+                {website.published ? <Public sx={{ color: '#4caf50' }} /> : <VisibilityOff sx={{ color: '#F5A623' }} />}
+              </Box>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666' }}>Status</Typography>
+            </Box>
+            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 28, fontWeight: 700, color: website.published ? '#4caf50' : '#F5A623' }}>
+              {website.published ? 'Live' : 'Draft'}
+            </Typography>
+            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666', mt: 0.5 }}>
+              {website.published ? 'Visible to guests' : 'Not yet published'}
+            </Typography>
+          </Paper>
+
+          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Box sx={{ p: 1, bgcolor: '#e8f5f5', borderRadius: 2 }}>
+                <Palette sx={{ color: '#00838F' }} />
+              </Box>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666' }}>Theme</Typography>
+            </Box>
+            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 28, fontWeight: 700, color: '#002528' }}>
+              {currentTheme.name}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.5, mt: 1 }}>
+              <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: currentTheme.primary }} />
+              <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: currentTheme.secondary }} />
+              <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: currentTheme.bg, border: '1px solid #e0e0e0' }} />
+            </Box>
+          </Paper>
+
+          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Box sx={{ p: 1, bgcolor: '#fce4ec', borderRadius: 2 }}>
+                <Image sx={{ color: '#EB1948' }} />
+              </Box>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666' }}>Photos</Typography>
+            </Box>
+            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 28, fontWeight: 700, color: '#EB1948' }}>
+              {website.photos.length}
+            </Typography>
+            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666', mt: 0.5 }}>
+              In gallery
+            </Typography>
+          </Paper>
+
+          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Box sx={{ p: 1, bgcolor: '#e3f2fd', borderRadius: 2 }}>
+                <Event sx={{ color: '#1565c0' }} />
+              </Box>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666' }}>Schedule</Typography>
+            </Box>
+            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 28, fontWeight: 700, color: '#1565c0' }}>
+              {website.schedule.length}
+            </Typography>
+            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666', mt: 0.5 }}>
+              Events planned
+            </Typography>
+          </Paper>
+        </Box>
+
         {/* Website URL Card */}
-        <Paper sx={{ p: 3, borderRadius: 3, mb: 4 }}>
+        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0', mb: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <LinkIcon sx={{ color: '#00838F' }} />
+              <Box sx={{ p: 1.5, bgcolor: '#e8f5f5', borderRadius: 2 }}>
+                <LinkIcon sx={{ color: '#00838F' }} />
+              </Box>
               <Box>
-                <Typography variant="body2" color="text.secondary">Your wedding website</Typography>
-                <Typography fontWeight={600}>{websiteUrl}</Typography>
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>Your wedding website</Typography>
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 16, color: '#002528' }}>{websiteUrl}</Typography>
               </Box>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Button
                 startIcon={copied ? <Check /> : <ContentCopy />}
                 onClick={copyUrl}
-                sx={{ textTransform: 'none' }}
+                sx={{ textTransform: 'none', fontFamily: "'Open Sans', sans-serif", fontWeight: 600, color: copied ? '#4caf50' : '#00838F' }}
               >
                 {copied ? 'Copied!' : 'Copy Link'}
               </Button>
@@ -162,10 +242,10 @@ export default function WeddingWebsite() {
                   <Switch
                     checked={website.published}
                     onChange={(e) => updateWebsite({ published: e.target.checked })}
-                    color="primary"
+                    sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#4caf50' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#4caf50' } }}
                   />
                 }
-                label={website.published ? 'Published' : 'Draft'}
+                label={<Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14 }}>{website.published ? 'Published' : 'Draft'}</Typography>}
               />
             </Box>
           </Box>
@@ -175,390 +255,358 @@ export default function WeddingWebsite() {
               label="Custom URL"
               value={website.url}
               onChange={(e) => updateWebsite({ url: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
-              slotProps={{
-                input: { startAdornment: <Typography color="text.secondary" sx={{ mr: 0.5 }}>itheewed.com/w/</Typography> }
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><Typography sx={{ color: '#666', fontFamily: "'Open Sans', sans-serif", fontSize: 14 }}>itheewed.com/w/</Typography></InputAdornment>,
+                sx: { fontFamily: "'Open Sans', sans-serif", borderRadius: 2 }
               }}
-              sx={{ width: 350 }}
+              sx={{ width: 400 }}
             />
           </Box>
         </Paper>
 
-        {/* Editor Tabs */}
-        <Paper sx={{ borderRadius: 3 }}>
-          <Tabs
-            value={activeTab}
-            onChange={(_, v) => setActiveTab(v)}
-            sx={{
-              borderBottom: '1px solid #eee',
-              '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 },
-              '& .Mui-selected': { color: '#00838F' },
-              '& .MuiTabs-indicator': { bgcolor: '#00838F' },
-            }}
-          >
-            <Tab icon={<Palette />} label="Design" iconPosition="start" />
-            <Tab icon={<Edit />} label="Content" iconPosition="start" />
-            <Tab icon={<Event />} label="Schedule" iconPosition="start" />
-            <Tab icon={<Image />} label="Photos" iconPosition="start" />
-          </Tabs>
+        {/* Two Column Layout: Editor + Preview */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: '1fr 400px' }, gap: 3 }}>
+          {/* Editor Panel */}
+          <Paper sx={{ borderRadius: 3, border: '1px solid #e0e0e0', overflow: 'hidden' }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_, v) => setActiveTab(v)}
+              sx={{
+                borderBottom: '1px solid #e0e0e0', bgcolor: '#fafafa',
+                '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, fontFamily: "'Open Sans', sans-serif", minHeight: 56 },
+                '& .Mui-selected': { color: '#00838F' },
+                '& .MuiTabs-indicator': { bgcolor: '#00838F' },
+              }}
+            >
+              <Tab icon={<Palette sx={{ fontSize: 20 }} />} label="Design" iconPosition="start" />
+              <Tab icon={<Edit sx={{ fontSize: 20 }} />} label="Content" iconPosition="start" />
+              <Tab icon={<Event sx={{ fontSize: 20 }} />} label="Schedule" iconPosition="start" />
+              <Tab icon={<Image sx={{ fontSize: 20 }} />} label="Photos" iconPosition="start" />
+            </Tabs>
 
-          <Box sx={{ p: 3 }}>
-            {/* Design Tab */}
-            {activeTab === 0 && (
-              <Box>
-                <Typography variant="h6" fontWeight={600} gutterBottom>Choose a Theme</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 2, mb: 4 }}>
-                  {themes.map(theme => (
-                    <Card
-                      key={theme.id}
-                      onClick={() => updateWebsite({ theme: theme.id })}
-                      sx={{
-                        p: 2,
-                        cursor: 'pointer',
-                        border: website.theme === theme.id ? '2px solid #00838F' : '1px solid #eee',
-                        transition: 'all 0.2s',
-                        '&:hover': { borderColor: '#00838F' },
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                        <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: theme.primary }} />
-                        <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: theme.secondary }} />
-                        <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: theme.bg, border: '1px solid #eee' }} />
-                      </Box>
-                      <Typography fontWeight={600}>{theme.name}</Typography>
-                      {website.theme === theme.id && (
-                        <Chip label="Active" size="small" sx={{ mt: 1, bgcolor: '#e8f5e9', color: '#2e7d32' }} />
-                      )}
-                    </Card>
-                  ))}
-                </Box>
-
-                <Divider sx={{ my: 3 }} />
-
-                <Typography variant="h6" fontWeight={600} gutterBottom>Cover Image</Typography>
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: 300,
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    backgroundImage: `url(${website.coverImage})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                >
-                  <Button
-                    variant="contained"
-                    startIcon={<PhotoCamera />}
-                    sx={{
-                      position: 'absolute',
-                      bottom: 16,
-                      right: 16,
-                      bgcolor: 'rgba(0,0,0,0.6)',
-                      '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
-                      textTransform: 'none',
-                    }}
-                  >
-                    Change Cover
-                  </Button>
-                </Box>
-              </Box>
-            )}
-
-            {/* Content Tab */}
-            {activeTab === 1 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Typography variant="h6" fontWeight={600}>Couple Details</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                  <TextField
-                    label="Partner 1 Name"
-                    value={website.coupleNames.partner1}
-                    onChange={(e) => updateWebsite({ coupleNames: { ...website.coupleNames, partner1: e.target.value } })}
-                  />
-                  <TextField
-                    label="Partner 2 Name"
-                    value={website.coupleNames.partner2}
-                    onChange={(e) => updateWebsite({ coupleNames: { ...website.coupleNames, partner2: e.target.value } })}
-                  />
-                </Box>
-
-                <Divider />
-
-                <Typography variant="h6" fontWeight={600}>Wedding Details</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                  <TextField
-                    label="Wedding Date"
-                    type="date"
-                    value={website.weddingDate}
-                    onChange={(e) => updateWebsite({ weddingDate: e.target.value })}
-                    slotProps={{ inputLabel: { shrink: true } }}
-                  />
-                  <TextField
-                    label="Wedding Time"
-                    type="time"
-                    value={website.weddingTime}
-                    onChange={(e) => updateWebsite({ weddingTime: e.target.value })}
-                    slotProps={{ inputLabel: { shrink: true } }}
-                  />
-                </Box>
-                <TextField
-                  label="Venue Name"
-                  value={website.venue.name}
-                  onChange={(e) => updateWebsite({ venue: { ...website.venue, name: e.target.value } })}
-                />
-                <TextField
-                  label="Venue Address"
-                  value={website.venue.address}
-                  onChange={(e) => updateWebsite({ venue: { ...website.venue, address: e.target.value } })}
-                />
-
-                <Divider />
-
-                <Typography variant="h6" fontWeight={600}>Our Story</Typography>
-                <TextField
-                  multiline
-                  rows={4}
-                  value={website.story}
-                  onChange={(e) => updateWebsite({ story: e.target.value })}
-                  placeholder="Share your love story with your guests..."
-                />
-
-                <Divider />
-
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="h6" fontWeight={600}>RSVP</Typography>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={website.rsvpEnabled}
-                        onChange={(e) => updateWebsite({ rsvpEnabled: e.target.checked })}
-                      />
-                    }
-                    label="Enable RSVP"
-                  />
-                </Box>
-              </Box>
-            )}
-
-            {/* Schedule Tab */}
-            {activeTab === 2 && (
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6" fontWeight={600}>Wedding Day Schedule</Typography>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => updateWebsite({
-                      schedule: [...website.schedule, { time: '', event: '', location: '' }]
-                    })}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    Add Event
-                  </Button>
-                </Box>
-
-                {website.schedule.map((item, index) => (
-                  <Paper key={index} sx={{ p: 2, mb: 2, bgcolor: '#f9f9f9', borderRadius: 2 }}>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr auto', gap: 2, alignItems: 'center' }}>
-                      <TextField
-                        label="Time"
-                        type="time"
-                        size="small"
-                        value={item.time}
-                        onChange={(e) => {
-                          const newSchedule = [...website.schedule]
-                          newSchedule[index].time = e.target.value
-                          updateWebsite({ schedule: newSchedule })
-                        }}
-                        slotProps={{ inputLabel: { shrink: true } }}
-                      />
-                      <TextField
-                        label="Event"
-                        size="small"
-                        value={item.event}
-                        onChange={(e) => {
-                          const newSchedule = [...website.schedule]
-                          newSchedule[index].event = e.target.value
-                          updateWebsite({ schedule: newSchedule })
-                        }}
-                      />
-                      <TextField
-                        label="Location (optional)"
-                        size="small"
-                        value={item.location || ''}
-                        onChange={(e) => {
-                          const newSchedule = [...website.schedule]
-                          newSchedule[index].location = e.target.value
-                          updateWebsite({ schedule: newSchedule })
-                        }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          const newSchedule = website.schedule.filter((_, i) => i !== index)
-                          updateWebsite({ schedule: newSchedule })
-                        }}
-                      >
-                        ×
-                      </IconButton>
-                    </Box>
-                  </Paper>
-                ))}
-              </Box>
-            )}
-
-            {/* Photos Tab */}
-            {activeTab === 3 && (
-              <Box>
-                <Typography variant="h6" fontWeight={600} gutterBottom>Photo Gallery</Typography>
-                <Typography color="text.secondary" sx={{ mb: 3 }}>
-                  Add your favorite photos to share with guests
-                </Typography>
-
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
-                  {website.photos.map((photo, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        position: 'relative',
-                        paddingTop: '100%',
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        '&:hover .overlay': { opacity: 1 },
-                      }}
-                    >
-                      <img
-                        src={photo}
-                        alt={`Photo ${index + 1}`}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                      <Box
-                        className="overlay"
+            <Box sx={{ p: 3 }}>
+              {/* Design Tab */}
+              {activeTab === 0 && (
+                <Box>
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 18, fontWeight: 600, color: '#002528', mb: 2 }}>Choose a Theme</Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 2, mb: 4 }}>
+                    {themes.map(theme => (
+                      <Card
+                        key={theme.id}
+                        onClick={() => updateWebsite({ theme: theme.id })}
                         sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          bgcolor: 'rgba(0,0,0,0.5)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          opacity: 0,
-                          transition: 'opacity 0.2s',
+                          p: 2, cursor: 'pointer', borderRadius: 2,
+                          border: website.theme === theme.id ? '2px solid #00838F' : '1px solid #e0e0e0',
+                          transition: 'all 0.2s', '&:hover': { borderColor: '#00838F' },
                         }}
                       >
-                        <IconButton sx={{ color: 'white' }}>
-                          <Edit />
-                        </IconButton>
-                      </Box>
-                    </Box>
-                  ))}
+                        <Box sx={{ display: 'flex', gap: 0.75, mb: 1.5 }}>
+                          <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: theme.primary }} />
+                          <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: theme.secondary }} />
+                          <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: theme.bg, border: '1px solid #e0e0e0' }} />
+                        </Box>
+                        <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14, color: '#002528' }}>{theme.name}</Typography>
+                        {website.theme === theme.id && (
+                          <Chip label="Active" size="small" sx={{ mt: 1, bgcolor: '#e8f5e9', color: '#2e7d32', height: 22, fontSize: 11, fontWeight: 600 }} />
+                        )}
+                      </Card>
+                    ))}
+                  </Box>
 
-                  {/* Add Photo Button */}
+                  <Divider sx={{ my: 3 }} />
+
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 18, fontWeight: 600, color: '#002528', mb: 2 }}>Cover Image</Typography>
                   <Box
                     sx={{
-                      paddingTop: '100%',
-                      position: 'relative',
-                      border: '2px dashed #ccc',
-                      borderRadius: 2,
-                      cursor: 'pointer',
-                      '&:hover': { borderColor: '#00838F' },
+                      width: '100%', height: 250, borderRadius: 3, overflow: 'hidden', position: 'relative',
+                      backgroundImage: `url(${website.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center',
                     }}
                   >
+                    <Button
+                      variant="contained"
+                      startIcon={<PhotoCamera />}
+                      sx={{ position: 'absolute', bottom: 16, right: 16, bgcolor: 'rgba(0,0,0,0.6)', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' }, textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
+                    >
+                      Change Cover
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+
+              {/* Content Tab */}
+              {activeTab === 1 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 18, fontWeight: 600, color: '#002528' }}>Couple Details</Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                    <TextField label="Partner 1 Name" value={website.coupleNames.partner1} onChange={(e) => updateWebsite({ coupleNames: { ...website.coupleNames, partner1: e.target.value } })} />
+                    <TextField label="Partner 2 Name" value={website.coupleNames.partner2} onChange={(e) => updateWebsite({ coupleNames: { ...website.coupleNames, partner2: e.target.value } })} />
+                  </Box>
+
+                  <Divider />
+
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 18, fontWeight: 600, color: '#002528' }}>Wedding Details</Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                    <TextField label="Wedding Date" type="date" value={website.weddingDate} onChange={(e) => updateWebsite({ weddingDate: e.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
+                    <TextField label="Wedding Time" type="time" value={website.weddingTime} onChange={(e) => updateWebsite({ weddingTime: e.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
+                  </Box>
+                  <TextField label="Venue Name" value={website.venue.name} onChange={(e) => updateWebsite({ venue: { ...website.venue, name: e.target.value } })} />
+                  <TextField label="Venue Address" value={website.venue.address} onChange={(e) => updateWebsite({ venue: { ...website.venue, address: e.target.value } })} />
+
+                  <Divider />
+
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 18, fontWeight: 600, color: '#002528' }}>Our Story</Typography>
+                  <TextField multiline rows={4} value={website.story} onChange={(e) => updateWebsite({ story: e.target.value })} placeholder="Share your love story with your guests..." />
+
+                  <Divider />
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 18, fontWeight: 600, color: '#002528' }}>RSVP</Typography>
+                    <FormControlLabel
+                      control={<Switch checked={website.rsvpEnabled} onChange={(e) => updateWebsite({ rsvpEnabled: e.target.checked })} />}
+                      label={<Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14 }}>Enable RSVP</Typography>}
+                    />
+                  </Box>
+                </Box>
+              )}
+
+              {/* Schedule Tab */}
+              {activeTab === 2 && (
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 18, fontWeight: 600, color: '#002528' }}>Wedding Day Schedule</Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => updateWebsite({ schedule: [...website.schedule, { time: '', event: '', location: '' }] })}
+                      sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2, borderColor: '#00838F', color: '#00838F' }}
+                    >
+                      Add Event
+                    </Button>
+                  </Box>
+
+                  {website.schedule.map((item, index) => (
+                    <Paper key={index} sx={{ p: 2, mb: 2, bgcolor: '#fafafa', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '100px 1fr 1fr auto' }, gap: 2, alignItems: 'center' }}>
+                        <TextField
+                          label="Time"
+                          type="time"
+                          size="small"
+                          value={item.time}
+                          onChange={(e) => {
+                            const newSchedule = [...website.schedule]
+                            newSchedule[index].time = e.target.value
+                            updateWebsite({ schedule: newSchedule })
+                          }}
+                          slotProps={{ inputLabel: { shrink: true } }}
+                        />
+                        <TextField
+                          label="Event"
+                          size="small"
+                          value={item.event}
+                          onChange={(e) => {
+                            const newSchedule = [...website.schedule]
+                            newSchedule[index].event = e.target.value
+                            updateWebsite({ schedule: newSchedule })
+                          }}
+                        />
+                        <TextField
+                          label="Location"
+                          size="small"
+                          value={item.location || ''}
+                          onChange={(e) => {
+                            const newSchedule = [...website.schedule]
+                            newSchedule[index].location = e.target.value
+                            updateWebsite({ schedule: newSchedule })
+                          }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            const newSchedule = website.schedule.filter((_, i) => i !== index)
+                            updateWebsite({ schedule: newSchedule })
+                          }}
+                          sx={{ color: '#999' }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Paper>
+                  ))}
+                </Box>
+              )}
+
+              {/* Photos Tab */}
+              {activeTab === 3 && (
+                <Box>
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 18, fontWeight: 600, color: '#002528', mb: 1 }}>Photo Gallery</Typography>
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, color: '#666', mb: 3 }}>
+                    Add your favorite photos to share with guests
+                  </Typography>
+
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 2 }}>
+                    {website.photos.map((photo, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          position: 'relative', paddingTop: '100%', borderRadius: 2, overflow: 'hidden',
+                          '&:hover .overlay': { opacity: 1 },
+                        }}
+                      >
+                        <img
+                          src={photo}
+                          alt={`Photo ${index + 1}`}
+                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                        <Box
+                          className="overlay"
+                          sx={{
+                            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                            bgcolor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            opacity: 0, transition: 'opacity 0.2s', gap: 1,
+                          }}
+                        >
+                          <IconButton size="small" sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)' }}>
+                            <Edit fontSize="small" />
+                          </IconButton>
+                          <IconButton size="small" sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)' }}>
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    ))}
+
                     <Box
                       sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        paddingTop: '100%', position: 'relative', border: '2px dashed #ccc', borderRadius: 2,
+                        cursor: 'pointer', '&:hover': { borderColor: '#00838F', bgcolor: '#f5f5f5' },
                       }}
                     >
-                      <PhotoCamera sx={{ fontSize: 32, color: '#ccc', mb: 1 }} />
-                      <Typography color="text.secondary">Add Photo</Typography>
+                      <Box
+                        sx={{
+                          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <PhotoCamera sx={{ fontSize: 32, color: '#ccc', mb: 1 }} />
+                        <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#999' }}>Add Photo</Typography>
+                      </Box>
                     </Box>
                   </Box>
                 </Box>
+              )}
+            </Box>
+          </Paper>
+
+          {/* Live Preview Sidebar */}
+          <Paper sx={{ borderRadius: 3, border: '1px solid #e0e0e0', overflow: 'hidden', height: 'fit-content', display: { xs: 'none', xl: 'block' } }}>
+            <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0', bgcolor: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, fontWeight: 600, color: '#002528' }}>Live Preview</Typography>
+              <Chip label="Desktop" size="small" sx={{ fontSize: 11, height: 22 }} />
+            </Box>
+            <Box sx={{ bgcolor: currentTheme.bg, height: 500, overflowY: 'auto' }}>
+              {/* Mini Hero */}
+              <Box
+                sx={{
+                  height: 140, backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${website.coverImage})`,
+                  backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', color: 'white', textAlign: 'center',
+                }}
+              >
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 10, letterSpacing: 2, mb: 0.5 }}>WE'RE GETTING MARRIED</Typography>
+                <Typography sx={{ fontFamily: "serif", fontSize: 20, fontWeight: 700 }}>
+                  {website.coupleNames.partner1} & {website.coupleNames.partner2}
+                </Typography>
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, mt: 0.5 }}>
+                  {new Date(website.weddingDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </Typography>
               </Box>
-            )}
-          </Box>
-        </Paper>
+
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, fontWeight: 600, color: currentTheme.primary, mb: 1 }}>Our Story</Typography>
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666', lineHeight: 1.6 }}>
+                  {website.story.slice(0, 150)}...
+                </Typography>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, fontWeight: 600, color: currentTheme.primary, mb: 1 }}>
+                  <LocationOn sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
+                  Venue
+                </Typography>
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, fontWeight: 600 }}>{website.venue.name}</Typography>
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>{website.venue.address}</Typography>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, fontWeight: 600, color: currentTheme.primary, mb: 1 }}>Schedule</Typography>
+                {website.schedule.slice(0, 3).map((item, i) => (
+                  <Box key={i} sx={{ mb: 1 }}>
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, fontWeight: 600 }}>{item.time && formatTime(item.time)} - {item.event}</Typography>
+                  </Box>
+                ))}
+                {website.schedule.length > 3 && (
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 10, color: '#999' }}>+{website.schedule.length - 3} more events</Typography>
+                )}
+
+                {website.rsvpEnabled && (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    sx={{ mt: 2, bgcolor: currentTheme.primary, '&:hover': { bgcolor: currentTheme.primary }, textTransform: 'none', fontWeight: 600, fontSize: 12 }}
+                  >
+                    RSVP Now
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          </Paper>
+        </Box>
       </Box>
 
-      {/* Preview Dialog */}
+      {/* Full Preview Dialog */}
       <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">Website Preview</Typography>
-            <IconButton onClick={() => setPreviewOpen(false)}>×</IconButton>
-          </Box>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e0e0e0' }}>
+          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600 }}>Website Preview</Typography>
+          <IconButton onClick={() => setPreviewOpen(false)} size="small"><Close /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 0 }}>
-          {/* Preview Website */}
           <Box sx={{ bgcolor: currentTheme.bg, minHeight: 500 }}>
-            {/* Hero Section */}
             <Box
               sx={{
-                height: 350,
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${website.coverImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                textAlign: 'center',
+                height: 350, backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${website.coverImage})`,
+                backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', color: 'white', textAlign: 'center',
               }}
             >
-              <Typography variant="overline" sx={{ letterSpacing: 4, mb: 1 }}>WE'RE GETTING MARRIED</Typography>
-              <Typography variant="h2" fontWeight={700} sx={{ fontFamily: 'serif' }}>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, letterSpacing: 4, mb: 1 }}>WE'RE GETTING MARRIED</Typography>
+              <Typography sx={{ fontFamily: "serif", fontSize: 48, fontWeight: 700 }}>
                 {website.coupleNames.partner1} & {website.coupleNames.partner2}
               </Typography>
-              <Typography variant="h5" sx={{ mt: 2 }}>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 20, mt: 2 }}>
                 {new Date(website.weddingDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               </Typography>
             </Box>
 
-            {/* Content */}
             <Box sx={{ maxWidth: 600, mx: 'auto', p: 4, textAlign: 'center' }}>
-              <Typography variant="h5" fontWeight={600} sx={{ color: currentTheme.primary, mb: 2 }}>
-                Our Story
-              </Typography>
-              <Typography color="text.secondary" sx={{ mb: 4 }}>
-                {website.story}
-              </Typography>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 24, fontWeight: 600, color: currentTheme.primary, mb: 2 }}>Our Story</Typography>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', mb: 4, lineHeight: 1.8 }}>{website.story}</Typography>
 
               <Divider sx={{ my: 4 }} />
 
-              <Typography variant="h5" fontWeight={600} sx={{ color: currentTheme.primary, mb: 2 }}>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 24, fontWeight: 600, color: currentTheme.primary, mb: 2 }}>
                 <LocationOn sx={{ mr: 1, verticalAlign: 'middle' }} />
                 Venue
               </Typography>
-              <Typography fontWeight={600}>{website.venue.name}</Typography>
-              <Typography color="text.secondary">{website.venue.address}</Typography>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600 }}>{website.venue.name}</Typography>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666' }}>{website.venue.address}</Typography>
 
               <Divider sx={{ my: 4 }} />
 
-              <Typography variant="h5" fontWeight={600} sx={{ color: currentTheme.primary, mb: 2 }}>
-                Schedule
-              </Typography>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 24, fontWeight: 600, color: currentTheme.primary, mb: 2 }}>Schedule</Typography>
               {website.schedule.map((item, index) => (
                 <Box key={index} sx={{ mb: 2 }}>
-                  <Typography fontWeight={600}>{item.time} - {item.event}</Typography>
-                  {item.location && <Typography variant="body2" color="text.secondary">{item.location}</Typography>}
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600 }}>{item.time && formatTime(item.time)} - {item.event}</Typography>
+                  {item.location && <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, color: '#666' }}>{item.location}</Typography>}
                 </Box>
               ))}
 
@@ -568,14 +616,7 @@ export default function WeddingWebsite() {
                   <Button
                     variant="contained"
                     size="large"
-                    sx={{
-                      bgcolor: currentTheme.primary,
-                      '&:hover': { bgcolor: currentTheme.primary },
-                      px: 6,
-                      py: 1.5,
-                      textTransform: 'none',
-                      fontWeight: 600,
-                    }}
+                    sx={{ bgcolor: currentTheme.primary, '&:hover': { bgcolor: currentTheme.primary }, px: 6, py: 1.5, textTransform: 'none', fontWeight: 600 }}
                   >
                     RSVP Now
                   </Button>

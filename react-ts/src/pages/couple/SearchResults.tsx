@@ -25,8 +25,12 @@ import {
   ArrowBackIos,
   ArrowForwardIos,
   GridView,
-  ViewModule,
-  ViewComfy
+  ViewList,
+  Map as MapIcon,
+  KeyboardArrowLeft,
+  KeyboardArrowRight,
+  FirstPage,
+  LastPage
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import Nav from '../../components/Nav';
@@ -334,8 +338,15 @@ export default function SearchResults() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   
-  // Grid columns state (4 to 8)
+  // View type state: 'grid' | 'list' | 'map'
+  const [viewType, setViewType] = useState<'grid' | 'list' | 'map'>('grid');
+  
+  // Grid columns state (for grid view)
   const [gridColumns, setGridColumns] = useState(4);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
   
   // Preview modal state
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -387,6 +398,22 @@ export default function SearchResults() {
           return b.featured ? 1 : -1;
       }
     });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredVendors.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedVendors = filteredVendors.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchQuery, sortBy]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleExpandCarousel = (vendor: typeof allVendors[0]) => {
     setSelectedVendor({
@@ -567,71 +594,123 @@ export default function SearchResults() {
             ))}
           </Box>
 
-          {/* Grid Column Selector */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: 'white', borderRadius: 2, p: 0.5, border: '1px solid #e0e0e0' }}>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666', px: 1 }}>
-              View:
-            </Typography>
-            <IconButton
-              onClick={() => setGridColumns(4)}
-              size="small"
-              sx={{
-                backgroundColor: gridColumns === 4 ? '#00838F' : 'transparent',
-                color: gridColumns === 4 ? 'white' : '#666',
-                borderRadius: 1,
-                '&:hover': { backgroundColor: gridColumns === 4 ? '#006d75' : '#f5f5f5' }
-              }}
-              title="4 columns"
-            >
-              <ViewModule sx={{ fontSize: 20 }} />
-            </IconButton>
-            <IconButton
-              onClick={() => setGridColumns(6)}
-              size="small"
-              sx={{
-                backgroundColor: gridColumns === 6 ? '#00838F' : 'transparent',
-                color: gridColumns === 6 ? 'white' : '#666',
-                borderRadius: 1,
-                '&:hover': { backgroundColor: gridColumns === 6 ? '#006d75' : '#f5f5f5' }
-              }}
-              title="6 columns"
-            >
-              <GridView sx={{ fontSize: 20 }} />
-            </IconButton>
-            <IconButton
-              onClick={() => setGridColumns(8)}
-              size="small"
-              sx={{
-                backgroundColor: gridColumns === 8 ? '#00838F' : 'transparent',
-                color: gridColumns === 8 ? 'white' : '#666',
-                borderRadius: 1,
-                '&:hover': { backgroundColor: gridColumns === 8 ? '#006d75' : '#f5f5f5' }
-              }}
-              title="8 columns"
-            >
-              <ViewComfy sx={{ fontSize: 20 }} />
-            </IconButton>
+          {/* View Type & Grid Column Selector */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* View Type Selector */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: 'white', borderRadius: 2, p: 0.5, border: '1px solid #e0e0e0' }}>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666', px: 1 }}>
+                View:
+              </Typography>
+              <IconButton
+                onClick={() => setViewType('grid')}
+                size="small"
+                sx={{
+                  backgroundColor: viewType === 'grid' ? '#00838F' : 'transparent',
+                  color: viewType === 'grid' ? 'white' : '#666',
+                  borderRadius: 1,
+                  '&:hover': { backgroundColor: viewType === 'grid' ? '#006d75' : '#f5f5f5' }
+                }}
+                title="Grid View"
+              >
+                <GridView sx={{ fontSize: 20 }} />
+              </IconButton>
+              <IconButton
+                onClick={() => setViewType('list')}
+                size="small"
+                sx={{
+                  backgroundColor: viewType === 'list' ? '#00838F' : 'transparent',
+                  color: viewType === 'list' ? 'white' : '#666',
+                  borderRadius: 1,
+                  '&:hover': { backgroundColor: viewType === 'list' ? '#006d75' : '#f5f5f5' }
+                }}
+                title="List View"
+              >
+                <ViewList sx={{ fontSize: 20 }} />
+              </IconButton>
+              <IconButton
+                onClick={() => setViewType('map')}
+                size="small"
+                sx={{
+                  backgroundColor: viewType === 'map' ? '#00838F' : 'transparent',
+                  color: viewType === 'map' ? 'white' : '#666',
+                  borderRadius: 1,
+                  '&:hover': { backgroundColor: viewType === 'map' ? '#006d75' : '#f5f5f5' }
+                }}
+                title="Map View"
+              >
+                <MapIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+            </Box>
+
+            {/* Grid Columns Selector (only visible in grid view) */}
+            {viewType === 'grid' && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, backgroundColor: 'white', borderRadius: 2, p: 0.5, border: '1px solid #e0e0e0' }}>
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666', px: 1 }}>
+                  Columns:
+                </Typography>
+                {[3, 4, 6].map(cols => (
+                  <IconButton
+                    key={cols}
+                    onClick={() => setGridColumns(cols)}
+                    size="small"
+                    sx={{
+                      backgroundColor: gridColumns === cols ? '#00838F' : 'transparent',
+                      color: gridColumns === cols ? 'white' : '#666',
+                      borderRadius: 1,
+                      minWidth: 28,
+                      '&:hover': { backgroundColor: gridColumns === cols ? '#006d75' : '#f5f5f5' }
+                    }}
+                    title={`${cols} columns`}
+                  >
+                    <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{cols}</Typography>
+                  </IconButton>
+                ))}
+              </Box>
+            )}
+
+            {/* Items Per Page Selector */}
+            <FormControl size="small" sx={{ minWidth: 100 }}>
+              <Select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                sx={{
+                  fontFamily: "'Open Sans', sans-serif",
+                  fontSize: 12,
+                  backgroundColor: 'white',
+                  borderRadius: 2,
+                  '& fieldset': { borderColor: '#e0e0e0' }
+                }}
+              >
+                <MenuItem value={6}>6 / page</MenuItem>
+                <MenuItem value={12}>12 / page</MenuItem>
+                <MenuItem value={24}>24 / page</MenuItem>
+                <MenuItem value={48}>48 / page</MenuItem>
+              </Select>
+            </FormControl>
           </Box>
         </Box>
       </Box>
 
-      {/* Vendor Grid */}
-      <Box sx={{
-        px: 4,
-        pb: 4,
-        flex: 1,
-        display: 'grid',
-        gridTemplateColumns: {
-          xs: '1fr',
-          sm: 'repeat(2, 1fr)',
-          md: `repeat(${Math.min(gridColumns, 4)}, 1fr)`,
-          lg: `repeat(${Math.min(gridColumns, 6)}, 1fr)`,
-          xl: `repeat(${gridColumns}, 1fr)`
-        },
-        gap: gridColumns >= 6 ? 2 : 3,
-        alignContent: 'start'
-      }}>
-        {filteredVendors.map((vendor) => (
+      {/* Vendor Results */}
+      {viewType === 'grid' && (
+        <Box sx={{
+          px: 4,
+          pb: 4,
+          flex: 1,
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: `repeat(${Math.min(gridColumns, 4)}, 1fr)`,
+            lg: `repeat(${gridColumns}, 1fr)`
+          },
+          gap: gridColumns >= 6 ? 2 : 3,
+          alignContent: 'start'
+        }}>
+          {paginatedVendors.map((vendor) => (
           <Card
             key={vendor.id}
             sx={{
@@ -790,7 +869,233 @@ export default function SearchResults() {
             </Box>
           </Card>
         ))}
-      </Box>
+        </Box>
+      )}
+
+      {/* List View */}
+      {viewType === 'list' && (
+        <Box sx={{ px: 4, pb: 4, flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {paginatedVendors.map((vendor) => (
+            <Card
+              key={vendor.id}
+              sx={{
+                display: 'flex',
+                border: '0.25px solid #00838F',
+                borderRadius: 2,
+                overflow: 'hidden',
+                transition: 'all 0.3s',
+                '&:hover': {
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                }
+              }}
+            >
+              {/* Image Section */}
+              <Box sx={{ position: 'relative', width: 280, minWidth: 280, height: 200 }}>
+                <ImageCarousel 
+                  images={vendor.images} 
+                  onExpand={() => handleExpandCarousel(vendor)}
+                />
+                {vendor.featured && (
+                  <Chip
+                    label="Featured"
+                    size="small"
+                    sx={{
+                      position: 'absolute',
+                      top: 12,
+                      left: 12,
+                      backgroundColor: '#EB1948',
+                      color: 'white',
+                      fontFamily: "'Open Sans', sans-serif",
+                      fontSize: 10,
+                      fontWeight: 600
+                    }}
+                  />
+                )}
+                <Chip
+                  label={vendor.category}
+                  size="small"
+                  sx={{
+                    position: 'absolute',
+                    bottom: 12,
+                    left: 12,
+                    backgroundColor: 'rgba(0,131,143,0.9)',
+                    color: 'white',
+                    fontFamily: "'Open Sans', sans-serif",
+                    fontSize: 10
+                  }}
+                />
+              </Box>
+              
+              {/* Content Section */}
+              <Box sx={{ flex: 1, p: 3, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                    <Typography 
+                      onClick={() => handleViewProfile(vendor.id)}
+                      sx={{
+                        fontFamily: "'Open Sans', sans-serif",
+                        fontWeight: 600,
+                        fontSize: 20,
+                        color: '#002528',
+                        cursor: 'pointer',
+                        '&:hover': { color: '#00838F' }
+                      }}
+                    >
+                      {vendor.name}
+                    </Typography>
+                    <IconButton
+                      onClick={(e) => handleCardFavorite(e, vendor)}
+                      sx={{ color: isInShortlist(vendor.id) ? '#EB1948' : '#666' }}
+                    >
+                      {isInShortlist(vendor.id) ? <Favorite /> : <FavoriteBorder />}
+                    </IconButton>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <LocationOn sx={{ fontSize: 16, color: '#00838F' }} />
+                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666' }}>
+                        {vendor.location}
+                      </Typography>
+                    </Box>
+                    {vendor.capacity && (
+                      <Chip
+                        label={vendor.capacity}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, borderColor: '#e0e0e0', color: '#666' }}
+                      />
+                    )}
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Rating value={vendor.rating} readOnly size="small" precision={0.1} />
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, fontWeight: 600, color: '#002528' }}>
+                      {vendor.rating}
+                    </Typography>
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
+                      ({vendor.reviewCount} reviews)
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                  <Box>
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>
+                      Starting at
+                    </Typography>
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 22, fontWeight: 700, color: '#00838F' }}>
+                      {formatPrice(vendor.price)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={() => handleViewProfile(vendor.id)}
+                      sx={{
+                        fontFamily: "'Open Sans', sans-serif",
+                        textTransform: 'none',
+                        borderColor: '#00838F',
+                        color: '#00838F',
+                        '&:hover': { backgroundColor: 'rgba(0,131,143,0.05)', borderColor: '#006d75' }
+                      }}
+                    >
+                      View Profile
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleMessage(vendor.id)}
+                      sx={{
+                        fontFamily: "'Open Sans', sans-serif",
+                        textTransform: 'none',
+                        backgroundColor: '#00838F',
+                        '&:hover': { backgroundColor: '#006d75' }
+                      }}
+                    >
+                      Contact
+                    </Button>
+                  </Box>
+                </Box>
+              </Box>
+            </Card>
+          ))}
+        </Box>
+      )}
+
+      {/* Map View */}
+      {viewType === 'map' && (
+        <Box sx={{ px: 4, pb: 4, flex: 1, display: 'flex', gap: 3 }}>
+          {/* Vendor List Sidebar */}
+          <Box sx={{ width: 380, maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {paginatedVendors.map((vendor) => (
+              <Card
+                key={vendor.id}
+                onClick={() => handleExpandCarousel(vendor)}
+                sx={{
+                  display: 'flex',
+                  border: '0.25px solid #00838F',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }
+                }}
+              >
+                <Box
+                  component="img"
+                  src={vendor.image}
+                  alt={vendor.name}
+                  sx={{ width: 100, height: 100, objectFit: 'cover' }}
+                />
+                <Box sx={{ p: 1.5, flex: 1 }}>
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14, color: '#002528', mb: 0.5 }}>
+                    {vendor.name}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                    <LocationOn sx={{ fontSize: 12, color: '#00838F' }} />
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>
+                      {vendor.location}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Rating value={vendor.rating} readOnly size="small" precision={0.1} sx={{ fontSize: 12 }} />
+                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>
+                        ({vendor.reviewCount})
+                      </Typography>
+                    </Box>
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, fontWeight: 700, color: '#00838F' }}>
+                      {formatPrice(vendor.price)}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Card>
+            ))}
+          </Box>
+          
+          {/* Map Placeholder */}
+          <Box sx={{ 
+            flex: 1, 
+            backgroundColor: '#e8f4f5', 
+            borderRadius: 2, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            border: '2px dashed #00838F',
+            minHeight: 500
+          }}>
+            <Box sx={{ textAlign: 'center' }}>
+              <MapIcon sx={{ fontSize: 64, color: '#00838F', mb: 2 }} />
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 18, fontWeight: 600, color: '#002528', mb: 1 }}>
+                Map View Coming Soon
+              </Typography>
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, color: '#666' }}>
+                Interactive map with vendor locations will be available here
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      )}
 
       {/* No Results */}
       {filteredVendors.length === 0 && (
@@ -816,6 +1121,116 @@ export default function SearchResults() {
           >
             Clear filters
           </Button>
+        </Box>
+      )}
+
+      {/* Pagination */}
+      {filteredVendors.length > 0 && totalPages > 1 && (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          gap: 2, 
+          py: 4,
+          px: 4,
+          backgroundColor: 'white',
+          borderTop: '1px solid #e0e0e0'
+        }}>
+          {/* Results Info */}
+          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, color: '#666', mr: 2 }}>
+            Showing {startIndex + 1}-{Math.min(endIndex, filteredVendors.length)} of {filteredVendors.length} vendors
+          </Typography>
+
+          {/* First Page */}
+          <IconButton
+            onClick={() => handlePageChange(1)}
+            disabled={currentPage === 1}
+            sx={{ 
+              color: currentPage === 1 ? '#ccc' : '#00838F',
+              '&:hover': { backgroundColor: 'rgba(0,131,143,0.1)' }
+            }}
+            size="small"
+          >
+            <FirstPage />
+          </IconButton>
+
+          {/* Previous */}
+          <IconButton
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            sx={{ 
+              color: currentPage === 1 ? '#ccc' : '#00838F',
+              '&:hover': { backgroundColor: 'rgba(0,131,143,0.1)' }
+            }}
+            size="small"
+          >
+            <KeyboardArrowLeft />
+          </IconButton>
+
+          {/* Page Numbers */}
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(page => {
+                // Show first page, last page, current page, and pages around current
+                if (page === 1 || page === totalPages) return true;
+                if (Math.abs(page - currentPage) <= 1) return true;
+                return false;
+              })
+              .map((page, index, array) => {
+                // Add ellipsis if there's a gap
+                const showEllipsisBefore = index > 0 && page - array[index - 1] > 1;
+                return (
+                  <React.Fragment key={page}>
+                    {showEllipsisBefore && (
+                      <Typography sx={{ px: 1, color: '#666', alignSelf: 'center' }}>...</Typography>
+                    )}
+                    <Button
+                      onClick={() => handlePageChange(page)}
+                      variant={currentPage === page ? 'contained' : 'text'}
+                      sx={{
+                        minWidth: 36,
+                        height: 36,
+                        fontFamily: "'Open Sans', sans-serif",
+                        fontWeight: currentPage === page ? 600 : 400,
+                        backgroundColor: currentPage === page ? '#00838F' : 'transparent',
+                        color: currentPage === page ? 'white' : '#002528',
+                        '&:hover': { 
+                          backgroundColor: currentPage === page ? '#006d75' : 'rgba(0,131,143,0.1)' 
+                        }
+                      }}
+                    >
+                      {page}
+                    </Button>
+                  </React.Fragment>
+                );
+              })}
+          </Box>
+
+          {/* Next */}
+          <IconButton
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            sx={{ 
+              color: currentPage === totalPages ? '#ccc' : '#00838F',
+              '&:hover': { backgroundColor: 'rgba(0,131,143,0.1)' }
+            }}
+            size="small"
+          >
+            <KeyboardArrowRight />
+          </IconButton>
+
+          {/* Last Page */}
+          <IconButton
+            onClick={() => handlePageChange(totalPages)}
+            disabled={currentPage === totalPages}
+            sx={{ 
+              color: currentPage === totalPages ? '#ccc' : '#00838F',
+              '&:hover': { backgroundColor: 'rgba(0,131,143,0.1)' }
+            }}
+            size="small"
+          >
+            <LastPage />
+          </IconButton>
         </Box>
       )}
 
