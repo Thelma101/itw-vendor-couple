@@ -20,6 +20,10 @@ import DayOfTimeline from './pages/couple/DayOfTimeline'
 import VendorCompare from './pages/couple/VendorCompare'
 import InspirationGallery from './pages/couple/InspirationGallery'
 import SeatingChart from './pages/couple/SeatingChart'
+import Favourites from './pages/couple/Favourites'
+import AskWed from './pages/couple/AskWed'
+import VendorMatching from './pages/couple/VendorMatching'
+import GuestExperienceHub from './pages/couple/GuestExperienceHub'
 import VendorDashboardLayout from './layouts/VendorDashboardLayout'
 import Gallery from './pages/vendor/Gallery'
 import AccountInformation from './pages/vendor/AccountInformation'
@@ -68,6 +72,10 @@ export default function App() {
             <Route path="/couple/compare" element={<VendorCompare />} />
             <Route path="/couple/inspiration" element={<InspirationGallery />} />
             <Route path="/couple/seating" element={<SeatingChart />} />
+            <Route path="/couple/favourites" element={<Favourites />} />
+            <Route path="/couple/askwed" element={<AskWed />} />
+            <Route path="/couple/vendor-matching" element={<VendorMatching />} />
+            <Route path="/couple/guest-hub" element={<GuestExperienceHub />} />
 
             {/* Vendor Dashboard Routes */}
             <Route path="/vendor" element={<VendorDashboardLayout />}>

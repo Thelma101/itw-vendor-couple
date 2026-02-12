@@ -1,41 +1,55 @@
-import { useState } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import {
   Box,
   Typography,
-  Paper,
-  TextField,
-  Button,
   IconButton,
-  LinearProgress,
+  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
+  Snackbar,
+  Alert,
+  Slide,
+  Fade,
   Chip,
+  LinearProgress,
   InputAdornment,
-  Card,
-  Tabs,
-  Tab,
 } from '@mui/material'
 import {
-  Add,
-  Delete,
   Edit,
-  TrendingUp,
-  TrendingDown,
-  AccountBalance,
-  Savings,
-  Warning,
+  Delete,
+  Close,
+  ArrowBack,
+  AccountBalanceWallet,
   Receipt,
-  Search,
 } from '@mui/icons-material'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
+import DeleteConfirmModal from '@/components/DeleteConfirmModal'
 
+/* ───────── tokens (shared with Checklist / GuestList / Favourites) ───────── */
+const T = {
+  bg: '#FFF6F9',
+  primary: '#00838F',
+  primaryBlack: '#002528',
+  accentGrad: 'linear-gradient(255.71deg, #EB1948 65.18%, #B52344 232.03%)',
+  accent: '#EB1948',
+  menuSelector: '#ECEBA2',
+  success: '#008F53',
+  text: '#2d2d2d',
+  textSub: '#aaaaaa',
+  font: "'Open Sans', sans-serif",
+  border: '0.25px solid #00838F',
+  borderBlack: '0.25px solid #002528',
+}
+
+/* ───────── types ───────── */
 interface BudgetItem {
   id: string
   category: string
@@ -46,416 +60,732 @@ interface BudgetItem {
   notes?: string
 }
 
+type FilterTab = 'all' | 'paid' | 'partial' | 'booked' | 'pending'
+type InnerView = null | 'detail'
+
+/* ───────── data ───────── */
 const defaultCategories = [
-  'Venue', 'Catering', 'Photography', 'Videography', 'Florist', 'Music/DJ',
-  'Wedding Cake', 'Attire', 'Hair & Makeup', 'Transportation', 'Invitations',
-  'Decorations', 'Officiant', 'Rings', 'Favors', 'Gifts', 'Honeymoon', 'Other',
+  'Venue', 'Catering', 'Photography', 'Videography', 'Music/DJ',
+  'Florist', 'Decor', 'Wedding Planner', 'Cake', 'Attire (Bride)',
+  'Attire (Groom)', 'Hair & Makeup', 'Transportation', 'Invitations',
+  'Favours', 'Officiant', 'Jewellery', 'Miscellaneous',
 ]
 
-const categoryColors: Record<string, string> = {
-  'Venue': '#8b4557', 'Catering': '#1e6091', 'Photography': '#2d5a27', 'Videography': '#9c27b0',
-  'Florist': '#e91e63', 'Music/DJ': '#ff9800', 'Wedding Cake': '#e8b4b8', 'Attire': '#00bcd4',
-  'Hair & Makeup': '#f48fb1', 'Transportation': '#607d8b', 'Invitations': '#d4af37',
-  'Decorations': '#4caf50', 'Officiant': '#795548', 'Rings': '#ffd700', 'Favors': '#9e9e9e',
-  'Gifts': '#ff5722', 'Honeymoon': '#03a9f4', 'Other': '#00838F',
+const seed: BudgetItem[] = []
+
+/* ───────── helpers ───────── */
+const STORAGE = 'itw_budget'
+const BUDGET_KEY = 'itw_total_budget'
+const load = (): BudgetItem[] => { try { const r = localStorage.getItem(STORAGE); return r ? JSON.parse(r) : seed } catch { return seed } }
+const save = (b: BudgetItem[]) => { try { localStorage.setItem(STORAGE, JSON.stringify(b)) } catch {/**/} }
+const loadBudget = (): number => { try { const r = localStorage.getItem(BUDGET_KEY); return r ? parseFloat(r) : 2500000 } catch { return 2500000 } }
+const saveBudget = (v: number) => { try { localStorage.setItem(BUDGET_KEY, v.toString()) } catch {/**/} }
+
+const fmt = (amount: number) =>
+  new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(amount)
+
+const getStatus = (item: BudgetItem): 'paid' | 'partial' | 'booked' | 'pending' => {
+  if (item.paid >= item.actual && item.actual > 0) return 'paid'
+  if (item.paid > 0) return 'partial'
+  if (item.actual > 0) return 'booked'
+  return 'pending'
 }
 
-const initialBudget: BudgetItem[] = [
-  { id: '1', category: 'Venue', vendor: 'Grand Ballroom', estimated: 500000, actual: 480000, paid: 240000 },
-  { id: '2', category: 'Catering', vendor: 'Elite Catering Co', estimated: 350000, actual: 380000, paid: 190000 },
-  { id: '3', category: 'Photography', vendor: 'Moments Studio', estimated: 150000, actual: 150000, paid: 75000 },
-  { id: '4', category: 'Videography', estimated: 120000, actual: 0, paid: 0 },
-  { id: '5', category: 'Florist', vendor: 'Bloom & Petal', estimated: 80000, actual: 95000, paid: 47500 },
-  { id: '6', category: 'Music/DJ', estimated: 100000, actual: 0, paid: 0 },
-  { id: '7', category: 'Wedding Cake', estimated: 60000, actual: 0, paid: 0 },
-  { id: '8', category: 'Attire', estimated: 200000, actual: 180000, paid: 180000 },
-  { id: '9', category: 'Hair & Makeup', estimated: 50000, actual: 0, paid: 0 },
-  { id: '10', category: 'Transportation', estimated: 80000, actual: 0, paid: 0 },
-  { id: '11', category: 'Invitations', estimated: 40000, actual: 35000, paid: 35000 },
-  { id: '12', category: 'Decorations', estimated: 100000, actual: 0, paid: 0 },
-  { id: '13', category: 'Rings', estimated: 150000, actual: 140000, paid: 140000 },
-  { id: '14', category: 'Honeymoon', estimated: 300000, actual: 0, paid: 0 },
-]
-
+/* ═══════ COMPONENT ═══════ */
 export default function BudgetTracker() {
-  const [totalBudget, setTotalBudget] = useState(2500000)
-  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>(initialBudget)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingItem, setEditingItem] = useState<BudgetItem | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterTab, setFilterTab] = useState(0)
-  const [formData, setFormData] = useState({
-    category: '', vendor: '', estimated: '', actual: '', paid: '', notes: '',
-  })
+  const [items, setItems] = useState<BudgetItem[]>(load)
+  const [totalBudget, setTotalBudget] = useState<number>(loadBudget)
+  const [tab, setTab] = useState<FilterTab>('all')
+  const [innerView, setInnerView] = useState<InnerView>(null)
+  const [selected, setSelected] = useState<BudgetItem | null>(null)
+  const [editing, setEditing] = useState<BudgetItem | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [newItem, setNewItem] = useState({ category: '', vendor: '', estimated: '', actual: '', paid: '', notes: '' })
+  const [snack, setSnack] = useState<{ open: boolean; msg: string; sev: 'success' | 'info' | 'error' }>({ open: false, msg: '', sev: 'success' })
+  const [budgetEditOpen, setBudgetEditOpen] = useState(false)
+  const [budgetDraft, setBudgetDraft] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
 
-  const totalEstimated = budgetItems.reduce((acc, item) => acc + item.estimated, 0)
-  const totalActual = budgetItems.reduce((acc, item) => acc + item.actual, 0)
-  const totalPaid = budgetItems.reduce((acc, item) => acc + item.paid, 0)
-  const remaining = totalBudget - totalActual
-  const budgetUsedPercent = (totalActual / totalBudget) * 100
-  const paidPercent = totalActual > 0 ? (totalPaid / totalActual) * 100 : 0
+  useEffect(() => { save(items) }, [items])
+  useEffect(() => { saveBudget(totalBudget) }, [totalBudget])
 
-  const filteredItems = budgetItems.filter(item => {
-    const matchesSearch = item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.vendor?.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    if (!matchesSearch) return false
-    
-    switch (filterTab) {
-      case 1: return item.paid >= item.actual && item.actual > 0 // Paid
-      case 2: return item.paid > 0 && item.paid < item.actual // Partial
-      case 3: return item.actual > 0 && item.paid === 0 // Booked
-      case 4: return item.actual === 0 // Pending
-      default: return true
+  const notify = useCallback((msg: string, sev: 'success' | 'info' | 'error' = 'success') => setSnack({ open: true, msg, sev }), [])
+
+  /* ── stats ── */
+  const stats = useMemo(() => {
+    const totalEstimated = items.reduce((s, i) => s + i.estimated, 0)
+    const totalActual = items.reduce((s, i) => s + i.actual, 0)
+    const totalPaid = items.reduce((s, i) => s + i.paid, 0)
+    const remaining = totalBudget - totalActual
+    const pct = totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0
+    return { totalEstimated, totalActual, totalPaid, remaining, pct, outstanding: totalActual - totalPaid }
+  }, [items, totalBudget])
+
+  /* ── counts ── */
+  const counts = useMemo(() => ({
+    all: items.length,
+    paid: items.filter(i => getStatus(i) === 'paid').length,
+    partial: items.filter(i => getStatus(i) === 'partial').length,
+    booked: items.filter(i => getStatus(i) === 'booked').length,
+    pending: items.filter(i => getStatus(i) === 'pending').length,
+  }), [items])
+
+  const filtered = useMemo(() => {
+    if (tab === 'paid') return items.filter(i => getStatus(i) === 'paid')
+    if (tab === 'partial') return items.filter(i => getStatus(i) === 'partial')
+    if (tab === 'booked') return items.filter(i => getStatus(i) === 'booked')
+    if (tab === 'pending') return items.filter(i => getStatus(i) === 'pending')
+    return items
+  }, [items, tab])
+
+  /* ── actions ── */
+  const deleteItem = useCallback((id: string) => {
+    setItems(p => p.filter(i => i.id !== id))
+    if (selected?.id === id) { setSelected(null); setInnerView(null) }
+  }, [selected])
+  const confirmDelete = useCallback((id: string) => setDeleteTarget(id), [])
+  const handleDeleteConfirmed = useCallback(() => {
+    if (deleteTarget) deleteItem(deleteTarget)
+    setDeleteTarget(null)
+  }, [deleteTarget, deleteItem])
+
+  const addItem = useCallback(() => {
+    if (!newItem.category) return
+    setItems(p => [...p, {
+      id: `${Date.now()}`,
+      category: newItem.category,
+      vendor: newItem.vendor || undefined,
+      estimated: parseFloat(newItem.estimated) || 0,
+      actual: parseFloat(newItem.actual) || 0,
+      paid: parseFloat(newItem.paid) || 0,
+      notes: newItem.notes || undefined,
+    }])
+    setNewItem({ category: '', vendor: '', estimated: '', actual: '', paid: '', notes: '' })
+    setAddOpen(false)
+    notify('Expense added', 'success')
+  }, [newItem, notify])
+
+  const updateItem = useCallback((u: BudgetItem) => {
+    setItems(p => p.map(i => i.id === u.id ? u : i))
+    setEditing(null)
+    setSelected(u)
+    notify('Expense updated', 'success')
+  }, [notify])
+
+  const openDetail = (item: BudgetItem) => { setSelected(item); setEditing(null); setInnerView('detail') }
+  const closePanel = () => { setInnerView(null); setSelected(null); setEditing(null) }
+
+  /* ── status chip helper ── */
+  const statusChip = (item: BudgetItem) => {
+    const s = getStatus(item)
+    const map = {
+      paid: { label: 'Paid', bg: '#e8f5e9', color: '#2e7d32' },
+      partial: { label: 'Partial', bg: '#fff3e0', color: '#ef6c00' },
+      booked: { label: 'Booked', bg: '#e3f2fd', color: '#1565c0' },
+      pending: { label: 'Pending', bg: '#f5f5f5', color: '#757575' },
     }
-  })
-
-  const handleOpenDialog = (item?: BudgetItem) => {
-    if (item) {
-      setEditingItem(item)
-      setFormData({
-        category: item.category, vendor: item.vendor || '',
-        estimated: item.estimated.toString(), actual: item.actual.toString(),
-        paid: item.paid.toString(), notes: item.notes || '',
-      })
-    } else {
-      setEditingItem(null)
-      setFormData({ category: '', vendor: '', estimated: '', actual: '', paid: '', notes: '' })
-    }
-    setDialogOpen(true)
+    const c = map[s]
+    return <Chip label={c.label} size="small" sx={{ bgcolor: c.bg, color: c.color, fontWeight: 600, fontFamily: T.font, fontSize: 11, height: 22, borderRadius: '4px' }} />
   }
 
-  const handleSave = () => {
-    const newItem: BudgetItem = {
-      id: editingItem?.id || Date.now().toString(),
-      category: formData.category, vendor: formData.vendor || undefined,
-      estimated: parseFloat(formData.estimated) || 0, actual: parseFloat(formData.actual) || 0,
-      paid: parseFloat(formData.paid) || 0, notes: formData.notes || undefined,
-    }
-
-    if (editingItem) {
-      setBudgetItems(prev => prev.map(item => item.id === editingItem.id ? newItem : item))
-    } else {
-      setBudgetItems(prev => [...prev, newItem])
-    }
-    setDialogOpen(false)
+  /* ── badge styles per tab ── */
+  const tabMeta: Record<FilterTab, { label: string; badgeBg: string; badgeColor: string; count: number }> = {
+    all:     { label: 'All', badgeBg: T.menuSelector, badgeColor: T.primaryBlack, count: counts.all },
+    paid:    { label: 'Paid', badgeBg: T.success, badgeColor: '#fff', count: counts.paid },
+    partial: { label: 'Partial', badgeBg: '#F5A623', badgeColor: '#fff', count: counts.partial },
+    booked:  { label: 'Booked', badgeBg: T.primaryBlack, badgeColor: '#fff', count: counts.booked },
+    pending: { label: 'Pending', badgeBg: 'none', badgeColor: '#fff', count: counts.pending },
   }
 
-  const handleDelete = (id: string) => {
-    setBudgetItems(prev => prev.filter(item => item.id !== id))
-  }
+  /* sidebar items — My Budget is active */
+  const sidebarItems: { label: string; key: string; href?: string }[] = [
+    { label: 'My Budget', key: 'budget' },
+    { label: 'My Guest-list', key: 'guests', href: '/couple/guests' },
+    { label: 'Favourites', key: 'favourites', href: '/couple/favourites' },
+    { label: 'To-do list', key: 'todo', href: '/couple/checklist' },
+  ]
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(amount)
-  }
-
-  const getStatusChip = (item: BudgetItem) => {
-    if (item.paid >= item.actual && item.actual > 0) {
-      return <Chip label="Paid" size="small" sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontWeight: 600, fontFamily: "'Open Sans', sans-serif", fontSize: 11 }} />
-    }
-    if (item.paid > 0) {
-      return <Chip label="Partial" size="small" sx={{ bgcolor: '#fff3e0', color: '#ef6c00', fontWeight: 600, fontFamily: "'Open Sans', sans-serif", fontSize: 11 }} />
-    }
-    if (item.actual > 0) {
-      return <Chip label="Booked" size="small" sx={{ bgcolor: '#e3f2fd', color: '#1565c0', fontWeight: 600, fontFamily: "'Open Sans', sans-serif", fontSize: 11 }} />
-    }
-    return <Chip label="Pending" size="small" sx={{ bgcolor: '#f5f5f5', color: '#757575', fontWeight: 600, fontFamily: "'Open Sans', sans-serif", fontSize: 11 }} />
-  }
-
-  const getCategoryColor = (category: string) => categoryColors[category] || '#00838F'
-
+  /* ═══════ RENDER ═══════ */
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#FFF6F9', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: T.bg, display: 'flex', flexDirection: 'column' }}>
       <Nav />
-      
-      <Box sx={{ flex: 1, px: 4, py: 4 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+
+      {/* ──── PAGE HEADER ──── */}
+      <Box sx={{ px: { xs: 3, md: '120px' }, pt: { xs: 4, md: '40px' }, pb: { xs: 3, md: '28px' } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ width: 4, height: 48, background: T.accentGrad, borderRadius: 2, flexShrink: 0 }} />
           <Box>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 32, fontWeight: 700, color: '#002528' }}>
-              Budget Tracker
+            <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: { xs: 24, md: 28 }, color: T.primaryBlack, lineHeight: 1.2 }}>
+              My Budget
             </Typography>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, color: '#666', mt: 0.5 }}>
-              Track your wedding expenses and stay within budget
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => handleOpenDialog()}
-            sx={{ bgcolor: '#EB1948', '&:hover': { bgcolor: '#c41438' }, borderRadius: 2, textTransform: 'none', fontWeight: 600, px: 3 }}
-          >
-            Add Expense
-          </Button>
-        </Box>
-
-        {/* Stats Cards Row */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(5, 1fr)' }, gap: 3, mb: 4 }}>
-          {/* Total Budget */}
-          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Box sx={{ p: 1, bgcolor: '#e8f5f5', borderRadius: 2 }}>
-                <AccountBalance sx={{ color: '#00838F' }} />
-              </Box>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666' }}>Total Budget</Typography>
-            </Box>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 24, fontWeight: 700, color: '#002528' }}>
-              {formatCurrency(totalBudget)}
-            </Typography>
-            <TextField
-              size="small" type="number" value={totalBudget}
-              onChange={(e) => setTotalBudget(parseFloat(e.target.value) || 0)}
-              sx={{ mt: 1.5, width: '100%', '& input': { fontFamily: "'Open Sans', sans-serif", fontSize: 13 } }}
-              InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }}
-            />
-          </Paper>
-
-          {/* Spent */}
-          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Box sx={{ p: 1, bgcolor: totalActual > totalBudget ? '#ffebee' : '#e8f5e9', borderRadius: 2 }}>
-                <TrendingUp sx={{ color: totalActual > totalBudget ? '#EB1948' : '#4caf50' }} />
-              </Box>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666' }}>Spent</Typography>
-            </Box>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 24, fontWeight: 700, color: totalActual > totalBudget ? '#EB1948' : '#002528' }}>
-              {formatCurrency(totalActual)}
-            </Typography>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666', mt: 1 }}>
-              {Math.round(budgetUsedPercent)}% of budget
-            </Typography>
-          </Paper>
-
-          {/* Paid */}
-          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Box sx={{ p: 1, bgcolor: '#e8f5e9', borderRadius: 2 }}>
-                <Savings sx={{ color: '#4caf50' }} />
-              </Box>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666' }}>Paid</Typography>
-            </Box>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 24, fontWeight: 700, color: '#4caf50' }}>
-              {formatCurrency(totalPaid)}
-            </Typography>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666', mt: 1 }}>
-              {Math.round(paidPercent)}% of spent
-            </Typography>
-          </Paper>
-
-          {/* Outstanding */}
-          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Box sx={{ p: 1, bgcolor: '#fff3e0', borderRadius: 2 }}>
-                <Receipt sx={{ color: '#F5A623' }} />
-              </Box>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666' }}>Outstanding</Typography>
-            </Box>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 24, fontWeight: 700, color: '#F5A623' }}>
-              {formatCurrency(totalActual - totalPaid)}
-            </Typography>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666', mt: 1 }}>
-              Still to pay
-            </Typography>
-          </Paper>
-
-          {/* Remaining */}
-          <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #e0e0e0', bgcolor: remaining < 0 ? '#ffebee' : 'white' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Box sx={{ p: 1, bgcolor: remaining < 0 ? '#ffcdd2' : '#e8f5e9', borderRadius: 2 }}>
-                {remaining < 0 ? <Warning sx={{ color: '#EB1948' }} /> : <TrendingDown sx={{ color: '#4caf50' }} />}
-              </Box>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666' }}>Remaining</Typography>
-            </Box>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 24, fontWeight: 700, color: remaining < 0 ? '#EB1948' : '#4caf50' }}>
-              {formatCurrency(Math.abs(remaining))}
-            </Typography>
-            {remaining < 0 && (
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#EB1948', fontWeight: 600, mt: 1 }}>
-                Over budget!
-              </Typography>
-            )}
-          </Paper>
-        </Box>
-
-        {/* Budget Progress Bar */}
-        <Paper sx={{ p: 3, borderRadius: 3, mb: 4, border: '1px solid #e0e0e0' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 16, color: '#002528' }}>
-              Budget Usage
-            </Typography>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 700, fontSize: 18, color: budgetUsedPercent > 100 ? '#EB1948' : '#00838F' }}>
-              {Math.round(budgetUsedPercent)}%
+            <Typography sx={{ fontFamily: T.font, fontWeight: 400, fontSize: 15, color: T.textSub, mt: 0.3 }}>
+              Track every Naira for your perfect day
             </Typography>
           </Box>
-          <LinearProgress
-            variant="determinate"
-            value={Math.min(budgetUsedPercent, 100)}
-            sx={{ height: 16, borderRadius: 8, bgcolor: '#e0e0e0', '& .MuiLinearProgress-bar': { bgcolor: budgetUsedPercent > 100 ? '#EB1948' : budgetUsedPercent > 80 ? '#F5A623' : '#00838F', borderRadius: 8 } }}
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5 }}>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-              Estimated: {formatCurrency(totalEstimated)}
-            </Typography>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-              {budgetUsedPercent > 100 ? 'Over' : 'Under'} by: {formatCurrency(Math.abs(remaining))}
-            </Typography>
-          </Box>
-        </Paper>
-
-        {/* Filters */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
-          <TextField
-            placeholder="Search expenses..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            size="small"
-            InputProps={{
-              startAdornment: <InputAdornment position="start"><Search sx={{ color: '#999' }} /></InputAdornment>,
-              sx: { fontFamily: "'Open Sans', sans-serif", backgroundColor: 'white', borderRadius: 2 }
-            }}
-            sx={{ minWidth: 250 }}
-          />
-          <Tabs value={filterTab} onChange={(_, v) => setFilterTab(v)} sx={{ bgcolor: 'white', borderRadius: 2, minHeight: 40, '& .MuiTab-root': { minHeight: 40, textTransform: 'none', fontFamily: "'Open Sans', sans-serif", fontSize: 13 } }}>
-            <Tab label="All" />
-            <Tab label="Paid" />
-            <Tab label="Partial" />
-            <Tab label="Booked" />
-            <Tab label="Pending" />
-          </Tabs>
         </Box>
-
-        {/* Budget Items Grid */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }, gap: 2 }}>
-          {filteredItems.map((item) => (
-            <Card key={item.id} sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid #e0e0e0', transition: 'all 0.2s', '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' } }}>
-              <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
-                {/* Color Bar */}
-                <Box sx={{ width: 6, bgcolor: getCategoryColor(item.category) }} />
-                
-                <Box sx={{ flex: 1, p: 2.5 }}>
-                  {/* Header */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Box>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 16, color: '#002528' }}>
-                        {item.category}
-                      </Typography>
-                      {item.vendor && (
-                        <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666', mt: 0.5 }}>
-                          {item.vendor}
-                        </Typography>
-                      )}
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {getStatusChip(item)}
-                      <IconButton size="small" onClick={() => handleOpenDialog(item)}>
-                        <Edit fontSize="small" sx={{ color: '#666' }} />
-                      </IconButton>
-                      <IconButton size="small" onClick={() => handleDelete(item.id)}>
-                        <Delete fontSize="small" sx={{ color: '#999' }} />
-                      </IconButton>
-                    </Box>
-                  </Box>
-
-                  {/* Amounts */}
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 2 }}>
-                    <Box>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 10, color: '#999', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        Estimated
-                      </Typography>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, fontWeight: 600, color: '#002528' }}>
-                        {formatCurrency(item.estimated)}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 10, color: '#999', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        Actual
-                      </Typography>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, fontWeight: 600, color: item.actual > item.estimated ? '#EB1948' : '#002528' }}>
-                        {item.actual > 0 ? formatCurrency(item.actual) : '-'}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 10, color: '#999', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        Paid
-                      </Typography>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 14, fontWeight: 600, color: '#4caf50' }}>
-                        {item.paid > 0 ? formatCurrency(item.paid) : '-'}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Progress Bar for this item */}
-                  {item.actual > 0 && (
-                    <Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>
-                          Payment Progress
-                        </Typography>
-                        <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, fontWeight: 600, color: '#666' }}>
-                          {Math.round((item.paid / item.actual) * 100)}%
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={(item.paid / item.actual) * 100}
-                        sx={{ height: 6, borderRadius: 3, bgcolor: '#e0e0e0', '& .MuiLinearProgress-bar': { bgcolor: item.paid >= item.actual ? '#4caf50' : '#F5A623', borderRadius: 3 } }}
-                      />
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-            </Card>
-          ))}
-        </Box>
-
-        {/* Summary Footer */}
-        <Paper sx={{ mt: 4, p: 3, borderRadius: 3, bgcolor: '#002528', border: 'none' }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 3, textAlign: 'center' }}>
-            <Box>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.7)', mb: 0.5 }}>Total Estimated</Typography>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 20, fontWeight: 700, color: 'white' }}>{formatCurrency(totalEstimated)}</Typography>
-            </Box>
-            <Box>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.7)', mb: 0.5 }}>Total Spent</Typography>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 20, fontWeight: 700, color: totalActual > totalBudget ? '#ff6b6b' : '#4caf50' }}>{formatCurrency(totalActual)}</Typography>
-            </Box>
-            <Box>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.7)', mb: 0.5 }}>Total Paid</Typography>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 20, fontWeight: 700, color: '#4caf50' }}>{formatCurrency(totalPaid)}</Typography>
-            </Box>
-            <Box>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.7)', mb: 0.5 }}>Budget Remaining</Typography>
-              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 20, fontWeight: 700, color: remaining < 0 ? '#ff6b6b' : '#4caf50' }}>{formatCurrency(remaining)}</Typography>
-            </Box>
-          </Box>
-        </Paper>
       </Box>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600 }}>{editingItem ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
+      {/* ──── BUDGET SUMMARY BAR ──── */}
+      <Box sx={{ px: { xs: 2, md: '120px' }, pb: 2 }}>
+        <Box sx={{
+          bgcolor: T.primaryBlack, borderRadius: '6px', px: { xs: 2, md: 4 }, py: 2.5,
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: { xs: 2, md: 5 },
+        }}>
+          {/* Total Budget */}
+          <Box sx={{ cursor: 'pointer' }} onClick={() => { setBudgetDraft(totalBudget.toString()); setBudgetEditOpen(true) }}>
+            <Typography sx={{ fontFamily: T.font, fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Total Budget
+            </Typography>
+            <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 20, color: '#fff' }}>
+              {fmt(totalBudget)}
+            </Typography>
+          </Box>
+
+          {/* Divider */}
+          <Box sx={{ width: '1px', height: 36, bgcolor: 'rgba(255,255,255,0.15)', display: { xs: 'none', md: 'block' } }} />
+
+          {/* Spent */}
+          <Box>
+            <Typography sx={{ fontFamily: T.font, fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Spent
+            </Typography>
+            <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 20, color: stats.totalActual > totalBudget ? '#ff6b6b' : '#4caf50' }}>
+              {fmt(stats.totalActual)}
+            </Typography>
+          </Box>
+
+          <Box sx={{ width: '1px', height: 36, bgcolor: 'rgba(255,255,255,0.15)', display: { xs: 'none', md: 'block' } }} />
+
+          {/* Paid */}
+          <Box>
+            <Typography sx={{ fontFamily: T.font, fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Paid
+            </Typography>
+            <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 20, color: '#4caf50' }}>
+              {fmt(stats.totalPaid)}
+            </Typography>
+          </Box>
+
+          <Box sx={{ width: '1px', height: 36, bgcolor: 'rgba(255,255,255,0.15)', display: { xs: 'none', md: 'block' } }} />
+
+          {/* Outstanding */}
+          <Box>
+            <Typography sx={{ fontFamily: T.font, fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Outstanding
+            </Typography>
+            <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 20, color: '#F5A623' }}>
+              {fmt(stats.outstanding)}
+            </Typography>
+          </Box>
+
+          <Box sx={{ width: '1px', height: 36, bgcolor: 'rgba(255,255,255,0.15)', display: { xs: 'none', md: 'block' } }} />
+
+          {/* Remaining */}
+          <Box>
+            <Typography sx={{ fontFamily: T.font, fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Remaining
+            </Typography>
+            <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 20, color: stats.remaining < 0 ? '#ff6b6b' : '#4caf50' }}>
+              {fmt(Math.abs(stats.remaining))}
+              {stats.remaining < 0 && <Typography component="span" sx={{ fontFamily: T.font, fontSize: 11, color: '#ff6b6b', ml: 0.5 }}>over</Typography>}
+            </Typography>
+          </Box>
+
+          {/* Progress bar (far right) */}
+          <Box sx={{ flex: 1, minWidth: 120, display: { xs: 'none', lg: 'block' } }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <Typography sx={{ fontFamily: T.font, fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Budget Usage</Typography>
+              <Typography sx={{ fontFamily: T.font, fontSize: 11, fontWeight: 700, color: stats.pct > 100 ? '#ff6b6b' : '#4caf50' }}>{Math.round(stats.pct)}%</Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={Math.min(stats.pct, 100)}
+              sx={{
+                height: 8, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.15)',
+                '& .MuiLinearProgress-bar': { bgcolor: stats.pct > 100 ? '#ff6b6b' : stats.pct > 80 ? '#F5A623' : '#4caf50', borderRadius: 4 },
+              }}
+            />
+          </Box>
+        </Box>
+      </Box>
+
+      {/* ──── MAIN LAYOUT ──── */}
+      <Box sx={{
+        flex: 1, display: 'flex',
+        px: { xs: 2, md: '120px' },
+        pb: 8, gap: { xs: 0, md: '24px' },
+        flexDirection: { xs: 'column', md: 'row' },
+      }}>
+        {/* ═══ SIDEBAR ═══ */}
+        <Box sx={{
+          width: { xs: '100%', md: 304 }, flexShrink: 0,
+          bgcolor: '#fff', border: T.border,
+          display: 'flex', flexDirection: 'column',
+          mb: { xs: 2, md: 0 },
+          height: 'fit-content',
+        }}>
+          {sidebarItems.map((item, i) => {
+            const isActive = item.key === 'budget'
+            return (
+              <Box key={item.key}>
+                <Box
+                  component="a"
+                  onClick={(e: React.MouseEvent) => { if (item.href) { window.location.href = item.href; e.preventDefault() } }}
+                  sx={{
+                    display: 'flex', alignItems: 'center',
+                    height: i === 0 ? 61 : i === 1 ? 59 : 48,
+                    px: 3,
+                    bgcolor: isActive ? T.primary : '#fff',
+                    cursor: 'pointer',
+                    borderBottom: i < 3 ? (i === 0 ? T.border : i === 1 ? T.borderBlack : T.border) : 'none',
+                    transition: 'background 0.2s',
+                    textDecoration: 'none',
+                    '&:hover': { bgcolor: isActive ? T.primary : 'rgba(0,131,143,0.04)' },
+                  }}
+                >
+                  <Typography sx={{
+                    fontFamily: T.font,
+                    fontWeight: isActive ? 700 : 600,
+                    fontSize: 16, lineHeight: '50px',
+                    color: isActive ? '#fff' : T.primaryBlack,
+                  }}>
+                    {item.label}
+                  </Typography>
+                </Box>
+              </Box>
+            )
+          })}
+        </Box>
+
+        {/* ═══ CONTENT ═══ */}
+        <Box sx={{
+          flex: 1, bgcolor: '#fff', border: T.border,
+          display: 'flex', flexDirection: 'column',
+          minHeight: 599,
+        }}>
+          {/* ── Tab Row ── */}
+          <Box sx={{
+            display: 'flex', alignItems: 'center',
+            pl: { xs: 2, md: '57px' }, pr: { xs: 2, md: 3 },
+            height: 61,
+            borderBottom: T.border,
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, md: '40px' }, flex: 1 }}>
+              {(['all', 'paid', 'partial', 'booked', 'pending'] as FilterTab[]).map((key) => {
+                const m = tabMeta[key]
+                const isActive = tab === key
+                return (
+                  <Box
+                    key={key}
+                    onClick={() => setTab(key)}
+                    sx={{
+                      display: 'flex', alignItems: 'center', gap: 0.8,
+                      cursor: 'pointer', position: 'relative', py: 1,
+                    }}
+                  >
+                    <Typography sx={{
+                      fontFamily: T.font, fontWeight: 600, fontSize: 16,
+                      color: isActive ? T.primary : T.primaryBlack,
+                      transition: 'color 0.2s',
+                    }}>
+                      {m.label}
+                    </Typography>
+
+                    {/* Badge */}
+                    <Box sx={{
+                      width: 20, height: 20, borderRadius: '50%',
+                      background: key === 'pending' ? T.accentGrad : m.badgeBg,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Typography sx={{
+                        fontFamily: T.font, fontWeight: 600, fontSize: 10,
+                        color: m.badgeColor, lineHeight: 1,
+                      }}>
+                        {m.count}
+                      </Typography>
+                    </Box>
+
+                    {/* Active underline */}
+                    {isActive && (
+                      <Box sx={{
+                        position: 'absolute', bottom: -1, left: 0,
+                        width: '100%', height: 2.5,
+                        bgcolor: T.primary, borderRadius: 2,
+                      }} />
+                    )}
+                  </Box>
+                )
+              })}
+            </Box>
+
+            {/* Add button */}
+            <Button
+              onClick={() => setAddOpen(true)}
+              sx={{
+                bgcolor: T.primary, color: '#fff',
+                fontFamily: T.font, fontWeight: 600, fontSize: 16,
+                textTransform: 'none', px: 2, py: '10px',
+                borderRadius: 0, lineHeight: 'normal',
+                minWidth: 'auto', whiteSpace: 'nowrap',
+                '&:hover': { bgcolor: '#006670' },
+              }}
+            >
+              Add Expense
+            </Button>
+          </Box>
+
+          {/* ── Expense List ── */}
+          <Box sx={{ flex: 1 }}>
+            {(() => {
+              const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+              const paged = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+              return <>
+            {filtered.length === 0 ? (
+              <Fade in timeout={400}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 10, px: 3 }}>
+                  {/* Overlapping icons */}
+                  <Box sx={{ position: 'relative', width: 80, height: 80, mb: 3 }}>
+                    <Box sx={{
+                      position: 'absolute', top: 0, right: 0,
+                      width: 62, height: 62, borderRadius: '12px',
+                      bgcolor: 'rgba(0,131,143,0.12)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transform: 'rotate(8deg)',
+                    }}>
+                      <AccountBalanceWallet sx={{ fontSize: 30, color: T.primary, opacity: 0.7 }} />
+                    </Box>
+                    <Box sx={{
+                      position: 'absolute', bottom: 0, left: 0,
+                      width: 62, height: 62, borderRadius: '12px',
+                      bgcolor: 'rgba(0,131,143,0.18)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transform: 'rotate(-5deg)',
+                      boxShadow: '0 2px 8px rgba(0,131,143,0.1)',
+                    }}>
+                      <Receipt sx={{ fontSize: 30, color: T.primary }} />
+                    </Box>
+                  </Box>
+                  <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 22, color: T.primaryBlack, mb: 0.8 }}>
+                    {tab === 'all' ? 'Your Budget is Empty' : `No ${tabMeta[tab].label} Expenses Yet`}
+                  </Typography>
+                  <Typography sx={{ fontFamily: T.font, fontSize: 14, color: T.textSub }}>
+                    {tab === 'all' ? 'Add your first Expense' : 'Try a different filter'}
+                  </Typography>
+                </Box>
+              </Fade>
+            ) : (
+              paged.map((item) => (
+                <Box
+                  key={item.id}
+                  onClick={() => openDetail(item)}
+                  sx={{
+                    display: 'flex', alignItems: 'center',
+                    px: { xs: 2, md: '27px' }, py: 0,
+                    borderBottom: T.border,
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                    minHeight: 80,
+                    '&:hover': { bgcolor: 'rgba(0,131,143,0.02)' },
+                  }}
+                >
+                  {/* Category */}
+                  <Typography sx={{
+                    fontFamily: T.font, fontWeight: 600, fontSize: 16,
+                    color: T.text, lineHeight: 'normal',
+                    width: { xs: 100, md: 140 }, flexShrink: 0,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {item.category}
+                  </Typography>
+
+                  {/* Vendor */}
+                  <Typography sx={{
+                    fontFamily: T.font, fontWeight: 400, fontSize: 14,
+                    color: T.textSub, lineHeight: 'normal',
+                    width: { xs: 80, md: 120 }, flexShrink: 0,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    display: { xs: 'none', md: 'block' },
+                  }}>
+                    {item.vendor || '—'}
+                  </Typography>
+
+                  {/* Estimated */}
+                  <Typography sx={{
+                    fontFamily: T.font, fontWeight: 400, fontSize: 14,
+                    color: T.textSub, lineHeight: 'normal',
+                    width: { xs: 80, md: 100 }, flexShrink: 0,
+                    display: { xs: 'none', md: 'block' },
+                  }}>
+                    {fmt(item.estimated)}
+                  </Typography>
+
+                  {/* Actual */}
+                  <Typography sx={{
+                    fontFamily: T.font, fontWeight: 600, fontSize: 14,
+                    color: item.actual > item.estimated && item.estimated > 0 ? T.accent : T.text,
+                    lineHeight: 'normal',
+                    width: { xs: 80, md: 100 }, flexShrink: 0,
+                  }}>
+                    {item.actual > 0 ? fmt(item.actual) : '—'}
+                  </Typography>
+
+                  {/* Paid */}
+                  <Typography sx={{
+                    fontFamily: T.font, fontWeight: 600, fontSize: 14,
+                    color: T.success, lineHeight: 'normal',
+                    width: { xs: 80, md: 100 }, flexShrink: 0,
+                    display: { xs: 'none', md: 'block' },
+                  }}>
+                    {item.paid > 0 ? fmt(item.paid) : '—'}
+                  </Typography>
+
+                  {/* Status chip */}
+                  <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1 }}>
+                    {statusChip(item)}
+
+                    {/* Edit icon */}
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { e.stopPropagation(); setEditing({ ...item }); setSelected(item); setInnerView('detail') }}
+                      sx={{ color: T.primary, mx: 0.5 }}
+                    >
+                      <Edit sx={{ fontSize: 16 }} />
+                    </IconButton>
+
+                    {/* Delete icon */}
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { e.stopPropagation(); confirmDelete(item.id) }}
+                      sx={{ color: T.accent }}
+                    >
+                      <Delete sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Box>
+                </Box>
+              ))
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Box sx={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 1, py: 2, borderTop: T.border,
+              }}>
+                <Box
+                  component="button"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  sx={{
+                    fontFamily: T.font, fontWeight: 600, fontSize: 13,
+                    color: page === 1 ? T.textSub : T.primary,
+                    border: 'none', background: 'none', cursor: page === 1 ? 'default' : 'pointer',
+                    px: 1.5, py: 0.5,
+                  }}
+                >
+                  Prev
+                </Box>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                  <Box
+                    key={n}
+                    component="button"
+                    onClick={() => setPage(n)}
+                    sx={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: T.font, fontWeight: 600, fontSize: 13,
+                      border: 'none', cursor: 'pointer',
+                      bgcolor: n === page ? T.primary : 'transparent',
+                      color: n === page ? '#fff' : T.primaryBlack,
+                      transition: 'all 0.2s',
+                      '&:hover': { bgcolor: n === page ? T.primary : 'rgba(0,131,143,0.08)' },
+                    }}
+                  >
+                    {n}
+                  </Box>
+                ))}
+                <Box
+                  component="button"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  sx={{
+                    fontFamily: T.font, fontWeight: 600, fontSize: 13,
+                    color: page === totalPages ? T.textSub : T.primary,
+                    border: 'none', background: 'none', cursor: page === totalPages ? 'default' : 'pointer',
+                    px: 1.5, py: 0.5,
+                  }}
+                >
+                  Next
+                </Box>
+              </Box>
+            )}
+            </>
+            })()}
+          </Box>
+        </Box>
+      </Box>
+
+      {/* ──── DELETE CONFIRM MODAL ──── */}
+      <DeleteConfirmModal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirmed}
+        successMessage="Expense Deleted Successfully"
+      />
+
+      {/* ──── INNER VIEW SLIDE-OVER ──── */}
+      <Slide direction="left" in={innerView !== null} mountOnEnter unmountOnExit>
+        <Box sx={{
+          position: 'fixed', top: 0, right: 0, bottom: 0,
+          width: { xs: '100%', sm: 420 }, bgcolor: '#fff',
+          boxShadow: '-4px 0 24px rgba(0,0,0,0.1)', zIndex: 1300,
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        }}>
+          {/* header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 3, py: 2, borderBottom: '1px solid rgba(0,131,143,0.15)' }}>
+            <IconButton size="small" onClick={closePanel}><ArrowBack sx={{ fontSize: 20, color: '#666' }} /></IconButton>
+            <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 18, color: T.primaryBlack, flex: 1 }}>
+              {editing ? 'Edit Expense' : 'Expense Details'}
+            </Typography>
+            <IconButton size="small" onClick={closePanel}><Close sx={{ fontSize: 20, color: '#666' }} /></IconButton>
+          </Box>
+
+          <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+            {innerView === 'detail' && selected && (
+              editing ? (
+                <Fade in timeout={250}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                    <FormControl fullWidth>
+                      <InputLabel>Category</InputLabel>
+                      <Select value={editing.category} label="Category" onChange={e => setEditing({ ...editing, category: e.target.value })}>
+                        {defaultCategories.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                    <TextField label="Vendor (optional)" fullWidth value={editing.vendor || ''} onChange={e => setEditing({ ...editing, vendor: e.target.value })} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+                    <TextField label="Estimated Cost" type="number" fullWidth value={editing.estimated} onChange={e => setEditing({ ...editing, estimated: parseFloat(e.target.value) || 0 })} InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+                    <TextField label="Actual Cost" type="number" fullWidth value={editing.actual} onChange={e => setEditing({ ...editing, actual: parseFloat(e.target.value) || 0 })} InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+                    <TextField label="Amount Paid" type="number" fullWidth value={editing.paid} onChange={e => setEditing({ ...editing, paid: parseFloat(e.target.value) || 0 })} InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+                    <TextField label="Notes (optional)" fullWidth multiline rows={2} value={editing.notes || ''} onChange={e => setEditing({ ...editing, notes: e.target.value })} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+                    <Box sx={{ display: 'flex', gap: 1.5, mt: 1 }}>
+                      <Button fullWidth variant="contained" onClick={() => updateItem(editing)} sx={{ bgcolor: T.primary, '&:hover': { bgcolor: '#006670' }, textTransform: 'none', fontWeight: 600, fontFamily: T.font, borderRadius: 1 }}>Save</Button>
+                      <Button fullWidth variant="outlined" onClick={() => setEditing(null)} sx={{ borderColor: 'rgba(0,131,143,0.25)', color: '#666', textTransform: 'none', fontWeight: 600, fontFamily: T.font, borderRadius: 1 }}>Cancel</Button>
+                    </Box>
+                  </Box>
+                </Fade>
+              ) : (
+                <Fade in timeout={250}>
+                  <Box>
+                    <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 22, color: T.primaryBlack, mb: 0.5, lineHeight: 1.3 }}>{selected.category}</Typography>
+                    {selected.vendor && <Typography sx={{ fontFamily: T.font, fontSize: 14, color: T.textSub, mb: 3 }}>{selected.vendor}</Typography>}
+                    {!selected.vendor && <Box sx={{ mb: 3 }} />}
+
+                    {/* Payment progress */}
+                    {selected.actual > 0 && (
+                      <Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(0,131,143,0.04)', borderRadius: '6px' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Typography sx={{ fontFamily: T.font, fontSize: 13, fontWeight: 600, color: T.primaryBlack }}>Payment Progress</Typography>
+                          <Typography sx={{ fontFamily: T.font, fontSize: 13, fontWeight: 700, color: T.primary }}>{Math.round((selected.paid / selected.actual) * 100)}%</Typography>
+                        </Box>
+                        <LinearProgress
+                          variant="determinate"
+                          value={Math.min((selected.paid / selected.actual) * 100, 100)}
+                          sx={{ height: 8, borderRadius: 4, bgcolor: 'rgba(0,131,143,0.1)', '& .MuiLinearProgress-bar': { bgcolor: selected.paid >= selected.actual ? T.success : '#F5A623', borderRadius: 4 } }}
+                        />
+                      </Box>
+                    )}
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {[
+                        { label: 'Status', value: '' },
+                        { label: 'Estimated', value: fmt(selected.estimated) },
+                        { label: 'Actual', value: selected.actual > 0 ? fmt(selected.actual) : '—' },
+                        { label: 'Paid', value: selected.paid > 0 ? fmt(selected.paid) : '—' },
+                        { label: 'Outstanding', value: selected.actual > 0 ? fmt(selected.actual - selected.paid) : '—' },
+                        { label: 'Notes', value: selected.notes || '—' },
+                      ].map(row => (
+                        <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5, borderBottom: '1px solid rgba(0,131,143,0.1)' }}>
+                          <Typography sx={{ fontFamily: T.font, fontWeight: 600, fontSize: 14, color: T.textSub }}>{row.label}</Typography>
+                          {row.label === 'Status' ? statusChip(selected) : (
+                            <Typography sx={{
+                              fontFamily: T.font, fontWeight: 600, fontSize: 14,
+                              color: row.label === 'Paid' ? T.success : row.label === 'Outstanding' && selected.actual - selected.paid > 0 ? '#F5A623' : T.text,
+                            }}>
+                              {row.value}
+                            </Typography>
+                          )}
+                        </Box>
+                      ))}
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1.5, mt: 4 }}>
+                      <Button fullWidth variant="contained" startIcon={<Edit />} onClick={() => setEditing({ ...selected })} sx={{ bgcolor: T.primary, '&:hover': { bgcolor: '#006670' }, textTransform: 'none', fontWeight: 600, fontFamily: T.font, borderRadius: 1 }}>Edit</Button>
+                    </Box>
+                    <Button fullWidth startIcon={<Delete />} onClick={() => { confirmDelete(selected.id); closePanel() }} sx={{ mt: 1.5, color: T.accent, textTransform: 'none', fontWeight: 600, fontFamily: T.font, '&:hover': { bgcolor: 'rgba(235,25,72,0.04)' } }}>Delete Expense</Button>
+                  </Box>
+                </Fade>
+              )
+            )}
+          </Box>
+        </Box>
+      </Slide>
+      {innerView !== null && <Box onClick={closePanel} sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(0,37,40,0.25)', backdropFilter: 'blur(2px)', zIndex: 1299 }} />}
+
+      {/* ──── ADD DIALOG ──── */}
+      <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2, border: '1px solid rgba(0,131,143,0.15)' } }}>
+        <DialogTitle sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 20, color: T.primaryBlack, pb: 0 }}>Add New Expense</DialogTitle>
+        <DialogContent sx={{ pt: '16px !important' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <FormControl fullWidth>
               <InputLabel>Category</InputLabel>
-              <Select value={formData.category} label="Category" onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}>
-                {defaultCategories.map(cat => (<MenuItem key={cat} value={cat}>{cat}</MenuItem>))}
+              <Select value={newItem.category} label="Category" onChange={e => setNewItem(p => ({ ...p, category: e.target.value }))} sx={{ fontFamily: T.font }}>
+                {defaultCategories.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
               </Select>
             </FormControl>
-            <TextField label="Vendor Name (optional)" fullWidth value={formData.vendor} onChange={(e) => setFormData(prev => ({ ...prev, vendor: e.target.value }))} />
-            <TextField label="Estimated Cost" type="number" fullWidth value={formData.estimated} onChange={(e) => setFormData(prev => ({ ...prev, estimated: e.target.value }))} InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }} />
-            <TextField label="Actual Cost" type="number" fullWidth value={formData.actual} onChange={(e) => setFormData(prev => ({ ...prev, actual: e.target.value }))} InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }} />
-            <TextField label="Amount Paid" type="number" fullWidth value={formData.paid} onChange={(e) => setFormData(prev => ({ ...prev, paid: e.target.value }))} InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }} />
-            <TextField label="Notes (optional)" fullWidth multiline rows={2} value={formData.notes} onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))} />
+            <TextField label="Vendor Name (optional)" fullWidth placeholder="e.g. Lush Gardens" value={newItem.vendor} onChange={e => setNewItem(p => ({ ...p, vendor: e.target.value }))} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField label="Estimated Cost" type="number" fullWidth value={newItem.estimated} onChange={e => setNewItem(p => ({ ...p, estimated: e.target.value }))} InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+              <TextField label="Actual Cost" type="number" fullWidth value={newItem.actual} onChange={e => setNewItem(p => ({ ...p, actual: e.target.value }))} InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField label="Amount Paid" type="number" fullWidth value={newItem.paid} onChange={e => setNewItem(p => ({ ...p, paid: e.target.value }))} InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+              <TextField label="Notes (optional)" fullWidth value={newItem.notes} onChange={e => setNewItem(p => ({ ...p, notes: e.target.value }))} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+            </Box>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setDialogOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} sx={{ bgcolor: '#00838F', '&:hover': { bgcolor: '#006670' }, textTransform: 'none' }}>
-            {editingItem ? 'Save Changes' : 'Add Expense'}
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setAddOpen(false)} sx={{ textTransform: 'none', fontFamily: T.font, fontWeight: 600, color: '#666' }}>Cancel</Button>
+          <Button variant="contained" onClick={addItem} disabled={!newItem.category} sx={{ bgcolor: T.primary, '&:hover': { bgcolor: '#006670' }, textTransform: 'none', fontWeight: 600, fontFamily: T.font, px: 3 }}>Add Expense</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ──── BUDGET EDIT DIALOG ──── */}
+      <Dialog open={budgetEditOpen} onClose={() => setBudgetEditOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 2, border: '1px solid rgba(0,131,143,0.15)' } }}>
+        <DialogTitle sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 20, color: T.primaryBlack, pb: 0 }}>Set Total Budget</DialogTitle>
+        <DialogContent sx={{ pt: '16px !important' }}>
+          <TextField
+            label="Total Budget" type="number" fullWidth autoFocus
+            value={budgetDraft}
+            onChange={e => setBudgetDraft(e.target.value)}
+            InputProps={{ startAdornment: <InputAdornment position="start">₦</InputAdornment> }}
+            sx={{ mt: 1, '& .MuiInputBase-root': { fontFamily: T.font } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setBudgetEditOpen(false)} sx={{ textTransform: 'none', fontFamily: T.font, fontWeight: 600, color: '#666' }}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={() => { setTotalBudget(parseFloat(budgetDraft) || 0); setBudgetEditOpen(false); notify('Budget updated') }}
+            sx={{ bgcolor: T.primary, '&:hover': { bgcolor: '#006670' }, textTransform: 'none', fontWeight: 600, fontFamily: T.font, px: 3 }}
+          >
+            Save
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ──── SNACKBAR ──── */}
+      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack(p => ({ ...p, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }} TransitionComponent={Slide}>
+        <Alert onClose={() => setSnack(p => ({ ...p, open: false }))} severity={snack.sev} variant="filled" sx={{ fontFamily: T.font, fontWeight: 600, borderRadius: 1 }}>{snack.msg}</Alert>
+      </Snackbar>
 
       <Footer />
     </Box>

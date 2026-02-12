@@ -45,8 +45,26 @@ export default function Nav() {
                     />
                 </Box>
 
-                {/* Navigation Links */}
+                {/* Navigation Links — sequential wedding planning flow */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, justifyContent: 'center' }}>
+                    <Button 
+                        component={Link}
+                        to="/couple/dashboard"
+                        sx={{ 
+                            color: 'primary.main',
+                            fontFamily: "'Open Sans', sans-serif",
+                            fontWeight: 600,
+                            fontSize: '14px',
+                            textTransform: 'none',
+                            px: 2,
+                            '&:hover': {
+                                backgroundColor: 'rgba(0, 131, 143, 0.04)'
+                            }
+                        }}
+                    >
+                        Dashboard
+                    </Button>
+
                     <Button 
                         component={Link}
                         to="/couple/search-results"
@@ -157,7 +175,7 @@ export default function Nav() {
 
                     <Button 
                         component={Link}
-                        to="/couple/my-vendors"
+                        to="/couple/askwed"
                         sx={{ 
                             color: 'primary.main',
                             fontFamily: "'Open Sans', sans-serif",
@@ -170,25 +188,7 @@ export default function Nav() {
                             }
                         }}
                     >
-                        My Vendors
-                    </Button>
-
-                    <Button 
-                        component={Link}
-                        to="/couple/messages"
-                        sx={{ 
-                            color: 'primary.main',
-                            fontFamily: "'Open Sans', sans-serif",
-                            fontWeight: 600,
-                            fontSize: '14px',
-                            textTransform: 'none',
-                            px: 2,
-                            '&:hover': {
-                                backgroundColor: 'rgba(0, 131, 143, 0.04)'
-                            }
-                        }}
-                    >
-                        Messages
+                        AskWed
                     </Button>
                 </Box>
 
