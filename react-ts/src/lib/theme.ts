@@ -19,7 +19,7 @@ const palette = {
   },
 
   bgThemeColor: {
-    main: '#FFF6F9',
+    main: '#FFFFFF',
   },
 
   success: { main: '#10b981', contrastText: '#ffffff' },

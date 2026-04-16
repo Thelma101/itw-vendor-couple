@@ -111,7 +111,7 @@ export default function VendorSearchBar({
           </Button>
           <IconButton
             sx={{
-              bgcolor: '#FFF6F9',
+              bgcolor: '#FFFFFF',
               border: '1px solid #CCFDF2',
               '&:hover': { bgcolor: '#FFE0EC' },
             }}

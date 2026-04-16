@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -18,7 +18,8 @@ import {
   Alert
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import BackButton from '../../components/BackButton';
+import { addRecentlyViewed } from '../../components/home/RecentlyViewed';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -150,6 +151,20 @@ const VendorProfile: React.FC = () => {
   const availability = generateAvailability();
   const isFavorited = isInShortlist(vendorData.id);
 
+  // Track recently viewed vendor
+  useEffect(() => {
+    addRecentlyViewed({
+      id: vendorData.id,
+      name: vendorData.name,
+      category: vendorData.type,
+      image: vendorData.profileImage,
+      rating: vendorData.rating,
+      reviewCount: vendorData.reviewCount,
+      price: vendorData.startingPrice,
+      location: vendorData.location,
+    });
+  }, [vendorData.id]);
+
   const handleFavorite = () => {
     if (isFavorited) {
       removeFromShortlist(vendorData.id);
@@ -178,39 +193,16 @@ const VendorProfile: React.FC = () => {
     return `₦${price.toLocaleString()}`;
   };
 
-  const handleBack = () => {
-    if (fromPreview) {
-      // Navigate back to source page with state to reopen the modal
-      if (previewSource === 'home') {
-        navigate('/', { state: { reopenPreview: true, vendorId: previewVendorId } });
-      } else {
-        navigate('/couple/search-results', { state: { reopenPreview: true, vendorId: previewVendorId } });
-      }
-    } else {
-      navigate(-1);
-    }
-  };
-
   return (
     <Box sx={{ backgroundColor: '#FFF6F9', minHeight: '100vh' }}>
       <Nav />
       
       {/* Back Button */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 4, py: 2 }}>
-        <Button
-          startIcon={<ArrowBackIcon sx={{ width: 24, height: 24 }} />}
-          onClick={handleBack}
-          sx={{
-            fontFamily: "'Open Sans', sans-serif",
-            fontWeight: 700,
-            fontSize: 16,
-            color: '#002528',
-            textTransform: 'none',
-            '&:hover': { backgroundColor: 'transparent' }
-          }}
-        >
-          {fromPreview ? 'Back to Preview' : 'Back'}
-        </Button>
+        <BackButton
+          fallbackPath="/couple/search-results"
+          label={fromPreview ? 'Back to Preview' : undefined}
+        />
       </Box>
 
       {/* Main Content */}

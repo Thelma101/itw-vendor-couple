@@ -13,7 +13,7 @@ import Footer from '@/components/Footer'
 
 /* ═══════ TOKENS ═══════ */
 const T = {
-  bg: '#FFF6F9', primary: '#00838F', primaryBlack: '#002528',
+  bg: '#FFFFFF', primary: '#00838F', primaryBlack: '#002528',
   accentGrad: 'linear-gradient(255.71deg, #EB1948 65.18%, #B52344 232.03%)',
   accent: '#EB1948', success: '#008F53',
   text: '#2d2d2d', textSub: '#aaaaaa', font: "'Open Sans', sans-serif",

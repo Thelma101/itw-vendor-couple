@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Box, Typography, Button, MenuItem, Select, TextField, Card, Rating, Snackbar, Alert } from '@mui/material';
-import { KeyboardArrowDown, LocationOn } from '@mui/icons-material';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { Box, Typography, Button, TextField, Card, Rating, Snackbar, Alert, CircularProgress } from '@mui/material';
+import { LocationOn } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Nav from '../../components/Nav';
 import Footer from '../../components/Footer';
@@ -8,6 +8,20 @@ import PhotoCollage from '../../components/PhotoCollage';
 import VendorPreviewModal from '../../components/VendorPreviewModal';
 import type { VendorPreviewData } from '../../components/VendorPreviewModal';
 import { useShortlist } from '../../contexts/ShortlistContext';
+import EnhancedCategoryDropdown from '../../components/EnhancedCategoryDropdown';
+
+// Lazy-loaded homepage sections for performance
+const BrowseByCategory = lazy(() => import('../../components/home/BrowseByCategory'));
+const Testimonials = lazy(() => import('../../components/home/Testimonials'));
+const WhyChooseUs = lazy(() => import('../../components/home/WhyChooseUs'));
+const RecentlyViewed = lazy(() => import('../../components/home/RecentlyViewed'));
+const PopularInArea = lazy(() => import('../../components/home/PopularInArea'));
+
+const SectionLoader = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+    <CircularProgress size={32} sx={{ color: '#00838F' }} />
+  </Box>
+);
 
 
 const heroImage = "https://www.figma.com/api/mcp/asset/4840190a-4450-4abc-9898-613647818f37";
@@ -435,34 +449,12 @@ export default function HomePage() {
           {/* Search Fields */}
           {searchType === 'category' ? (
             <Box sx={{ display: 'flex', gap: 0, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-              {/* Category Dropdown */}
+              {/* Category Dropdown — Enhanced with search, grouping & vendor counts */}
               <Box sx={{ flex: 1 }}>
-                <Select
+                <EnhancedCategoryDropdown
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  IconComponent={KeyboardArrowDown}
-                  displayEmpty
-                  sx={{
-                    bgcolor: 'white',
-                    width: '100%',
-                    height: 51,
-                    border: '0.25px solid #00838F',
-                    borderRadius: 0,
-                    fontFamily: "'Open Sans', sans-serif",
-                    fontSize: 16,
-                    fontWeight: 600,
-                    color: '#002528',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      border: 'none',
-                    },
-                  }}
-                >
-                  <MenuItem value="Reception Venue">Reception Venue</MenuItem>
-                  <MenuItem value="Florist">Florist</MenuItem>
-                  <MenuItem value="Photographer">Photographer</MenuItem>
-                  <MenuItem value="Cake & Desserts">Cake & Desserts</MenuItem>
-                  <MenuItem value="Music">Music</MenuItem>
-                </Select>
+                  onChange={setCategory}
+                />
               </Box>
 
               {/* Location Input */}
@@ -554,7 +546,7 @@ export default function HomePage() {
         </Box>
       </Box>
 
-      {/* Hot Vendors Section */}
+      {/* Trending Vendors Section */}
       <Box sx={{ py: 8, px: { xs: 2, md: 4 }, bgcolor: 'white' }}>
         <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
           {/* Section Header */}
@@ -577,7 +569,7 @@ export default function HomePage() {
                 },
               }}
             >
-              Hot
+              Trending Vendors
             </Typography>
             <Typography
               sx={{
@@ -596,7 +588,7 @@ export default function HomePage() {
             </Typography>
           </Box>
 
-          {/* Hot vendors section */}
+          {/* Trending vendors section */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {hotVendors.map((vendor) => (
               <Card
@@ -1054,6 +1046,28 @@ export default function HomePage() {
           </Box>
         </Box>
       </Box>
+
+      {/* ─── New Homepage Sections (lazy loaded) ─── */}
+
+      <Suspense fallback={<SectionLoader />}>
+        <BrowseByCategory />
+      </Suspense>
+
+      <Suspense fallback={<SectionLoader />}>
+        <RecentlyViewed />
+      </Suspense>
+
+      <Suspense fallback={<SectionLoader />}>
+        <PopularInArea />
+      </Suspense>
+
+      <Suspense fallback={<SectionLoader />}>
+        <Testimonials />
+      </Suspense>
+
+      <Suspense fallback={<SectionLoader />}>
+        <WhyChooseUs />
+      </Suspense>
 
       {/* Vendor Preview Modal */}
       <VendorPreviewModal

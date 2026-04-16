@@ -311,7 +311,7 @@ export default function EnhancedSearchResults() {
   const totalPages = Math.ceil(filteredVendors.length / vendorsPerPage);
 
   return (
-    <Box sx={{ backgroundColor: '#FFF6F9', minHeight: '100vh' }}>
+    <Box sx={{ backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
       <Nav />
 
       <Box sx={{ px: { xs: 2, md: 4 }, py: 4 }}>
@@ -460,7 +460,7 @@ export default function EnhancedSearchResults() {
                               top: 12,
                               right: 12,
                               bgcolor: 'white',
-                              '&:hover': { bgcolor: '#FFF6F9' },
+                              '&:hover': { bgcolor: '#FFFFFF' },
                             }}
                           >
                             {isShortlisted(vendor.id) ? (

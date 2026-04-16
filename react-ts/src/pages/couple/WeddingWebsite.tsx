@@ -7,7 +7,7 @@ import {
   Edit, Delete, Close, ArrowBack, Public, VisibilityOff, ContentCopy, Check, PhotoCamera,
   Visibility, Share, Link as LinkIcon, LocationOn, Schedule, Palette, CheckCircle,
   QuestionAnswer, Hotel, Lock, LockOpen, Style, FormatSize, Add, ExpandMore, ExpandLess,
-  Flight, DirectionsCar, Phone, Language,
+  Flight, DirectionsCar, Phone, Language, Favorite, PhotoLibrary,
 } from '@mui/icons-material'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
@@ -25,20 +25,34 @@ const T = {
 /* ═══════ FONT OPTIONS ═══════ */
 interface FontOption { id: string; name: string; family: string; category: 'serif' | 'sans-serif' | 'display' | 'script' }
 const FONT_OPTIONS: FontOption[] = [
-  { id: 'open-sans',       name: 'Open Sans',        family: "'Open Sans', sans-serif",        category: 'sans-serif' },
-  { id: 'playfair',        name: 'Playfair Display',  family: "'Playfair Display', serif",      category: 'serif' },
-  { id: 'georgia',         name: 'Georgia',           family: "'Georgia', serif",               category: 'serif' },
-  { id: 'times',           name: 'Times New Roman',   family: "'Times New Roman', serif",       category: 'serif' },
-  { id: 'montserrat',      name: 'Montserrat',        family: "'Montserrat', sans-serif",       category: 'sans-serif' },
-  { id: 'lato',            name: 'Lato',              family: "'Lato', sans-serif",             category: 'sans-serif' },
-  { id: 'raleway',         name: 'Raleway',           family: "'Raleway', sans-serif",          category: 'sans-serif' },
-  { id: 'cormorant',       name: 'Cormorant Garamond',family: "'Cormorant Garamond', serif",   category: 'serif' },
-  { id: 'great-vibes',     name: 'Great Vibes',       family: "'Great Vibes', cursive",         category: 'script' },
-  { id: 'dancing-script',  name: 'Dancing Script',    family: "'Dancing Script', cursive",      category: 'script' },
-  { id: 'josefin',         name: 'Josefin Sans',      family: "'Josefin Sans', sans-serif",     category: 'sans-serif' },
-  { id: 'cinzel',          name: 'Cinzel',            family: "'Cinzel', serif",                category: 'display' },
-  { id: 'eb-garamond',     name: 'EB Garamond',       family: "'EB Garamond', serif",           category: 'serif' },
-  { id: 'libre-baskerville', name: 'Libre Baskerville', family: "'Libre Baskerville', serif",  category: 'serif' },
+  /* ── Sans-Serif ── */
+  { id: 'open-sans',       name: 'Open Sans',         family: "'Open Sans', sans-serif",         category: 'sans-serif' },
+  { id: 'montserrat',      name: 'Montserrat',        family: "'Montserrat', sans-serif",        category: 'sans-serif' },
+  { id: 'lato',            name: 'Lato',              family: "'Lato', sans-serif",              category: 'sans-serif' },
+  { id: 'raleway',         name: 'Raleway',           family: "'Raleway', sans-serif",           category: 'sans-serif' },
+  { id: 'josefin',         name: 'Josefin Sans',      family: "'Josefin Sans', sans-serif",      category: 'sans-serif' },
+  { id: 'poppins',         name: 'Poppins',           family: "'Poppins', sans-serif",           category: 'sans-serif' },
+  { id: 'inter',           name: 'Inter',             family: "'Inter', sans-serif",             category: 'sans-serif' },
+  { id: 'dm-sans',         name: 'DM Sans',           family: "'DM Sans', sans-serif",           category: 'sans-serif' },
+  { id: 'nunito',          name: 'Nunito',            family: "'Nunito', sans-serif",            category: 'sans-serif' },
+  /* ── Serif ── */
+  { id: 'playfair',        name: 'Playfair Display',  family: "'Playfair Display', serif",       category: 'serif' },
+  { id: 'georgia',         name: 'Georgia',           family: "'Georgia', serif",                category: 'serif' },
+  { id: 'times',           name: 'Times New Roman',   family: "'Times New Roman', serif",        category: 'serif' },
+  { id: 'cormorant',       name: 'Cormorant Garamond',family: "'Cormorant Garamond', serif",    category: 'serif' },
+  { id: 'eb-garamond',     name: 'EB Garamond',       family: "'EB Garamond', serif",            category: 'serif' },
+  { id: 'libre-baskerville', name: 'Libre Baskerville', family: "'Libre Baskerville', serif",   category: 'serif' },
+  { id: 'merriweather',    name: 'Merriweather',      family: "'Merriweather', serif",           category: 'serif' },
+  { id: 'lora',            name: 'Lora',              family: "'Lora', serif",                   category: 'serif' },
+  { id: 'dm-serif',        name: 'DM Serif Display',  family: "'DM Serif Display', serif",      category: 'serif' },
+  /* ── Display ── */
+  { id: 'cinzel',          name: 'Cinzel',            family: "'Cinzel', serif",                 category: 'display' },
+  { id: 'abril',           name: 'Abril Fatface',     family: "'Abril Fatface', serif",          category: 'display' },
+  { id: 'bodoni',          name: 'Bodoni Moda',       family: "'Bodoni Moda', serif",            category: 'display' },
+  /* ── Script ── */
+  { id: 'great-vibes',     name: 'Great Vibes',       family: "'Great Vibes', cursive",          category: 'script' },
+  { id: 'dancing-script',  name: 'Dancing Script',    family: "'Dancing Script', cursive",       category: 'script' },
+  { id: 'parisienne',      name: 'Parisienne',        family: "'Parisienne', cursive",           category: 'script' },
 ]
 
 /* ═══════ 18 TEMPLATES ═══════ */
@@ -116,18 +130,9 @@ type FilterTab = 'details' | 'schedule' | 'faq' | 'travel' | 'stationery' | 'pho
 type InnerView = null | 'detail' | 'preview'
 type PageView = 'gallery' | 'editor'
 
-const themes = [
-  { id: 'elegant', name: 'Elegant', primary: '#1a1a1a', secondary: '#d4af37', bg: '#faf9f6' },
-  { id: 'romantic', name: 'Romantic', primary: '#8b4557', secondary: '#e8b4b8', bg: '#fff5f5' },
-  { id: 'modern', name: 'Modern', primary: '#00838F', secondary: '#EB1948', bg: '#ffffff' },
-  { id: 'garden', name: 'Garden', primary: '#2d5a27', secondary: '#a8d5a2', bg: '#f5faf5' },
-  { id: 'beach', name: 'Beach', primary: '#1e6091', secondary: '#74c0fc', bg: '#f0f9ff' },
-  { id: 'rustic', name: 'Rustic', primary: '#6b4423', secondary: '#d4a574', bg: '#fdf6ec' },
-]
-
 /* ═══════ DEFAULTS / STORAGE ═══════ */
 const defaultData: WebsiteData = {
-  url: 'sarah-and-james', published: false, theme: 'modern', templateId: '',
+  url: 'sarah-and-james', published: false, theme: '', templateId: '',
   customColors: { primary: '#00838F', secondary: '#d4af37', accent: '#EB1948', text: '#002528', bg: '#ffffff' },
   coverImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&h=600&fit=crop',
   coupleNames: { partner1: '', partner2: '' }, weddingDate: '', weddingTime: '',
@@ -207,23 +212,37 @@ function TemplatePreviewCard({ template, onSelect, selected }: { template: Templ
 /* ── COLOUR PALETTE PICKER ── */
 function ColorPalettePicker({ activePaletteId, customColors, onSelectPalette, onCustomColorChange }: { activePaletteId: string; customColors: CustomColors; onSelectPalette: (p: ColorPaletteOption) => void; onCustomColorChange: (key: keyof CustomColors, value: string) => void }) {
   const [showCustom, setShowCustom] = useState(false)
+  const lightBgs = ['#ffffff','#faf9f6','#f5faf5','#faf8f5','#f8faf5','#f8f5ff','#fdf8f0','#f0f5fa','#fdf6ec','#f0f9ff','#fff5f5','#f9f6f3','#f5f5f5','#faf7f5','#f5f7f3','#f8f5f0']
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
         <Palette sx={{ color: T.primary, fontSize: 22 }} />
         <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 16, color: T.primaryBlack }}>Colour Palette</Typography>
       </Box>
-      <Typography sx={{ fontFamily: T.font, fontSize: 13, color: T.textSub, mb: 2 }}>Choose a pre-made palette or create your own custom colours</Typography>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: 1.5, mb: 3 }}>
+      <Typography sx={{ fontFamily: T.font, fontSize: 13, color: T.textSub, mb: 1 }}>Sets the colours across your entire website — headings, buttons, backgrounds, text</Typography>
+      <Typography sx={{ fontFamily: T.font, fontSize: 12, color: '#888', mb: 2.5, fontStyle: 'italic' }}>Tip: Templates control the visual layout. Colour palettes control the colour scheme. Mix any template with any palette!</Typography>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 1.5, mb: 3 }}>
         {COLOR_PALETTES.map(palette => {
           const isA = activePaletteId === palette.id
-          return <Box key={palette.id} onClick={() => onSelectPalette(palette)} sx={{ p: 1.5, cursor: 'pointer', borderRadius: '8px', border: isA ? `2px solid ${T.primary}` : '1px solid rgba(0,131,143,0.15)', transition: 'all 0.2s', bgcolor: isA ? 'rgba(0,131,143,0.04)' : '#fff', '&:hover': { borderColor: T.primary } }}>
-            <Box sx={{ display: 'flex', gap: 0.6, mb: 1 }}>{Object.values(palette.colors).map((c, i) => <Box key={i} sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: c, border: ['#ffffff','#faf9f6','#f5faf5','#faf8f5','#f8faf5','#f8f5ff','#fdf8f0','#f0f5fa','#fdf6ec','#f0f9ff'].includes(c) ? '1px solid #ddd' : 'none' }} />)}</Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Typography sx={{ fontFamily: T.font, fontWeight: 600, fontSize: 12, color: T.primaryBlack }}>{palette.name}</Typography>
-              {isA && <CheckCircle sx={{ fontSize: 14, color: T.primary }} />}
+          const c = palette.colors
+          return (
+            <Box key={palette.id} onClick={() => onSelectPalette(palette)} sx={{ cursor: 'pointer', borderRadius: '10px', border: isA ? `2.5px solid ${T.primary}` : '1px solid rgba(0,131,143,0.12)', transition: 'all 0.2s', overflow: 'hidden', bgcolor: '#fff', '&:hover': { borderColor: T.primary, boxShadow: '0 2px 12px rgba(0,131,143,0.1)' } }}>
+              {/* Visual preview bar */}
+              <Box sx={{ height: 48, display: 'flex', position: 'relative' }}>
+                <Box sx={{ flex: 2, bgcolor: c.primary }} />
+                <Box sx={{ flex: 1.5, bgcolor: c.secondary }} />
+                <Box sx={{ flex: 1, bgcolor: c.accent }} />
+                <Box sx={{ flex: 0.5, bgcolor: c.bg, borderRight: lightBgs.includes(c.bg) ? '1px solid #e0e0e0' : 'none' }} />
+                {isA && <Box sx={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%', bgcolor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }}><CheckCircle sx={{ fontSize: 18, color: T.primary }} /></Box>}
+              </Box>
+              <Box sx={{ px: 1.5, py: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography sx={{ fontFamily: T.font, fontWeight: 600, fontSize: 12.5, color: T.primaryBlack }}>{palette.name}</Typography>
+                <Box sx={{ display: 'flex', gap: 0.4 }}>
+                  {Object.values(c).map((col, i) => <Box key={i} sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: col, border: lightBgs.includes(col) ? '1px solid #ddd' : 'none' }} />)}
+                </Box>
+              </Box>
             </Box>
-          </Box>
+          )
         })}
       </Box>
       <Button onClick={() => setShowCustom(!showCustom)} startIcon={<Palette />} sx={{ textTransform: 'none', fontFamily: T.font, fontWeight: 600, fontSize: 14, color: T.primary, mb: showCustom ? 2 : 0 }}>
@@ -231,17 +250,22 @@ function ColorPalettePicker({ activePaletteId, customColors, onSelectPalette, on
       </Button>
       {showCustom && (
         <Fade in timeout={300}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 2, p: 2.5, borderRadius: '8px', border: '1px solid rgba(0,131,143,0.15)', bgcolor: 'rgba(0,131,143,0.02)' }}>
-            {(['primary','secondary','accent','text','bg'] as const).map(key => (
-              <Box key={key} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ position: 'relative' }}>
-                  <Box sx={{ width: 44, height: 44, borderRadius: '50%', bgcolor: customColors[key], border: '2px solid #fff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', cursor: 'pointer', '&:hover': { transform: 'scale(1.1)' } }} />
-                  <input type="color" value={customColors[key]} onChange={(e) => onCustomColorChange(key, e.target.value)} style={{ position: 'absolute', top: 0, left: 0, width: 44, height: 44, opacity: 0, cursor: 'pointer' }} />
+          <Box sx={{ p: 3, borderRadius: '10px', border: '1px solid rgba(0,131,143,0.15)', bgcolor: 'rgba(0,131,143,0.02)' }}>
+            <Box sx={{ display: 'flex', gap: 0, mb: 2.5, borderRadius: '6px', overflow: 'hidden', height: 40, border: '1px solid rgba(0,0,0,0.08)' }}>
+              {(['primary','secondary','accent','text','bg'] as const).map(key => <Box key={key} sx={{ flex: 1, bgcolor: customColors[key] }} />)}
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 2 }}>
+              {(['primary','secondary','accent','text','bg'] as const).map(key => (
+                <Box key={key} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.8 }}>
+                  <Box sx={{ position: 'relative' }}>
+                    <Box sx={{ width: 48, height: 48, borderRadius: '10px', bgcolor: customColors[key], border: '2px solid #fff', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', cursor: 'pointer', transition: 'transform 0.15s', '&:hover': { transform: 'scale(1.08)' } }} />
+                    <input type="color" value={customColors[key]} onChange={(e) => onCustomColorChange(key, e.target.value)} style={{ position: 'absolute', top: 0, left: 0, width: 48, height: 48, opacity: 0, cursor: 'pointer' }} />
+                  </Box>
+                  <Typography sx={{ fontFamily: T.font, fontWeight: 600, fontSize: 11, color: T.primaryBlack }}>{key.charAt(0).toUpperCase()+key.slice(1)}</Typography>
+                  <Typography sx={{ fontSize: 10, color: T.textSub, fontFamily: 'monospace' }}>{customColors[key].toUpperCase()}</Typography>
                 </Box>
-                <Typography sx={{ fontFamily: T.font, fontWeight: 600, fontSize: 11, color: T.primaryBlack }}>{key.charAt(0).toUpperCase()+key.slice(1)}</Typography>
-                <Typography sx={{ fontFamily: T.font, fontSize: 10, color: T.textSub }}>{customColors[key].toUpperCase()}</Typography>
-              </Box>
-            ))}
+              ))}
+            </Box>
           </Box>
         </Fade>
       )}
@@ -307,7 +331,7 @@ export default function WeddingWebsite() {
 
   const notify = useCallback((msg: string, sev: 'success' | 'info' | 'error' = 'success') => setSnack({ open: true, msg, sev }), [])
   const updateWebsite = useCallback((updates: Partial<WebsiteData>) => setWebsite(prev => ({ ...prev, ...updates })), [])
-  const currentTheme = useMemo(() => themes.find(t => t.id === website.theme) || themes[2], [website.theme])
+  const currentTemplate = useMemo(() => TEMPLATES.find(t => t.id === website.templateId), [website.templateId])
   const websiteUrl = `https://itheewed.com/w/${website.url}`
   const copyUrl = () => { navigator.clipboard.writeText(websiteUrl); setCopied(true); setTimeout(() => setCopied(false), 2000) }
 
@@ -372,12 +396,18 @@ export default function WeddingWebsite() {
     settings:   { label: 'Settings',   badgeBg: 'none',         badgeColor: '#fff',          count: counts.settings },
   }
 
-  const sidebarItems = [
-    { label: 'My Budget', key: 'budget', href: '/couple/budget' },
-    { label: 'My Guest-list', key: 'guests', href: '/couple/guests' },
-    { label: 'Favourites', key: 'favourites', href: '/couple/favourites' },
-    { label: 'To-do list', key: 'todo', href: '/couple/checklist' },
-  ]
+  /* ── completion tracker ── */
+  const completionItems = useMemo(() => [
+    { label: 'Cover Image', done: !!website.coverImage && website.coverImage !== defaultData.coverImage },
+    { label: 'Couple Names', done: !!website.coupleNames.partner1 && !!website.coupleNames.partner2 },
+    { label: 'Wedding Date', done: !!website.weddingDate },
+    { label: 'Venue', done: !!website.venue.name },
+    { label: 'Our Story', done: !!website.story.trim() },
+    { label: 'Schedule', done: website.schedule.length > 0 },
+    { label: 'Q&A', done: website.faq.length > 0 },
+    { label: 'Photos', done: website.photos.length > 0 },
+  ], [website])
+  const completionPct = useMemo(() => Math.round((completionItems.filter(c => c.done).length / completionItems.length) * 100), [completionItems])
 
   /* gallery filter */
   const categories = ['All', ...Array.from(new Set(TEMPLATES.map(t => t.category)))]
@@ -456,12 +486,21 @@ export default function WeddingWebsite() {
 
       {/* MAIN LAYOUT */}
       <Box sx={{ flex: 1, display: 'flex', px: { xs: 2, md: '120px' }, pb: 8, gap: { xs: 0, md: '24px' }, flexDirection: { xs: 'column', md: 'row' } }}>
-        {/* SIDEBAR */}
-        <Box sx={{ width: { xs: '100%', md: 304 }, flexShrink: 0, bgcolor: '#fff', border: T.border, display: 'flex', flexDirection: 'column', mb: { xs: 2, md: 0 }, height: 'fit-content' }}>
-          {sidebarItems.map((item, i) => (
-            <Box key={item.key} component="a" onClick={(e: React.MouseEvent) => { if (item.href) { window.location.href = item.href; e.preventDefault() } }}
-              sx={{ display: 'flex', alignItems: 'center', height: i === 0 ? 61 : i === 1 ? 59 : 48, px: 3, bgcolor: '#fff', cursor: 'pointer', borderBottom: i < 3 ? T.border : 'none', transition: 'background 0.2s', textDecoration: 'none', '&:hover': { bgcolor: 'rgba(0,131,143,0.04)' } }}>
-              <Typography sx={{ fontFamily: T.font, fontWeight: 600, fontSize: 16, lineHeight: '50px', color: T.primaryBlack }}>{item.label}</Typography>
+        {/* COMPLETION SIDEBAR */}
+        <Box sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0, bgcolor: '#fff', border: T.border, display: 'flex', flexDirection: 'column', mb: { xs: 2, md: 0 }, height: 'fit-content' }}>
+          <Box sx={{ p: 2.5, borderBottom: T.border }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+              <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 15, color: T.primaryBlack }}>Website Progress</Typography>
+              <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 14, color: completionPct === 100 ? T.success : T.primary }}>{completionPct}%</Typography>
+            </Box>
+            <Box sx={{ width: '100%', height: 6, borderRadius: 3, bgcolor: 'rgba(0,131,143,0.1)' }}>
+              <Box sx={{ width: `${completionPct}%`, height: '100%', borderRadius: 3, bgcolor: completionPct === 100 ? T.success : T.primary, transition: 'width 0.4s ease' }} />
+            </Box>
+          </Box>
+          {completionItems.map((item, i) => (
+            <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2.5, py: 1.5, borderBottom: i < completionItems.length - 1 ? T.border : 'none' }}>
+              <CheckCircle sx={{ fontSize: 18, color: item.done ? T.success : 'rgba(0,0,0,0.12)' }} />
+              <Typography sx={{ fontFamily: T.font, fontWeight: 500, fontSize: 14, color: item.done ? T.text : T.textSub }}>{item.label}</Typography>
             </Box>
           ))}
         </Box>
@@ -521,8 +560,9 @@ export default function WeddingWebsite() {
                   </Box>
                 </Box>
                 <Box>
-                  <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 16, color: T.primaryBlack, mb: 1.5 }}>Our Story</Typography>
-                  <TextField fullWidth multiline rows={4} placeholder="Share your love story..." value={website.story} onChange={e => updateWebsite({ story: e.target.value })} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
+                  <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 16, color: T.primaryBlack, mb: 0.5 }}>Our Story</Typography>
+                  <Typography sx={{ fontFamily: T.font, fontSize: 13, color: T.textSub, mb: 1.5 }}>Write a short narrative about how you met and your journey together</Typography>
+                  <TextField fullWidth multiline rows={4} placeholder="We met at a friend's birthday party in 2020 and instantly hit it off..." value={website.story} onChange={e => updateWebsite({ story: e.target.value })} sx={{ '& .MuiInputBase-root': { fontFamily: T.font } }} />
                 </Box>
                 <Box>
                   <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 16, color: T.primaryBlack, mb: 1.5 }}>Custom URL</Typography>
@@ -722,20 +762,14 @@ export default function WeddingWebsite() {
                 {/* COLOUR PALETTE */}
                 <ColorPalettePicker activePaletteId={activePaletteId} customColors={website.customColors} onSelectPalette={selectPalette} onCustomColorChange={updateCustomColor} />
 
-                {/* Theme */}
-                <Box>
-                  <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 16, color: T.primaryBlack, mb: 1.5 }}>Template Theme</Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 2 }}>
-                    {themes.map(theme => (
-                      <Box key={theme.id} onClick={() => updateWebsite({ theme: theme.id })} sx={{ p: 2, cursor: 'pointer', borderRadius: '6px', border: website.theme === theme.id ? `2px solid ${T.primary}` : '1px solid rgba(0,131,143,0.15)', transition: 'all 0.2s', '&:hover': { borderColor: T.primary } }}>
-                        <Box sx={{ display: 'flex', gap: 0.5, mb: 1 }}><Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: theme.primary }} /><Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: theme.secondary }} /><Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: theme.bg, border: '1px solid #e0e0e0' }} /></Box>
-                        <Typography sx={{ fontFamily: T.font, fontWeight: 600, fontSize: 13, color: T.primaryBlack }}>{theme.name}</Typography>
-                        {website.theme === theme.id && <Chip label="Active" size="small" sx={{ mt: 0.5, height: 20, fontSize: 10, fontWeight: 700, bgcolor: 'rgba(0,131,143,0.1)', color: T.primary }} />}
-                      </Box>
-                    ))}
+                {/* Change template link */}
+                <Box sx={{ borderTop: '1px solid rgba(0,131,143,0.1)', pt: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography sx={{ fontFamily: T.font, fontWeight: 600, fontSize: 14, color: T.primaryBlack }}>Current Template</Typography>
+                    <Typography sx={{ fontFamily: T.font, fontSize: 13, color: T.textSub }}>{currentTemplate?.name || 'None selected'} {currentTemplate?.category ? `· ${currentTemplate.category}` : ''}</Typography>
                   </Box>
+                  <Button onClick={() => setView('gallery')} startIcon={<Palette />} sx={{ textTransform: 'none', fontFamily: T.font, fontWeight: 600, fontSize: 13, color: T.primary, '&:hover': { bgcolor: 'rgba(0,131,143,0.04)' } }}>Change Template</Button>
                 </Box>
-                <Button onClick={() => setView('gallery')} startIcon={<Palette />} sx={{ textTransform: 'none', fontFamily: T.font, fontWeight: 600, fontSize: 14, color: T.primary, borderTop: '1px solid rgba(0,131,143,0.1)', pt: 2, '&:hover': { bgcolor: 'rgba(0,131,143,0.04)' } }}>Change Template</Button>
               </Box>
             )}
           </Box>
@@ -833,28 +867,352 @@ export default function WeddingWebsite() {
       </Dialog>
 
       {/* PREVIEW DIALOG */}
-      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,131,143,0.15)' }}>
-          <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 18, color: T.primaryBlack }}>Website Preview</Typography>
-          <IconButton onClick={() => setPreviewOpen(false)} size="small"><Close /></IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
-          <Box sx={{ bgcolor: website.customColors.bg || currentTheme.bg, minHeight: 500 }}>
-            {/* Hero */}
-            <Box sx={{ height: 300, backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${website.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', textAlign: 'center' }}>
-              <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 12, letterSpacing: 4, mb: 1, opacity: 0.9 }}>WE'RE GETTING MARRIED</Typography>
-              <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: 42, fontWeight: 700 }}>{website.coupleNames.partner1 || 'Partner 1'} & {website.coupleNames.partner2 || 'Partner 2'}</Typography>
-              {website.weddingDate && <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 18, mt: 1.5 }}>{new Date(website.weddingDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</Typography>}
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: '14px', overflow: 'hidden', maxHeight: '92vh', boxShadow: '0 24px 80px rgba(0,0,0,0.25)' } }}>
+        {/* Browser chrome */}
+        <Box sx={{ display: 'flex', alignItems: 'center', px: 2.5, py: 1.5, bgcolor: '#fafafa', borderBottom: '1px solid #e8e8e8', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.7 }}>
+            <Box sx={{ width: 11, height: 11, borderRadius: '50%', bgcolor: '#ff5f57', transition: 'opacity 0.15s', '&:hover': { opacity: 0.8 } }} />
+            <Box sx={{ width: 11, height: 11, borderRadius: '50%', bgcolor: '#febc2e' }} />
+            <Box sx={{ width: 11, height: 11, borderRadius: '50%', bgcolor: '#28c840' }} />
+          </Box>
+          <Box sx={{ flex: 1, px: 2, py: 0.7, bgcolor: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8 }}>
+            <Lock sx={{ fontSize: 11, color: '#28c840' }} />
+            <Typography sx={{ fontFamily: "'SF Mono', 'Monaco', monospace", fontSize: 11.5, color: '#666', letterSpacing: 0.2 }}>{websiteUrl}</Typography>
+          </Box>
+          <IconButton onClick={() => setPreviewOpen(false)} size="small" sx={{ color: '#aaa', '&:hover': { color: '#666', bgcolor: 'rgba(0,0,0,0.04)' } }}><Close sx={{ fontSize: 17 }} /></IconButton>
+        </Box>
+
+        <DialogContent sx={{ p: 0, bgcolor: website.customColors.bg || '#faf9f6' }}>
+          {/* ════════════ HERO ════════════ */}
+          <Box sx={{
+            height: { xs: 380, md: 480 },
+            backgroundImage: `linear-gradient(160deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.5) 100%), url(${website.coverImage})`,
+            backgroundSize: 'cover', backgroundPosition: 'center',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: 'white', textAlign: 'center', position: 'relative', overflow: 'hidden',
+          }}>
+            {/* Decorative top border */}
+            <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: `linear-gradient(90deg, ${website.customColors.primary}, ${website.customColors.secondary}, ${website.customColors.accent})` }} />
+            {/* Decorative frame */}
+            <Box sx={{ position: 'absolute', inset: { xs: 16, md: 28 }, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '2px', pointerEvents: 'none' }} />
+            {/* Top ornament */}
+            <Typography sx={{ fontSize: { xs: 22, md: 28 }, opacity: 0.5, mb: 1, letterSpacing: 3 }}>&#10047; &#10047; &#10047;</Typography>
+            <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: { xs: 11, md: 13 }, letterSpacing: { xs: 4, md: 8 }, mb: 1.5, opacity: 0.8, textTransform: 'uppercase', fontWeight: 300 }}>We&apos;re Getting Married</Typography>
+            <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 38, md: 56 }, fontWeight: 700, lineHeight: 1.05, textShadow: '0 3px 20px rgba(0,0,0,0.3)', px: 2 }}>
+              {website.coupleNames.partner1 || 'Partner 1'}<Box component="span" sx={{ display: { xs: 'block', md: 'inline' }, mx: { md: 1.5 }, fontSize: { xs: 24, md: 32 }, fontWeight: 300, opacity: 0.7 }}>&</Box>{website.coupleNames.partner2 || 'Partner 2'}
+            </Typography>
+            {/* Decorative line under names */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 2.5, mb: 1 }}>
+              <Box sx={{ width: 40, height: 1, bgcolor: 'rgba(255,255,255,0.4)' }} />
+              <Favorite sx={{ fontSize: 14, opacity: 0.6 }} />
+              <Box sx={{ width: 40, height: 1, bgcolor: 'rgba(255,255,255,0.4)' }} />
             </Box>
-            <Box sx={{ maxWidth: 600, mx: 'auto', p: 4, textAlign: 'center' }}>
-              {website.story && (<><Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: 22, fontWeight: 600, color: website.customColors.primary, mb: 2 }}>Our Story</Typography><Typography sx={{ fontFamily: getFont(website.bodyFont), color: '#666', mb: 4, lineHeight: 1.8 }}>{website.story}</Typography></>)}
-              {website.venue.name && (<><Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: 22, fontWeight: 600, color: website.customColors.primary, mb: 2, mt: 2 }}><LocationOn sx={{ mr: 0.5, verticalAlign: 'middle' }} /> Venue</Typography><Typography sx={{ fontFamily: getFont(website.bodyFont), fontWeight: 600 }}>{website.venue.name}</Typography><Typography sx={{ fontFamily: getFont(website.bodyFont), color: '#666' }}>{website.venue.address}</Typography></>)}
-              {website.schedule.length > 0 && (<><Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: 22, fontWeight: 600, color: website.customColors.primary, mb: 2, mt: 4 }}>Schedule</Typography>{website.schedule.map(evt => <Box key={evt.id} sx={{ mb: 1.5 }}><Typography sx={{ fontFamily: getFont(website.bodyFont), fontWeight: 600 }}>{evt.time && formatTime(evt.time)} – {evt.event}</Typography>{evt.location && <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 14, color: '#666' }}>{evt.location}</Typography>}</Box>)}</>)}
-              {website.faq.length > 0 && (<><Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: 22, fontWeight: 600, color: website.customColors.primary, mb: 2, mt: 4 }}>Q&A</Typography>{website.faq.map(f => <Box key={f.id} sx={{ mb: 2, textAlign: 'left' }}><Typography sx={{ fontFamily: getFont(website.bodyFont), fontWeight: 700, mb: 0.5 }}>{f.question}</Typography><Typography sx={{ fontFamily: getFont(website.bodyFont), color: '#666', fontSize: 14 }}>{f.answer}</Typography></Box>)}</>)}
-              {website.hotels.length > 0 && (<><Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: 22, fontWeight: 600, color: website.customColors.primary, mb: 2, mt: 4 }}>Accommodations</Typography>{website.hotels.map(h => <Box key={h.id} sx={{ mb: 2 }}><Typography sx={{ fontFamily: getFont(website.bodyFont), fontWeight: 600 }}>{h.name}</Typography><Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 14, color: '#666' }}>{h.address}{h.rate && ` · ${h.rate}`}</Typography></Box>)}</>)}
-              {website.rsvpEnabled && <Button variant="contained" size="large" sx={{ mt: 4, bgcolor: website.customColors.primary, '&:hover': { filter: 'brightness(0.85)' }, px: 5, py: 1.5, textTransform: 'none', fontWeight: 700, fontFamily: getFont(website.headingFont), borderRadius: '6px' }}>RSVP Now</Button>}
-              {website.privacyEnabled && <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 12, color: T.textSub, mt: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}><Lock sx={{ fontSize: 14 }} /> Password protected</Typography>}
+            {website.weddingDate && (
+              <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: { xs: 15, md: 19 }, opacity: 0.9, letterSpacing: 1 }}>
+                {new Date(website.weddingDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </Typography>
+            )}
+            {website.venue.name && (
+              <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: { xs: 12, md: 14 }, mt: 0.8, opacity: 0.65, letterSpacing: 0.5 }}>
+                <LocationOn sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.3 }} />
+                {website.venue.name}{website.venue.address ? ` \u00b7 ${website.venue.address}` : ''}
+              </Typography>
+            )}
+            {/* Countdown */}
+            {website.weddingDate && (() => {
+              const diff = new Date(website.weddingDate).getTime() - Date.now()
+              if (diff <= 0) return null
+              const totalDays = Math.ceil(diff / (1000 * 60 * 60 * 24))
+              const months = Math.floor(totalDays / 30)
+              const days = totalDays % 30
+              const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+              return (
+                <Box sx={{ display: 'flex', gap: { xs: 1.5, md: 2.5 }, mt: 3.5 }}>
+                  {[
+                    { val: months, label: 'Months' },
+                    { val: days, label: 'Days' },
+                    { val: hours, label: 'Hours' },
+                  ].map(c => (
+                    <Box key={c.label} sx={{ textAlign: 'center', minWidth: { xs: 56, md: 72 }, py: { xs: 1.2, md: 1.5 }, px: { xs: 1, md: 1.5 }, borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                      <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 24, md: 32 }, fontWeight: 700, lineHeight: 1 }}>{c.val}</Typography>
+                      <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: { xs: 9, md: 10 }, letterSpacing: 1.2, textTransform: 'uppercase', opacity: 0.7, mt: 0.3 }}>{c.label}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )
+            })()}
+          </Box>
+
+          {/* ════════════ WEBSITE NAV ════════════ */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: { xs: 1.5, md: 3.5 }, py: 2, bgcolor: '#fff', borderBottom: `2px solid ${website.customColors.primary}10`, flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+            {['Our Story', website.schedule.length > 0 && 'Schedule', website.faq.length > 0 && 'Q&A', website.venue.name && 'Venue', website.hotels.length > 0 && 'Travel', website.photos.length > 0 && 'Gallery', website.rsvpEnabled && 'RSVP'].filter(Boolean).map(link => (
+              <Typography key={link as string} sx={{ fontFamily: getFont(website.bodyFont), fontSize: 12, fontWeight: 600, color: website.customColors.primary, letterSpacing: 1.2, textTransform: 'uppercase', cursor: 'default', px: 1, py: 0.3, borderRadius: '4px', transition: 'all 0.15s', '&:hover': { bgcolor: `${website.customColors.primary}08` } }}>{link}</Typography>
+            ))}
+          </Box>
+
+          {/* ════════════ CONTENT ════════════ */}
+          <Box sx={{ maxWidth: 720, mx: 'auto', px: { xs: 2.5, md: 5 } }}>
+
+            {/* ── Our Story ── */}
+            {website.story && (
+              <Box sx={{ textAlign: 'center', py: { xs: 5, md: 7 } }}>
+                <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 11, letterSpacing: 4, textTransform: 'uppercase', color: website.customColors.secondary, mb: 1 }}>About Us</Typography>
+                <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 28, md: 36 }, fontWeight: 700, color: website.customColors.primary, mb: 1 }}>Our Story</Typography>
+                {/* Ornamental divider */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 3.5 }}>
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                  <Favorite sx={{ fontSize: 12, color: website.customColors.secondary, opacity: 0.6 }} />
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                </Box>
+                <Box sx={{ maxWidth: 580, mx: 'auto', p: { xs: 2.5, md: 4 }, borderRadius: '12px', bgcolor: '#fff', boxShadow: '0 1px 12px rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.04)', position: 'relative' }}>
+                  {/* Decorative quote mark */}
+                  <Typography sx={{ position: 'absolute', top: -8, left: 24, fontSize: 48, fontFamily: 'Georgia, serif', color: website.customColors.secondary, opacity: 0.2, lineHeight: 1 }}>&ldquo;</Typography>
+                  <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: { xs: 15, md: 16 }, color: website.customColors.text || '#555', lineHeight: 2, whiteSpace: 'pre-line', fontStyle: 'italic' }}>{website.story}</Typography>
+                </Box>
+              </Box>
+            )}
+
+            {/* Section divider */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+              <Box sx={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${website.customColors.secondary}30)` }} />
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: website.customColors.secondary, opacity: 0.3 }} />
+              <Box sx={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${website.customColors.secondary}30, transparent)` }} />
             </Box>
+
+            {/* ── When & Where ── */}
+            {(website.weddingDate || website.venue.name) && (
+              <Box sx={{ textAlign: 'center', py: { xs: 5, md: 7 } }}>
+                <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 11, letterSpacing: 4, textTransform: 'uppercase', color: website.customColors.secondary, mb: 1 }}>The Details</Typography>
+                <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 28, md: 36 }, fontWeight: 700, color: website.customColors.primary, mb: 1 }}>When & Where</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 4 }}>
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                  <Favorite sx={{ fontSize: 12, color: website.customColors.secondary, opacity: 0.6 }} />
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                </Box>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, justifyContent: 'center' }}>
+                  {website.weddingDate && (
+                    <Box sx={{ flex: '1 1 220px', maxWidth: 320, p: 3.5, borderRadius: '14px', bgcolor: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.04)', border: `1px solid ${website.customColors.primary}12`, position: 'relative', overflow: 'hidden' }}>
+                      <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, bgcolor: website.customColors.secondary }} />
+                      <Box sx={{ width: 52, height: 52, borderRadius: '50%', bgcolor: `${website.customColors.secondary}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                        <Schedule sx={{ fontSize: 24, color: website.customColors.secondary }} />
+                      </Box>
+                      <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: 18, fontWeight: 700, color: website.customColors.text || '#333', mb: 1 }}>Date & Time</Typography>
+                      <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 15, color: '#555' }}>{new Date(website.weddingDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</Typography>
+                      {website.weddingTime && <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 14, color: '#888', mt: 0.5 }}>{formatTime(website.weddingTime)}</Typography>}
+                    </Box>
+                  )}
+                  {website.venue.name && (
+                    <Box sx={{ flex: '1 1 220px', maxWidth: 320, p: 3.5, borderRadius: '14px', bgcolor: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.04)', border: `1px solid ${website.customColors.primary}12`, position: 'relative', overflow: 'hidden' }}>
+                      <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, bgcolor: website.customColors.secondary }} />
+                      <Box sx={{ width: 52, height: 52, borderRadius: '50%', bgcolor: `${website.customColors.secondary}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                        <LocationOn sx={{ fontSize: 24, color: website.customColors.secondary }} />
+                      </Box>
+                      <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: 18, fontWeight: 700, color: website.customColors.text || '#333', mb: 1 }}>Venue</Typography>
+                      <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 15, color: '#555' }}>{website.venue.name}</Typography>
+                      {website.venue.address && <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 13, color: '#888', mt: 0.5 }}>{website.venue.address}</Typography>}
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            )}
+
+            {/* Section divider */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+              <Box sx={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${website.customColors.secondary}30)` }} />
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: website.customColors.secondary, opacity: 0.3 }} />
+              <Box sx={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${website.customColors.secondary}30, transparent)` }} />
+            </Box>
+
+            {/* ── Schedule Timeline ── */}
+            {website.schedule.length > 0 && (
+              <Box sx={{ textAlign: 'center', py: { xs: 5, md: 7 } }}>
+                <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 11, letterSpacing: 4, textTransform: 'uppercase', color: website.customColors.secondary, mb: 1 }}>The Day</Typography>
+                <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 28, md: 36 }, fontWeight: 700, color: website.customColors.primary, mb: 1 }}>Schedule</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 4 }}>
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                  <Schedule sx={{ fontSize: 14, color: website.customColors.secondary, opacity: 0.6 }} />
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, position: 'relative', px: { xs: 1, md: 0 } }}>
+                  {/* Timeline Vertical line */}
+                  <Box sx={{ position: 'absolute', left: '50%', top: 8, bottom: 8, width: 2, background: `linear-gradient(${website.customColors.secondary}40, ${website.customColors.primary}40)`, transform: 'translateX(-50%)', borderRadius: 1 }} />
+                  {website.schedule.map((evt, i) => (
+                    <Box key={evt.id} sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, md: 2.5 }, py: 2, position: 'relative', flexDirection: i % 2 === 0 ? 'row' : 'row-reverse' }}>
+                      <Box sx={{ flex: 1, textAlign: i % 2 === 0 ? 'right' : 'left', px: 1.5 }}>
+                        <Box sx={{ display: 'inline-block', px: 2, py: 0.8, borderRadius: '20px', bgcolor: `${website.customColors.primary}08`, border: `1px solid ${website.customColors.primary}18` }}>
+                          <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 13, fontWeight: 700, color: website.customColors.primary }}>{evt.time ? formatTime(evt.time) : ''}</Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: '#fff', border: `3px solid ${website.customColors.secondary}`, boxShadow: `0 0 0 4px ${website.customColors.secondary}18`, zIndex: 1, flexShrink: 0 }} />
+                      <Box sx={{ flex: 1, textAlign: i % 2 === 0 ? 'left' : 'right', px: 1.5 }}>
+                        <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 15, md: 17 }, fontWeight: 700, color: website.customColors.text || '#333' }}>{evt.event}</Typography>
+                        {evt.location && <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 12, color: '#888', mt: 0.3 }}><LocationOn sx={{ fontSize: 12, verticalAlign: 'middle', mr: 0.3 }} />{evt.location}</Typography>}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* Section divider */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+              <Box sx={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${website.customColors.secondary}30)` }} />
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: website.customColors.secondary, opacity: 0.3 }} />
+              <Box sx={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${website.customColors.secondary}30, transparent)` }} />
+            </Box>
+
+            {/* ── Q&A ── */}
+            {website.faq.length > 0 && (
+              <Box sx={{ textAlign: 'center', py: { xs: 5, md: 7 } }}>
+                <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 11, letterSpacing: 4, textTransform: 'uppercase', color: website.customColors.secondary, mb: 1 }}>Have Questions?</Typography>
+                <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 28, md: 36 }, fontWeight: 700, color: website.customColors.primary, mb: 1 }}>Questions & Answers</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 4 }}>
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                  <Favorite sx={{ fontSize: 12, color: website.customColors.secondary, opacity: 0.6 }} />
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {website.faq.map((faq, idx) => (
+                    <Box key={faq.id} sx={{ textAlign: 'left', p: { xs: 2.5, md: 3.5 }, borderRadius: '14px', bgcolor: '#fff', border: `1px solid ${website.customColors.primary}10`, boxShadow: '0 2px 12px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden' }}>
+                      <Box sx={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', bgcolor: website.customColors.secondary, borderRadius: '4px 0 0 4px' }} />
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', pl: 1.5 }}>
+                        <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: `${website.customColors.secondary}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: 0.3 }}>
+                          <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: 14, fontWeight: 700, color: website.customColors.secondary }}>Q{idx+1}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 15, md: 16 }, fontWeight: 700, color: website.customColors.text || '#333', mb: 0.8 }}>{faq.question}</Typography>
+                          <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 14, color: '#666', lineHeight: 1.8 }}>{faq.answer}</Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* Section divider */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+              <Box sx={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${website.customColors.secondary}30)` }} />
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: website.customColors.secondary, opacity: 0.3 }} />
+              <Box sx={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${website.customColors.secondary}30, transparent)` }} />
+            </Box>
+
+            {/* ── Travel & Stay ── */}
+            {(website.hotels.length > 0 || website.travelNotes || website.transportation) && (
+              <Box sx={{ textAlign: 'center', py: { xs: 5, md: 7 } }}>
+                <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 11, letterSpacing: 4, textTransform: 'uppercase', color: website.customColors.secondary, mb: 1 }}>Getting Here</Typography>
+                <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 28, md: 36 }, fontWeight: 700, color: website.customColors.primary, mb: 1 }}>Travel & Stay</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 4 }}>
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                  <DirectionsCar sx={{ fontSize: 14, color: website.customColors.secondary, opacity: 0.6 }} />
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                </Box>
+                {(website.travelNotes || website.transportation) && (
+                  <Box sx={{ textAlign: 'left', mb: 4, p: 3, borderRadius: '14px', bgcolor: '#fff', border: `1px solid ${website.customColors.primary}10`, boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
+                    {website.travelNotes && <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 15, color: '#555', lineHeight: 1.9, mb: website.transportation ? 2 : 0 }}>{website.travelNotes}</Typography>}
+                    {website.transportation && (
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 2.5, bgcolor: `${website.customColors.secondary}06`, borderRadius: '10px', border: `1px dashed ${website.customColors.secondary}30` }}>
+                        <Box sx={{ width: 36, height: 36, borderRadius: '8px', bgcolor: `${website.customColors.secondary}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: 0.2 }}>
+                          <DirectionsCar sx={{ fontSize: 18, color: website.customColors.secondary }} />
+                        </Box>
+                        <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 14, color: '#555', lineHeight: 1.8 }}>{website.transportation}</Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+                {website.hotels.length > 0 && (
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                    {website.hotels.map(hotel => (
+                      <Box key={hotel.id} sx={{ textAlign: 'left', p: 3, borderRadius: '14px', bgcolor: '#fff', border: `1px solid ${website.customColors.primary}10`, boxShadow: '0 2px 12px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden' }}>
+                        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${website.customColors.secondary}, ${website.customColors.primary})` }} />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                          <Box sx={{ width: 40, height: 40, borderRadius: '10px', bgcolor: `${website.customColors.primary}08`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Hotel sx={{ fontSize: 20, color: website.customColors.primary }} />
+                          </Box>
+                          <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: 17, fontWeight: 700, color: website.customColors.text || '#333' }}>{hotel.name}</Typography>
+                        </Box>
+                        {hotel.address && <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 13, color: '#666', mb: 0.5, pl: 0.5 }}>{hotel.address}</Typography>}
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.5 }}>
+                          {hotel.rate && <Chip size="small" label={hotel.rate} sx={{ fontFamily: T.font, fontWeight: 600, fontSize: 11, bgcolor: `${website.customColors.primary}10`, color: website.customColors.primary, height: 26, borderRadius: '6px' }} />}
+                          {hotel.distance && <Chip size="small" label={`${hotel.distance} from venue`} sx={{ fontFamily: T.font, fontSize: 11, bgcolor: 'rgba(0,0,0,0.04)', color: '#666', height: 26, borderRadius: '6px' }} />}
+                          {hotel.deadline && <Chip size="small" label={`Book by ${hotel.deadline}`} sx={{ fontFamily: T.font, fontSize: 11, bgcolor: `${T.accent}10`, color: T.accent, fontWeight: 600, height: 26, borderRadius: '6px' }} />}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {/* Section divider */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+              <Box sx={{ flex: 1, height: 1, background: `linear-gradient(90deg, transparent, ${website.customColors.secondary}30)` }} />
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: website.customColors.secondary, opacity: 0.3 }} />
+              <Box sx={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${website.customColors.secondary}30, transparent)` }} />
+            </Box>
+
+            {/* ── Photo Gallery ── */}
+            {website.photos.length > 0 && (
+              <Box sx={{ textAlign: 'center', py: { xs: 5, md: 7 } }}>
+                <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 11, letterSpacing: 4, textTransform: 'uppercase', color: website.customColors.secondary, mb: 1 }}>Memories</Typography>
+                <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 28, md: 36 }, fontWeight: 700, color: website.customColors.primary, mb: 1 }}>Gallery</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 4 }}>
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                  <PhotoLibrary sx={{ fontSize: 14, color: website.customColors.secondary, opacity: 0.6 }} />
+                  <Box sx={{ width: 50, height: 1, bgcolor: website.customColors.secondary, opacity: 0.4 }} />
+                </Box>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 1.5 }}>
+                  {website.photos.map((photo, i) => (
+                    <Box key={i} sx={{
+                      aspectRatio: i === 0 && website.photos.length > 2 ? '2/1.2' : '1',
+                      gridColumn: i === 0 && website.photos.length > 2 ? { md: 'span 2' } : 'span 1',
+                      borderRadius: '12px', overflow: 'hidden', position: 'relative',
+                      '&:hover img': { transform: 'scale(1.05)' },
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                    }}>
+                      <img src={photo} alt={`Gallery ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }} />
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {/* ── RSVP CTA ── */}
+            {website.rsvpEnabled && (
+              <Box sx={{ textAlign: 'center', py: { xs: 7, md: 9 }, position: 'relative' }}>
+                {/* Decorative bg */}
+                <Box sx={{ position: 'absolute', inset: 0, borderRadius: '20px', bgcolor: `${website.customColors.primary}04`, border: `1px dashed ${website.customColors.primary}15` }} />
+                <Box sx={{ position: 'relative', zIndex: 1 }}>
+                  <Typography sx={{ fontSize: 36, mb: 1 }}>&#128141;</Typography>
+                  <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 28, md: 36 }, fontWeight: 700, color: website.customColors.primary, mb: 1 }}>Will You Be There?</Typography>
+                  <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 15, color: '#888', mb: 3.5, maxWidth: 380, mx: 'auto' }}>We would be honoured to have you celebrate this special day with us</Typography>
+                  <Button variant="contained" size="large" sx={{
+                    bgcolor: website.customColors.primary, '&:hover': { filter: 'brightness(0.88)', bgcolor: website.customColors.primary },
+                    px: { xs: 5, md: 7 }, py: { xs: 1.5, md: 2 }, textTransform: 'none', fontWeight: 700, fontSize: { xs: 16, md: 18 },
+                    fontFamily: getFont(website.headingFont), borderRadius: '50px', letterSpacing: 0.5,
+                    boxShadow: `0 6px 24px ${website.customColors.primary}35`,
+                  }}>RSVP Now</Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          {/* ════════════ FOOTER ════════════ */}
+          <Box sx={{ textAlign: 'center', py: 5, mt: 4, bgcolor: website.customColors.primary, color: '#fff', position: 'relative', overflow: 'hidden' }}>
+            {/* Decorative top border */}
+            <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${website.customColors.secondary}, ${website.customColors.accent}, ${website.customColors.secondary})` }} />
+            {/* Ornament */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 2 }}>
+              <Box sx={{ width: 40, height: 1, bgcolor: 'rgba(255,255,255,0.25)' }} />
+              <Favorite sx={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }} />
+              <Box sx={{ width: 40, height: 1, bgcolor: 'rgba(255,255,255,0.25)' }} />
+            </Box>
+            <Typography sx={{ fontFamily: getFont(website.headingFont), fontSize: { xs: 22, md: 26 }, fontWeight: 700, opacity: 0.95 }}>
+              {website.coupleNames.partner1 || 'Partner 1'} & {website.coupleNames.partner2 || 'Partner 2'}
+            </Typography>
+            {website.weddingDate && <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 13, opacity: 0.7, mt: 0.5, letterSpacing: 1 }}>{new Date(website.weddingDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</Typography>}
+            {website.privacyEnabled && <Typography sx={{ fontFamily: getFont(website.bodyFont), fontSize: 11, opacity: 0.5, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}><Lock sx={{ fontSize: 12 }} /> Password protected</Typography>}
+            <Typography sx={{ fontFamily: T.font, fontSize: 11, opacity: 0.35, mt: 2.5 }}>Made with iTheeWed</Typography>
           </Box>
         </DialogContent>
       </Dialog>

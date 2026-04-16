@@ -128,7 +128,7 @@ const NotificationPanel: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            bgcolor: '#FFF6F9',
+            bgcolor: '#FFFFFF',
             borderBottom: '1px solid #CCFDF2',
           }}
         >
@@ -214,7 +214,7 @@ const NotificationPanel: React.FC = () => {
                     {notification.avatar ? (
                       <Avatar src={notification.avatar} sx={{ width: 44, height: 44 }} />
                     ) : (
-                      <Avatar sx={{ bgcolor: '#FFF6F9', width: 44, height: 44 }}>
+                      <Avatar sx={{ bgcolor: '#FFFFFF', width: 44, height: 44 }}>
                         {getNotificationIcon(notification.type)}
                       </Avatar>
                     )}

@@ -116,7 +116,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <Box sx={{ backgroundColor: '#FFF6F9', minHeight: '100vh' }}>
+    <Box sx={{ backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
       <Nav />
 
       {/* Welcome Banner */}

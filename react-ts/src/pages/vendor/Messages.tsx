@@ -272,7 +272,7 @@ export default function VendorMessages() {
                 alignItems: 'flex-start',
                 gap: 2,
                 cursor: 'pointer',
-                bgcolor: selectedConversation.id === conv.id ? '#FFF6F9' : 'transparent',
+                bgcolor: selectedConversation.id === conv.id ? '#FFFFFF' : 'transparent',
                 borderLeft: selectedConversation.id === conv.id ? '3px solid #00838F' : '3px solid transparent',
                 '&:hover': { bgcolor: '#fafafa' },
               }}

@@ -16,7 +16,6 @@ import {
   Alert
 } from '@mui/material';
 import { 
-  ArrowBack, 
   Search, 
   FilterList, 
   LocationOn, 
@@ -33,6 +32,7 @@ import {
   LastPage
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import BackButton from '../../components/BackButton';
 import Nav from '../../components/Nav';
 import Footer from '../../components/Footer';
 import { useShortlist } from '../../contexts/ShortlistContext';
@@ -493,19 +493,7 @@ export default function SearchResults() {
 
       {/* Header Section */}
       <Box sx={{ px: 4, pt: 3, pb: 2 }}>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(-1)}
-          sx={{
-            color: '#002528',
-            mb: 2,
-            fontFamily: "'Open Sans', sans-serif",
-            fontSize: 16,
-            textTransform: 'none'
-          }}
-        >
-          Back
-        </Button>
+        <BackButton fallbackPath="/" sx={{ mb: 2 }} />
 
         <Typography sx={{
           fontFamily: "'Open Sans', sans-serif",

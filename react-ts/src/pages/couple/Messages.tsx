@@ -18,6 +18,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Nav from '../../components/Nav';
 import Footer from '../../components/Footer';
+import BackButton from '../../components/BackButton';
 import { useNotifications } from '../../contexts/NotificationContext';
 
 interface Message {
@@ -201,6 +202,7 @@ const Messages: React.FC = () => {
       
       {/* Page Header */}
       <Box sx={{ px: 4, py: 3 }}>
+        <BackButton fallbackPath="/couple/dashboard" sx={{ mb: 2 }} />
         <Typography sx={{ 
           fontFamily: "'Open Sans', sans-serif", 
           fontWeight: 700, 

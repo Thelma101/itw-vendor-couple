@@ -19,7 +19,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import BackButton from '../../components/BackButton';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -123,25 +123,12 @@ const Booking: React.FC = () => {
   };
 
   return (
-    <Box sx={{ backgroundColor: '#FFF6F9', minHeight: '100vh' }}>
+    <Box sx={{ backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
       <Nav />
       
       {/* Header */}
       <Box sx={{ px: 4, py: 3 }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(-1)}
-          sx={{
-            fontFamily: "'Open Sans', sans-serif",
-            fontWeight: 600,
-            fontSize: 14,
-            color: '#002528',
-            textTransform: 'none',
-            mb: 2
-          }}
-        >
-          Back
-        </Button>
+        <BackButton fallbackPath="/couple/shortlist" sx={{ mb: 2 }} />
 
         <Typography sx={{
           fontFamily: "'Open Sans', sans-serif",

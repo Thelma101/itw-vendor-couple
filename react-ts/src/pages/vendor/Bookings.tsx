@@ -583,7 +583,7 @@ export default function VendorBookings() {
                 </Grid>
                 {selectedBooking.specialRequests && (
                   <Grid size={{ xs: 12 }}>
-                    <Card sx={{ p: 2, bgcolor: '#FFF6F9', border: 'none', boxShadow: 'none' }}>
+                    <Card sx={{ p: 2, bgcolor: '#FFFFFF', border: 'none', boxShadow: 'none' }}>
                       <Typography sx={{ fontWeight: 600, mb: 1, color: '#002528' }}>
                         Special Requests
                       </Typography>

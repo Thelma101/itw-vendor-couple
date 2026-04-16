@@ -249,7 +249,7 @@ export default function Analytics() {
         <Grid container spacing={3}>
           {recentReviews.map((review, index) => (
             <Grid size={{ xs: 12, md: 4 }} key={index}>
-              <Box sx={{ p: 2, bgcolor: '#FFF6F9', borderRadius: 2 }}>
+              <Box sx={{ p: 2, bgcolor: '#FFFFFF', borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography sx={{ fontWeight: 600, fontSize: 14, color: '#002528' }}>{review.couple}</Typography>
                   <Box sx={{ display: 'flex', gap: 0.25 }}>

@@ -35,6 +35,7 @@ import {
 } from '@mui/icons-material'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
+import BackButton from '@/components/BackButton'
 import { mockVendors, type Vendor } from '@/data/mockVendors'
 
 interface CompareVendor extends Vendor {
@@ -196,6 +197,7 @@ export default function VendorCompare() {
       <Box sx={{ maxWidth: 1400, mx: 'auto', px: { xs: 2, md: 3 }, py: { xs: 2, md: 4 } }}>
         {/* Header */}
         <Box sx={{ mb: 3 }}>
+          <BackButton fallbackPath="/couple/search-results" sx={{ mb: 2 }} />
           <Typography variant="h4" fontWeight={700} color="#1a1a1a" gutterBottom sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
             Compare Vendors
           </Typography>

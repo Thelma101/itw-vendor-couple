@@ -175,7 +175,7 @@ export default function EnhancedBookingFlow({ vendor, onComplete }: EnhancedBook
             Your booking reference: <strong>{bookingReference}</strong>
           </Typography>
           
-          <Card sx={{ p: 3, bgcolor: '#FFF6F9', mb: 3 }}>
+          <Card sx={{ p: 3, bgcolor: '#FFFFFF', mb: 3 }}>
             <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 2 }}>
               Booking Summary
             </Typography>
@@ -480,7 +480,7 @@ export default function EnhancedBookingFlow({ vendor, onComplete }: EnhancedBook
               </RadioGroup>
             </FormControl>
 
-            <Card sx={{ p: 3, mt: 3, bgcolor: '#FFF6F9' }}>
+            <Card sx={{ p: 3, mt: 3, bgcolor: '#FFFFFF' }}>
               <Typography sx={{ fontWeight: 600, mb: 2 }}>
                 Payment Summary
               </Typography>
@@ -570,7 +570,7 @@ export default function EnhancedBookingFlow({ vendor, onComplete }: EnhancedBook
             </Card>
 
             {bookingData.specialRequests && (
-              <Card sx={{ p: 3, bgcolor: '#FFF6F9' }}>
+              <Card sx={{ p: 3, bgcolor: '#FFFFFF' }}>
                 <Typography sx={{ fontWeight: 600, mb: 1 }}>
                   Special Requests:
                 </Typography>

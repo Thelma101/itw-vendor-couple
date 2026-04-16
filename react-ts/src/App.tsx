@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ShortlistProvider } from './contexts/ShortlistContext'
 import { NotificationProvider } from './contexts/NotificationContext'
+import { useAuthFromUrl } from './hooks/useAuthFromUrl'
 import SelectVendors from './pages/couple/SelectVendors'
 import Shortlist from './pages/couple/Shortlist'
 import SearchResults from './pages/couple/SearchResults'
@@ -24,6 +25,8 @@ import Favourites from './pages/couple/Favourites'
 import AskWed from './pages/couple/AskWed'
 import VendorMatching from './pages/couple/VendorMatching'
 import GuestExperienceHub from './pages/couple/GuestExperienceHub'
+import LandingPage from './pages/LandingPage'
+import BlushLandingPage from './pages/BlushLandingPage'
 import VendorDashboardLayout from './layouts/VendorDashboardLayout'
 import Gallery from './pages/vendor/Gallery'
 import AccountInformation from './pages/vendor/AccountInformation'
@@ -44,14 +47,23 @@ import Promotions from './pages/vendor/Promotions'
 import TeamManagement from './pages/vendor/TeamManagement'
 import BusinessInsights from './pages/vendor/BusinessInsights'
 
+/** Receives auth token from signup-flow URL params and stores in localStorage */
+function AuthReceiver({ children }: { children: React.ReactNode }) {
+  useAuthFromUrl();
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <NotificationProvider>
       <ShortlistProvider>
         <BrowserRouter>
+          <AuthReceiver>
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
+            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/landing-blush" element={<BlushLandingPage />} />
             
             {/* Couple Routes (after login) */}
             <Route path="/couple/dashboard" element={<Dashboard />} />
@@ -100,6 +112,7 @@ export default function App() {
               <Route path="subscription/success" element={<SubscriptionSuccess />} />
             </Route>
           </Routes>
+          </AuthReceiver>
         </BrowserRouter>
       </ShortlistProvider>
     </NotificationProvider>

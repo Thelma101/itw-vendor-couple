@@ -226,7 +226,7 @@ export default function DayOfTimeline() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#FFF6F9', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
       <Nav />
       
       <Box sx={{ flex: 1, px: 4, py: 4 }}>

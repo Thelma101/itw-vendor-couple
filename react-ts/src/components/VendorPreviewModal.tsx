@@ -45,6 +45,10 @@ interface VendorPreviewModalProps {
   onBookNow?: (vendorId: string) => void;
   isFavorite: boolean;
   source?: 'home' | 'search'; // Where the modal was opened from
+  onNextVendor?: () => void; // Navigate to next vendor
+  onPrevVendor?: () => void; // Navigate to previous vendor
+  hasNextVendor?: boolean; // Whether there's a next vendor
+  hasPrevVendor?: boolean; // Whether there's a previous vendor
 }
 
 export default function VendorPreviewModal({
@@ -56,6 +60,10 @@ export default function VendorPreviewModal({
   onFavorite,
   onBookNow,
   isFavorite,
+  onNextVendor,
+  onPrevVendor,
+  hasNextVendor = false,
+  hasPrevVendor = false,
 }: VendorPreviewModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -153,6 +161,44 @@ export default function VendorPreviewModal({
             <FavoriteBorder sx={{ color: '#666' }} />
           )}
         </IconButton>
+
+        {/* Previous Vendor Button */}
+        {hasPrevVendor && (
+          <IconButton
+            onClick={onPrevVendor}
+            sx={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              zIndex: 10,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              color: 'white',
+              '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' }
+            }}
+            title="Previous Vendor"
+          >
+            <ArrowBackIos sx={{ fontSize: 18, ml: 0.5 }} />
+          </IconButton>
+        )}
+
+        {/* Next Vendor Button */}
+        {hasNextVendor && (
+          <IconButton
+            onClick={onNextVendor}
+            sx={{
+              position: 'absolute',
+              top: 12,
+              left: hasPrevVendor ? 60 : 12,
+              zIndex: 10,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              color: 'white',
+              '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' }
+            }}
+            title="Next Vendor"
+          >
+            <ArrowForwardIos sx={{ fontSize: 18 }} />
+          </IconButton>
+        )}
 
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
           {/* Image Gallery Section */}

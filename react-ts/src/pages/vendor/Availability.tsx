@@ -147,7 +147,7 @@ export default function Availability() {
                         cursor: isPast ? 'default' : 'pointer',
                         opacity: isPast ? 0.4 : 1,
                         bgcolor: status?.type === 'booked' ? '#E8F5E9' : status?.type === 'blocked' ? '#FFEBEE' : 'transparent',
-                        '&:hover': { bgcolor: !isPast && !status ? '#FFF6F9' : undefined },
+                        '&:hover': { bgcolor: !isPast && !status ? '#FFFFFF' : undefined },
                         position: 'relative',
                       }}
                     >
@@ -209,7 +209,7 @@ export default function Availability() {
                   sx={{
                     p: 2,
                     mb: 2,
-                    bgcolor: '#FFF6F9',
+                    bgcolor: '#FFFFFF',
                     borderRadius: 2,
                     borderLeft: '3px solid #00838F',
                   }}

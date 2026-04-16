@@ -50,7 +50,7 @@ import DeleteConfirmModal from '@/components/DeleteConfirmModal'
 
 /* ───────── tokens (from Figma) ───────── */
 const T = {
-  bg: '#FFF6F9',
+  bg: '#FFFFFF',
   primary: '#00838F',
   primaryBlack: '#002528',
   accentGrad: 'linear-gradient(255.71deg, #EB1948 65.18%, #B52344 232.03%)',

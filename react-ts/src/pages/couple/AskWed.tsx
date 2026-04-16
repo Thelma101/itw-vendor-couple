@@ -1,17 +1,20 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   Box, Typography, TextField, IconButton, Avatar, Chip, Button, Fade, CircularProgress,
+  Tooltip, LinearProgress,
 } from '@mui/material'
 import {
   Send, SmartToy, Person, Lightbulb, AttachMoney, Restaurant, CameraAlt, MusicNote,
   Favorite, Event, LocalFlorist, Celebration, AutoAwesome, Lock,
+  ChecklistRtl, Checkroom, TheaterComedy,
 } from '@mui/icons-material'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
+import { AskWedEngine, type EngineResponse } from '@/lib/askwed-engine'
 
 /* ═══════ TOKENS ═══════ */
 const T = {
-  bg: '#FFF6F9', primary: '#00838F', primaryBlack: '#002528',
+  bg: '#FFFFFF', primary: '#00838F', primaryBlack: '#002528',
   accentGrad: 'linear-gradient(255.71deg, #EB1948 65.18%, #B52344 232.03%)',
   accent: '#EB1948', success: '#008F53',
   text: '#2d2d2d', textSub: '#aaaaaa', font: "'Open Sans', sans-serif",
@@ -19,34 +22,8 @@ const T = {
 }
 
 /* ═══════ TYPES ═══════ */
-interface Message { id: string; role: 'user' | 'assistant'; text: string; timestamp: Date }
+interface Message { id: string; role: 'user' | 'assistant'; text: string; timestamp: Date; meta?: EngineResponse }
 interface SuggestedPrompt { icon: React.ElementType; label: string; prompt: string; premium?: boolean }
-
-/* ═══════ KNOWLEDGE BASE ═══════ */
-const KNOWLEDGE: Record<string, string> = {
-  budget: `Great question about budgeting! Here are key tips:\n\n**Budget Allocation Guide:**\n• Venue & Catering: 40-50%\n• Photography/Video: 10-12%\n• Music & Entertainment: 5-8%\n• Flowers & Décor: 8-10%\n• Attire & Beauty: 8-10%\n• Stationery: 2-3%\n• Transportation: 2-3%\n• Miscellaneous: 5-10%\n\nAlways keep a 10% contingency buffer. Use the Budget Tracker (/couple/budget) to stay on track!`,
-  venue: `When choosing your venue, consider:\n\n1. **Guest count** — venue capacity should be 10-20% more than your list\n2. **Season** — rainy season in Lagos (April-July) means indoor or tented venues\n3. **Location** — central to most guests to reduce no-shows\n4. **Inclusions** — some venues include tables, chairs, generators\n5. **Payment terms** — negotiate instalment plans\n\nPro tip: Visit venues at the same time of day as your event to check lighting and ambience!`,
-  photography: `Photography tips for your big day:\n\n• **Book 9-12 months** in advance for top photographers\n• Ask to see **full wedding galleries**, not just highlights\n• Discuss your shot list — couple portraits, family formals, candid moments\n• **Golden hour** (4-5 PM) gives the best natural light\n• Consider a **second photographer** for large weddings (200+ guests)\n• Ask about delivery timeline — 4-8 weeks is standard\n\nOur platform has top-rated photographers. Check Hire Vendors → Photography!`,
-  catering: `Catering is typically the biggest single expense. Consider:\n\n• **Plated vs buffet** — buffet is usually 20-30% cheaper\n• **Local cuisine** — jollof rice, suya stations, and small chops are crowd pleasers\n• **Tasting** — always do a tasting before booking\n• **Head count** — order for 90% of RSVPs (some guests won't show)\n• **Dietary needs** — ask about vegetarian, halal, and allergy options\n• **Bar packages** — open bar, limited, or cash bar\n\nDon't forget: cake cutting service, cocktail hour snacks, and late-night bites!`,
-  timeline: `Standard Nigerian wedding day timeline:\n\n⏰ **Traditional/Engagement:**\n• 10:00 AM — Venue setup\n• 12:00 PM — Guests arrive\n• 1:00 PM — Ceremony begins\n• 3:00 PM — Reception\n\n⏰ **White Wedding:**\n• 9:00 AM — Bridal prep\n• 11:00 AM — Church ceremony\n• 1:00 PM — Cocktail hour\n• 2:00 PM — Reception\n• 4:00 PM — First dance & toasts\n• 6:00 PM — Party!\n\nUse the Day-of Timeline page (/couple/timeline) to customise yours!`,
-  guest: `Guest list management tips:\n\n• Start with an **A-list** (must-invite) and **B-list** (if budget allows)\n• Set a firm RSVP deadline — 4-6 weeks before the wedding\n• Expect **15-20% decline rate** for Nigerian weddings\n• Use categories: Family, Friends, Colleagues, Plus-ones\n• **Aso-ebi coordination** — collect sizes and payments early\n• Track RSVPs digitally through your Wedding Website\n\nManage your list in the Guest List page (/couple/guests)!`,
-  music: `Music makes or breaks the party! Consider:\n\n• **Live band + DJ combo** is the gold standard for Nigerian weddings\n• Book popular acts 6-12 months ahead\n• Create a **do-not-play** list (as important as the playlist!)\n• Plan sets: Ceremony → Cocktail → Dinner → Party\n• Cultural music: highlife, afrobeats, juju for different crowd segments\n• Sound check the venue — some spaces need extra speakers\n\nBrowse Music vendors on our platform!`,
-  decor: `Décor & styling tips:\n\n• Match your **colour palette** to the season and venue\n• Centrepieces: tall arrangements for large halls, low for intimate settings\n• **Lighting** transforms any space — uplighting, fairy lights, chandeliers\n• Consider **reusing ceremony flowers** at the reception\n• Trends: dried flowers, arches, neon signs, hanging installations\n• DIY elements save money — welcome signs, table numbers, favours\n\nDesign your colour scheme in the Wedding Website settings!`,
-  default: `I'd love to help with your wedding planning! Here are things I can assist with:\n\n💰 **Budget** — allocation, saving tips, negotiation\n🏛️ **Venue** — selection criteria, questions to ask\n📸 **Photography** — booking tips, shot lists\n🍽️ **Catering** — menu planning, tasting tips\n⏰ **Timeline** — day-of scheduling\n👥 **Guest List** — management, RSVPs\n🎵 **Music** — entertainment planning\n🌸 **Décor** — styling and trends\n\nJust ask me anything about your wedding planning journey!`,
-}
-
-const matchTopic = (input: string): string => {
-  const lower = input.toLowerCase()
-  if (/budget|cost|money|price|expensive|cheap|afford|save|spend|allocat/i.test(lower)) return 'budget'
-  if (/venue|hall|location|space|outdoor|indoor|garden|beach/i.test(lower)) return 'venue'
-  if (/photo|camera|picture|portrait|shot|photographer/i.test(lower)) return 'photography'
-  if (/food|cater|menu|dinner|lunch|buffet|chef|cake|drink|bar/i.test(lower)) return 'catering'
-  if (/time|schedule|day.of|itinerary|plan.*day|when|clock|hour/i.test(lower)) return 'timeline'
-  if (/guest|invite|rsvp|list|aso.?ebi|attendance|seat/i.test(lower)) return 'guest'
-  if (/music|band|dj|song|dance|entertainment|live/i.test(lower)) return 'music'
-  if (/decor|flower|colour|color|design|theme|style|centrepiece|light/i.test(lower)) return 'decor'
-  return 'default'
-}
 
 /* ═══════ SUGGESTED PROMPTS ═══════ */
 const SUGGESTED: SuggestedPrompt[] = [
@@ -58,6 +35,9 @@ const SUGGESTED: SuggestedPrompt[] = [
   { icon: LocalFlorist, label: 'Décor & styling', prompt: 'What are current wedding décor trends?' },
   { icon: Favorite,    label: 'Guest management', prompt: 'How do I manage my wedding guest list?' },
   { icon: Celebration, label: 'Venue selection', prompt: 'What should I look for when choosing a venue?' },
+  { icon: Checkroom,   label: 'Wedding attire', prompt: 'What should I know about choosing wedding attire?' },
+  { icon: ChecklistRtl, label: 'Planning guide', prompt: 'Where do I start with wedding planning?' },
+  { icon: TheaterComedy, label: 'Cultural traditions', prompt: 'Tell me about Nigerian wedding traditions and customs' },
 ]
 
 const PREMIUM_PROMPTS: SuggestedPrompt[] = [
@@ -65,10 +45,26 @@ const PREMIUM_PROMPTS: SuggestedPrompt[] = [
   { icon: AutoAwesome, label: 'Vendor negotiation', prompt: 'How do I negotiate with vendors effectively?', premium: true },
 ]
 
+/* ═══════ CONFIDENCE COLOURS ═══════ */
+const getConfidenceColor = (confidence: number) => {
+  if (confidence >= 0.7) return T.success
+  if (confidence >= 0.4) return '#f59e0b'
+  return T.accent
+}
+
+const getConfidenceLabel = (confidence: number) => {
+  if (confidence >= 0.7) return 'High confidence'
+  if (confidence >= 0.4) return 'Medium confidence'
+  if (confidence > 0) return 'Low confidence'
+  return ''
+}
+
 /* ═══════ MAIN COMPONENT ═══════ */
 export default function AskWed() {
+  const engine = useMemo(() => new AskWedEngine(), [])
+
   const [messages, setMessages] = useState<Message[]>([
-    { id: '0', role: 'assistant', text: `Hi! I'm **AskWed**, your AI wedding planning assistant. 💍\n\nI can help with budgeting, vendor selection, timelines, guest management, and more. What would you like to know?`, timestamp: new Date() },
+    { id: '0', role: 'assistant', text: `Hi! I'm **AskWed**, your AI wedding planning assistant. 💍\n\nI can help with budgeting, venues, photography, catering, timelines, guest management, music, décor, attire, cultural traditions, and general planning. What would you like to know?`, timestamp: new Date() },
   ])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -88,15 +84,26 @@ export default function AskWed() {
     setInput('')
     setIsTyping(true)
 
-    // Simulate AI thinking delay (300-900ms)
+    // Simulate AI thinking delay (300-900ms) — proportional to confidence work
     const delay = 300 + Math.random() * 600
     setTimeout(() => {
-      const topic = matchTopic(text)
-      const reply: Message = { id: `a-${Date.now()}`, role: 'assistant', text: KNOWLEDGE[topic], timestamp: new Date() }
+      const result = engine.processQuery(text)
+      const reply: Message = {
+        id: `a-${Date.now()}`,
+        role: 'assistant',
+        text: result.text,
+        timestamp: new Date(),
+        meta: result,
+      }
+      // Track in engine for follow-up context
+      engine.addToHistory({
+        id: reply.id, role: 'assistant', text: reply.text, timestamp: reply.timestamp,
+        meta: { topic: result.topic, confidence: result.confidence, matchedKeywords: result.matchedKeywords, multiTopic: result.multiTopic },
+      })
       setMessages(prev => [...prev, reply])
       setIsTyping(false)
     }, delay)
-  }, [])
+  }, [engine])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input) }
@@ -152,6 +159,25 @@ export default function AskWed() {
                     border: msg.role === 'assistant' ? '1px solid rgba(0,131,143,0.1)' : 'none',
                   }}>
                     {renderText(msg.text)}
+                    {/* Confidence indicator for assistant messages */}
+                    {msg.role === 'assistant' && msg.meta && msg.meta.confidence > 0 && (
+                      <Tooltip title={`${getConfidenceLabel(msg.meta.confidence)} (${(msg.meta.confidence * 100).toFixed(0)}%) — Topic: ${msg.meta.topic}${msg.meta.multiTopic ? ' (multi-topic)' : ''} — ${msg.meta.processingTimeMs.toFixed(0)}ms`}>
+                        <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LinearProgress
+                            variant="determinate"
+                            value={msg.meta.confidence * 100}
+                            sx={{
+                              flex: 1, maxWidth: 80, height: 3, borderRadius: 2,
+                              bgcolor: 'rgba(0,0,0,0.06)',
+                              '& .MuiLinearProgress-bar': { bgcolor: getConfidenceColor(msg.meta.confidence) },
+                            }}
+                          />
+                          <Typography sx={{ fontFamily: T.font, fontSize: 10, color: T.textSub }}>
+                            {getConfidenceLabel(msg.meta.confidence)}
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    )}
                   </Box>
                 </Box>
               </Fade>
@@ -202,8 +228,9 @@ export default function AskWed() {
           <Box sx={{ bgcolor: '#fff', border: T.border, p: 2.5 }}>
             <Typography sx={{ fontFamily: T.font, fontWeight: 700, fontSize: 16, color: T.primaryBlack, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <Lightbulb sx={{ color: '#f59e0b', fontSize: 20 }} /> Quick Topics
+              <Chip label="11" size="small" sx={{ ml: 'auto', bgcolor: 'rgba(0,131,143,0.1)', color: T.primary, fontWeight: 700, fontSize: 11, height: 20 }} />
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, maxHeight: 400, overflowY: 'auto' }}>
               {SUGGESTED.map((s, i) => (
                 <Button key={i} onClick={() => { sendMessage(s.prompt); inputRef.current?.focus() }} startIcon={<s.icon />} fullWidth
                   sx={{ justifyContent: 'flex-start', textTransform: 'none', fontFamily: T.font, fontWeight: 600, fontSize: 13, color: T.primaryBlack, py: 1, '&:hover': { bgcolor: 'rgba(0,131,143,0.04)' } }}>

@@ -48,7 +48,7 @@ const VendorDashboardLayout = () => {
   ];
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#FFF6F9' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#FFFFFF' }}>
       {/* Sidebar */}
       <Box
         sx={{
