@@ -135,8 +135,8 @@ const VendorProfile: React.FC = () => {
   
   // Check if we came from a preview modal
   const fromPreview = location.state?.fromPreview === true;
-  const previewSource = location.state?.source || ''; // 'home' or 'search'
-  const previewVendorId = location.state?.vendorId || null;
+  // const previewSource = location.state?.source || ''; // 'home' or 'search'
+  // const previewVendorId = location.state?.vendorId || null;
   
   const [inquiryOpen, setInquiryOpen] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -160,7 +160,7 @@ const VendorProfile: React.FC = () => {
       image: vendorData.profileImage,
       rating: vendorData.rating,
       reviewCount: vendorData.reviewCount,
-      price: vendorData.startingPrice,
+      price: vendorData.startingPrice.toString(),
       location: vendorData.location,
     });
   }, [vendorData.id]);

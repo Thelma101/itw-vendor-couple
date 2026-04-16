@@ -109,14 +109,16 @@ export function useNavigationHistory(): NavigationHistoryAPI {
 
   // Persistent stack stored in sessionStorage so it survives hot-reload
   // but resets when the tab is closed.
-  const stackRef = useRef<HistoryEntry[]>(() => {
-    try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as HistoryEntry[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  const stackRef = useRef<HistoryEntry[]>(
+    (function() {
+      try {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        return raw ? (JSON.parse(raw) as HistoryEntry[]) : [];
+      } catch {
+        return [];
+      }
+    })()
+  );
 
   // Lazily initialise the ref on first render
   if (typeof stackRef.current === 'function') {

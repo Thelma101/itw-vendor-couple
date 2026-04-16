@@ -144,7 +144,7 @@ const Testimonials: React.FC = () => {
               transition: 'transform 0.4s ease',
             }}
           >
-            {TESTIMONIALS.map((t, i) => (
+            {TESTIMONIALS.map((t) => (
               <Card
                 key={t.id}
                 sx={{

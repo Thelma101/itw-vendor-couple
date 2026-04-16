@@ -8,7 +8,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { Box, Typography, Card, Rating, Button } from '@mui/material';
+import { Box, Typography, Card, Rating } from '@mui/material';
 import { LocationOn, History } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 

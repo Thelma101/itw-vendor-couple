@@ -217,9 +217,7 @@ const BrowseByCategory: React.FC = () => {
                     }}
                   >
                     <Box sx={{ color: 'white', display: 'flex' }}>
-                      {React.cloneElement(cat.icon as React.ReactElement, {
-                        sx: { fontSize: 22, color: 'white' },
-                      })}
+                      <cat.icon sx={{ fontSize: 22, color: 'white' }} />
                     </Box>
                     <Box>
                       <Typography
