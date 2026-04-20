@@ -162,7 +162,7 @@ export default function VendorMatching() {
 
   /* ── Compute scores ── */
   const scoredVendors = useMemo(() => {
-    let vendors = selectedCategory === 'All' ? mockVendors : mockVendors.filter(v => v.category === selectedCategory)
+    const vendors = selectedCategory === 'All' ? mockVendors : mockVendors.filter(v => v.category === selectedCategory)
     const scored = vendors.map(v => calculateChemistryScore(v, prefs))
     return scored.sort((a, b) => b.chemistryScore - a.chemistryScore)
   }, [prefs, selectedCategory])

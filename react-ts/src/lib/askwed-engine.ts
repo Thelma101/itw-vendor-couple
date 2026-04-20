@@ -550,7 +550,7 @@ export class AskWedEngine {
     // ─── Step 3: Follow-up detection ───
     const isFollowUp = FOLLOW_UP_PATTERNS.some(p => p.test(normInput))
     if (isFollowUp && this.lastTopic && this.lastTopic !== 'default') {
-      const followUpText = this.generateFollowUp(this.lastTopic, normInput)
+      const followUpText = this.generateFollowUp(this.lastTopic)
       return {
         text: followUpText,
         topic: this.lastTopic,
@@ -619,7 +619,7 @@ export class AskWedEngine {
     }
   }
 
-  private generateFollowUp(topic: string, _input: string): string {
+  private generateFollowUp(topic: string): string {
     const followUps: Record<string, string> = {
       budget: `Here's more on budgeting:\n\n**Negotiation Tips:**\n• Always get quotes from **at least 3 vendors** in each category\n• Ask if there are **off-peak discounts** (weekdays, January-March)\n• Request **package deals** when booking multiple services\n• Don't be afraid to ask for a **payment plan**\n• Read the contract — look out for hidden fees (overtime, setup, cleanup)\n\n**Common Budget Mistakes:**\n• Forgetting tipping / gratuity (5-10% for major vendors)\n• Not accounting for outfit changes and accessories\n• Underestimating transportation costs (bridal party, family)\n• Ignoring stationery costs (save-the-dates, invites, programs)\n\nWant me to create a detailed budget breakdown for a specific amount?`,
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * RecentlyViewed — Shows vendors the user has recently viewed.
  *

@@ -163,7 +163,7 @@ const VendorProfile: React.FC = () => {
       price: vendorData.startingPrice.toString(),
       location: vendorData.location,
     });
-  }, [vendorData.id]);
+  }, []);
 
   const handleFavorite = () => {
     if (isFavorited) {

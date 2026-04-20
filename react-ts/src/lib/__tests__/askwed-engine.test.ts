@@ -422,12 +422,10 @@ describe('Baseline Response Accuracy', () => {
     { input: 'What are bridesmaid dress options?', expectedTopic: 'attire' },
   ]
 
-  let accurateCount = 0
   for (const tc of testCases) {
     it(`classifies "${tc.input}" as ${tc.expectedTopic}`, () => {
       const res = engine.processQuery(tc.input)
       expect(res.topic).toBe(tc.expectedTopic)
-      accurateCount++
     })
   }
 })
