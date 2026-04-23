@@ -64,7 +64,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/couple/checklist': 'Checklist',
   '/couple/budget': 'Budget',
   '/couple/guests': 'Guests',
-  '/couple/website': 'Website',
+  '/couple/wedding-website': 'Wedding Website',
   '/couple/timeline': 'Timeline',
   '/couple/compare': 'Compare',
   '/couple/inspiration': 'Inspiration',

@@ -13,7 +13,6 @@ const SearchResults = lazy(() => import('./pages/couple/SearchResults'))
 const EnhancedSearchResults = lazy(() => import('./pages/couple/EnhancedSearchResults'))
 const HomePage = lazy(() => import('./pages/couple/HomePage'))
 const Dashboard = lazy(() => import('./pages/couple/Dashboard'))
-const Notes = lazy(() => import('./pages/couple/Notes'))
 const MyVendors = lazy(() => import('./pages/couple/MyVendors'))
 const VendorProfile = lazy(() => import('./pages/couple/VendorProfile'))
 const Messages = lazy(() => import('./pages/couple/Messages'))
@@ -95,7 +94,7 @@ export default function App() {
                 <Route path="/couple/checklist" element={<RoutedPage><Checklist /></RoutedPage>} />
                 <Route path="/couple/budget" element={<RoutedPage><BudgetTracker /></RoutedPage>} />
                 <Route path="/couple/guests" element={<RoutedPage><GuestList /></RoutedPage>} />
-                <Route path="/couple/website" element={<RoutedPage><WeddingWebsite /></RoutedPage>} />
+                <Route path="/couple/wedding-website" element={<RoutedPage><WeddingWebsite /></RoutedPage>} />
                 <Route path="/couple/timeline" element={<RoutedPage><DayOfTimeline /></RoutedPage>} />
                 <Route path="/couple/compare" element={<RoutedPage><VendorCompare /></RoutedPage>} />
                 <Route path="/couple/inspiration" element={<RoutedPage><InspirationGallery /></RoutedPage>} />
@@ -104,7 +103,6 @@ export default function App() {
                 <Route path="/couple/askwed" element={<RoutedPage><AskWed /></RoutedPage>} />
                 <Route path="/couple/vendor-matching" element={<RoutedPage><VendorMatching /></RoutedPage>} />
                 <Route path="/couple/guest-hub" element={<RoutedPage><GuestExperienceHub /></RoutedPage>} />
-                <Route path="/couple/notes" element={<RoutedPage><Notes /></RoutedPage>} />
 
               <Route path="/vendor" element={<RoutedPage><VendorDashboardLayout /></RoutedPage>}>
                 <Route index element={<RoutedPage><VendorOverview /></RoutedPage>} />

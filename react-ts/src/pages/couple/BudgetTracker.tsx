@@ -7,14 +7,18 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   LinearProgress,
   Paper,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material'
-import { Add, CheckCircle, Savings, TrendingUp, WarningAmber } from '@mui/icons-material'
+import { Add, CheckCircle, Savings, TrendingUp, WarningAmber, Edit, Delete, Edit as EditNote } from '@mui/icons-material'
 import CouplePageShell from '@/components/couple/CouplePageShell'
+import EditNoteDrawer from '@/components/couple/EditNoteDrawer'
+import EditExpenseDrawer from '@/components/couple/drawers/EditExpenseDrawer'
 
 interface Expense {
   id: string
@@ -48,11 +52,79 @@ export default function BudgetTracker() {
   const [totalBudget, setTotalBudget] = useState(Number(localStorage.getItem(budgetKey)) || 2500000)
   const [expenses, setExpenses] = useState<Expense[]>(readExpenses)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
   const [form, setForm] = useState({ category: '', estimated: '', actual: '' })
 
   const syncExpenses = (next: Expense[]) => {
     setExpenses(next)
     localStorage.setItem(expenseKey, JSON.stringify(next))
+  }
+
+  const addOrUpdateExpense = () => {
+    if (!form.category.trim()) return
+    
+    if (editingId) {
+      // Update existing expense
+      const updated = expenses.map(exp => 
+        exp.id === editingId 
+          ? { ...exp, category: form.category.trim(), estimated: Number(form.estimated) || 0, actual: Number(form.actual) || 0 }
+          : exp
+      )
+      syncExpenses(updated)
+      setEditingId(null)
+    } else {
+      // Add new expense
+      const next: Expense = {
+        id: String(Date.now()),
+        category: form.category.trim(),
+        estimated: Number(form.estimated) || 0,
+        actual: Number(form.actual) || 0,
+      }
+      syncExpenses([...expenses, next])
+    }
+    
+    setForm({ category: '', estimated: '', actual: '' })
+    setDialogOpen(false)
+  }
+
+  const handleEditClick = (expense: Expense) => {
+    setEditingExpense(expense)
+    setEditingId(expense.id)
+  }
+
+  const handleExpenseDrawerChange = (field: string, value: any) => {
+    if (editingExpense) {
+      setEditingExpense({ ...editingExpense, [field]: value })
+    }
+  }
+
+  const handleSaveExpense = () => {
+    if (editingExpense && editingId) {
+      const updated = expenses.map((exp) => (exp.id === editingId ? editingExpense : exp))
+      syncExpenses(updated)
+      setEditingExpense(null)
+      setEditingId(null)
+    }
+  }
+
+  const handleDeleteExpenseFromDrawer = () => {
+    if (editingId) {
+      setDeleteConfirm(editingId)
+    }
+  }
+
+  const handleDeleteExpense = (id: string) => {
+    syncExpenses(expenses.filter(exp => exp.id !== id))
+    setDeleteConfirm(null)
+  }
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false)
+    setEditingId(null)
+    setForm({ category: '', estimated: '', actual: '' })
   }
 
   const committed = useMemo(() => expenses.reduce((sum, item) => sum + item.actual, 0), [expenses])
@@ -78,19 +150,6 @@ export default function BudgetTracker() {
           icon: <CheckCircle sx={{ color: '#166534' }} />,
         }
 
-  const addExpense = () => {
-    if (!form.category.trim()) return
-    const next: Expense = {
-      id: String(Date.now()),
-      category: form.category.trim(),
-      estimated: Number(form.estimated) || 0,
-      actual: Number(form.actual) || 0,
-    }
-    syncExpenses([...expenses, next])
-    setForm({ category: '', estimated: '', actual: '' })
-    setDialogOpen(false)
-  }
-
   return (
     <CouplePageShell
       title="Budget"
@@ -98,16 +157,24 @@ export default function BudgetTracker() {
       badge={`Remaining ${formatCurrency(remaining)}`}
       actions={
         <Stack direction="row" spacing={1}>
+          <Tooltip title="Saves your total budget envelope so it persists across sessions">
+            <Button
+              onClick={() => {
+                localStorage.setItem(budgetKey, String(totalBudget))
+              }}
+              variant="outlined"
+              sx={{ textTransform: 'none', borderRadius: 6, fontWeight: 700 }}
+            >
+              Save Budget
+            </Button>
+          </Tooltip>
           <Button
-            onClick={() => {
-              // Save the total budget to localStorage so it persists across page refreshes
-              // This ensures your wedding budget envelope is retained even after closing/reopening
-              localStorage.setItem(budgetKey, String(totalBudget))
-            }}
             variant="outlined"
-            sx={{ textTransform: 'none', borderRadius: 6, fontWeight: 700 }}
+            startIcon={<EditNote />}
+            onClick={() => setNoteDrawerOpen(true)}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 6 }}
           >
-            Save Budget
+            Add Note
           </Button>
           <Button
             variant="contained"
@@ -215,6 +282,12 @@ export default function BudgetTracker() {
                     <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                       <Chip label={`Estimate ${formatCurrency(expense.estimated)}`} sx={{ bgcolor: '#EEF2FF', color: '#4338CA', fontWeight: 700 }} />
                       <Chip label={`Actual ${formatCurrency(expense.actual)}`} sx={{ bgcolor: '#FDE8EE', color: '#B42349', fontWeight: 700 }} />
+                      <IconButton size="small" onClick={() => handleEditClick(expense)} sx={{ color: '#00838F', '&:hover': { bgcolor: '#E0F2F1' } }}>
+                        <Edit sx={{ fontSize: 18 }} />
+                      </IconButton>
+                      <IconButton size="small" onClick={() => setDeleteConfirm(expense.id)} sx={{ color: '#B91C1C', '&:hover': { bgcolor: '#FEF2F2' } }}>
+                        <Delete sx={{ fontSize: 18 }} />
+                      </IconButton>
                     </Stack>
                   </Stack>
                 </Paper>
@@ -256,8 +329,8 @@ export default function BudgetTracker() {
         </Stack>
       </Box>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Add Expense</DialogTitle>
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>{editingId ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 0.5 }}>
             <TextField label="Category" value={form.category} onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))} />
@@ -266,10 +339,55 @@ export default function BudgetTracker() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
-          <Button onClick={addExpense} variant="contained" sx={{ textTransform: 'none', bgcolor: '#00838F' }}>Save</Button>
+          <Button onClick={handleCloseDialog} sx={{ textTransform: 'none' }}>Cancel</Button>
+          <Button onClick={addOrUpdateExpense} variant="contained" sx={{ textTransform: 'none', bgcolor: '#00838F' }}>
+            {editingId ? 'Update' : 'Save'}
+          </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirm !== null} onClose={() => setDeleteConfirm(null)}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Delete Expense?</DialogTitle>
+        <DialogContent>
+          <Typography>This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={() => setDeleteConfirm(null)} sx={{ textTransform: 'none' }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => deleteConfirm && handleDeleteExpense(deleteConfirm)}
+            variant="contained"
+            sx={{ textTransform: 'none', bgcolor: '#B91C1C' }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Note Drawer */}
+      <EditNoteDrawer open={noteDrawerOpen} onClose={() => setNoteDrawerOpen(false)} />
+
+      {/* Edit Expense Drawer */}
+      {editingExpense && (
+        <EditExpenseDrawer
+          open={editingId !== null}
+          onClose={() => {
+            setEditingExpense(null)
+            setEditingId(null)
+          }}
+          data={{
+            category: editingExpense.category,
+            estimated: editingExpense.estimated,
+            actual: editingExpense.actual,
+          }}
+          onChange={handleExpenseDrawerChange}
+          onSave={handleSaveExpense}
+          onDelete={handleDeleteExpenseFromDrawer}
+          title="Edit Expense"
+        />
+      )}
     </CouplePageShell>
   )
 }

@@ -3,11 +3,24 @@ import { Box, Button, Card, Dialog, DialogActions, DialogContent, DialogTitle, D
 import { Delete, Edit, Calendar } from '@mui/icons-material'
 import CouplePageShell from '@/components/couple/CouplePageShell'
 import { useNotes } from '@/contexts/NotesContext'
+import FloatingNoteButton from '@/components/couple/FloatingNoteButton'
 
-export default function NotesView() {
-  const { getAllNotes, deleteNote, updateNote } = useNotes()
+export default function NotesPage() {
+  const context = useNotes()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
+  
+  if (!context) {
+    return (
+      <CouplePageShell title="My Notes" subtitle="View and manage your wedding planning notes.">
+        <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid #E2E8F0', textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 16, color: '#64748B' }}>Unable to load notes</Typography>
+        </Paper>
+      </CouplePageShell>
+    )
+  }
+
+  const { getAllNotes, deleteNote, updateNote } = context
   const notes = getAllNotes()
 
   const handleEdit = (id: string, content: string) => {
@@ -118,6 +131,22 @@ export default function NotesView() {
                 fontSize: 13,
               },
             }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={handleCancel} variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}>
+            Cancel
+          </Button>
+          <Button onClick={handleSaveEdit} variant="contained" sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, bgcolor: '#0F766E' }} disabled={!editText.trim()}>
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      <FloatingNoteButton page="notes" />
+    </CouplePageShell>
+  )
+}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, gap: 1 }}>

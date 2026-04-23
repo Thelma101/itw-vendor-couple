@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Fab, TextField, Typography } from '@mui/material'
-import { Edit, Close } from '@mui/icons-material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Fab, TextField, Typography, Stack, IconButton } from '@mui/material'
+import { Edit, Close, ViewAgenda } from '@mui/icons-material'
 import { useNotes } from '@/contexts/NotesContext'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
+import NotesDrawer from './NotesDrawer'
 
 export default function FloatingNoteButton() {
   const [open, setOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const { currentNote, setCurrentNote, addNote } = useNotes()
   const location = useLocation()
-  const navigate = useNavigate()
+  const isDashboard = location.pathname === '/couple/dashboard'
 
   const pageName = location.pathname.split('/').pop() || 'page'
 
@@ -19,6 +21,8 @@ export default function FloatingNoteButton() {
     addNote(currentNote, pageName)
     handleClose()
   }
+
+  if (!isDashboard) return null
 
   return (
     <>
@@ -69,9 +73,10 @@ export default function FloatingNoteButton() {
           />
           <Box sx={{ display: 'flex', gap: 1, mt: 2, justifyContent: 'space-between', alignItems: 'center' }}>
             <Button
-              onClick={() => navigate('/couple/notes')}
+              onClick={() => setDrawerOpen(true)}
               variant="text"
-              sx={{ textTransform: 'none', fontWeight: 700, color: '#0F766E' }}
+              startIcon={<ViewAgenda />}
+              sx={{ textTransform: 'none', fontWeight: 700, color: '#0F766E', fontSize: 12 }}
             >
               View all notes
             </Button>
@@ -86,6 +91,9 @@ export default function FloatingNoteButton() {
           </Box>
         </DialogContent>
       </Dialog>
+
+      {/* Notes Drawer */}
+      <NotesDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>
   )
 }

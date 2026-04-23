@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Avatar,
   Box,
   Button,
@@ -8,13 +11,15 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Paper,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
-import { Add } from '@mui/icons-material'
+import { Add, ExpandMore, Delete, Edit as EditNote } from '@mui/icons-material'
 import CouplePageShell from '@/components/couple/CouplePageShell'
+import EditNoteDrawer from '@/components/couple/EditNoteDrawer'
 
 interface Guest {
   id: string
@@ -54,6 +59,8 @@ export default function GuestList() {
   const [guests, setGuests] = useState<Guest[]>(readGuests)
   const [filter, setFilter] = useState<'All' | Guest['status']>('All')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', phone: '', group: '', notes: '' })
   const [search, setSearch] = useState('')
 
@@ -111,6 +118,11 @@ export default function GuestList() {
     )
   }
 
+  const deleteGuest = (id: string) => {
+    sync(guests.filter((guest) => guest.id !== id))
+    setDeleteConfirm(null)
+  }
+
   const initials = (name: string) =>
     name
       .split(' ')
@@ -125,14 +137,24 @@ export default function GuestList() {
       subtitle="Keep RSVPs, family groups, and attendance momentum in one place with a layout that feels more polished than a plain spreadsheet."
       badge={`${guests.length} total guests`}
       actions={
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => setDialogOpen(true)}
-          sx={{ bgcolor: '#00838F', textTransform: 'none', fontWeight: 700, borderRadius: 6, '&:hover': { bgcolor: '#006670' } }}
-        >
-          Add Guest
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            startIcon={<EditNote />}
+            onClick={() => setNoteDrawerOpen(true)}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 6 }}
+          >
+            Add Note
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => setDialogOpen(true)}
+            sx={{ bgcolor: '#00838F', textTransform: 'none', fontWeight: 700, borderRadius: 6, '&:hover': { bgcolor: '#006670' } }}
+          >
+            Add Guest
+          </Button>
+        </Stack>
       }
     >
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: '1.18fr 0.92fr' }, gap: 2.5 }}>
@@ -182,23 +204,54 @@ export default function GuestList() {
               const tone = statusStyles[guest.status]
 
               return (
-                <Paper key={guest.id} elevation={0} sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: 4, transition: 'all 0.2s ease', '&:hover': { boxShadow: '0 12px 24px rgba(15,23,42,0.06)' } }}>
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Avatar sx={{ bgcolor: '#E6FFFB', color: '#0F766E', fontWeight: 800 }}>{initials(guest.name)}</Avatar>
-                      <Box>
-                        <Typography sx={{ fontWeight: 800, color: '#0F172A' }}>{guest.name}</Typography>
-                        <Typography sx={{ fontSize: 13, color: '#64748B' }}>{guest.email || 'No email provided'}</Typography>
-                        <Chip label={guest.group} size="small" sx={{ mt: 0.8, bgcolor: '#F8FAFC', color: '#475569', fontWeight: 700 }} />
-                      </Box>
+                <Paper key={guest.id} elevation={0} sx={{ border: '1px solid #E2E8F0', borderRadius: 4, transition: 'all 0.2s ease', '&:hover': { boxShadow: '0 12px 24px rgba(15,23,42,0.06)' } }}>
+                  <Box sx={{ p: 2 }}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} sx={{ mb: 1.5 }}>
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Avatar sx={{ bgcolor: '#E6FFFB', color: '#0F766E', fontWeight: 800 }}>{initials(guest.name)}</Avatar>
+                        <Box>
+                          <Typography sx={{ fontWeight: 800, color: '#0F172A' }}>{guest.name}</Typography>
+                          <Typography sx={{ fontSize: 13, color: '#64748B' }}>{guest.phone || 'No phone provided'}</Typography>
+                          <Chip label={guest.group} size="small" sx={{ mt: 0.8, bgcolor: '#F8FAFC', color: '#475569', fontWeight: 700 }} />
+                        </Box>
+                      </Stack>
+                      <Stack direction={{ xs: 'row', md: 'column' }} spacing={1} alignItems={{ xs: 'center', md: 'flex-end' }}>
+                        <Chip label={guest.status} sx={{ bgcolor: tone.bg, color: tone.color, fontWeight: 800 }} />
+                        <Stack direction="row" spacing={0.5}>
+                          <Button onClick={() => cycleStatus(guest.id)} size="small" variant="outlined" sx={{ textTransform: 'none', borderRadius: 2.2, fontWeight: 700 }}>
+                            Move Status
+                          </Button>
+                          <IconButton size="small" onClick={() => setDeleteConfirm(guest.id)} sx={{ color: '#B91C1C', '&:hover': { bgcolor: '#FEF2F2' } }}>
+                            <Delete sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Stack>
+                      </Stack>
                     </Stack>
-                    <Stack direction={{ xs: 'row', md: 'column' }} spacing={1} alignItems={{ xs: 'center', md: 'flex-end' }}>
-                      <Chip label={guest.status} sx={{ bgcolor: tone.bg, color: tone.color, fontWeight: 800 }} />
-                      <Button onClick={() => cycleStatus(guest.id)} size="small" variant="outlined" sx={{ textTransform: 'none', borderRadius: 2.2, fontWeight: 700 }}>
-                        Move Status
-                      </Button>
-                    </Stack>
-                  </Stack>
+
+                    {(guest.email || guest.notes) && (
+                      <Accordion elevation={0} disableGutters sx={{ border: 'none', '&:before': { display: 'none' } }}>
+                        <AccordionSummary expandIcon={<ExpandMore />} sx={{ p: 0, minHeight: 'auto', '& .MuiAccordionSummary-content': { m: 0 } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#0F766E' }}>View details</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ p: '12px 0 0 0', pt: 1.5, borderTop: '1px solid #EDF2F7' }}>
+                          <Stack spacing={1}>
+                            {guest.email && (
+                              <Box>
+                                <Typography sx={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, mb: 0.3 }}>EMAIL</Typography>
+                                <Typography sx={{ fontSize: 13, color: '#0F172A' }}>{guest.email}</Typography>
+                              </Box>
+                            )}
+                            {guest.notes && (
+                              <Box>
+                                <Typography sx={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, mb: 0.3 }}>NOTES</Typography>
+                                <Typography sx={{ fontSize: 13, color: '#0F172A' }}>{guest.notes}</Typography>
+                              </Box>
+                            )}
+                          </Stack>
+                        </AccordionDetails>
+                      </Accordion>
+                    )}
+                  </Box>
                 </Paper>
               )
             })}
@@ -238,22 +291,54 @@ export default function GuestList() {
         </Stack>
       </Box>
 
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirm !== null} onClose={() => setDeleteConfirm(null)}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Remove Guest?</DialogTitle>
+        <DialogContent>
+          <Typography>This guest will be permanently removed from your list. This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={() => setDeleteConfirm(null)} sx={{ textTransform: 'none' }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => deleteConfirm && deleteGuest(deleteConfirm)}
+            variant="contained"
+            sx={{ textTransform: 'none', bgcolor: '#B91C1C' }}
+          >
+            Remove
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Note Drawer */}
+      <EditNoteDrawer open={noteDrawerOpen} onClose={() => setNoteDrawerOpen(false)} />
+
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>Add Guest</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 0.5 }}>
-            <TextField label="Full name" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
-            <TextField label="Email" value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} />
-            <TextField label="Phone number" value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} placeholder="+234 (optional)" />
+            <TextField label="Full name" required value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
+            <TextField label="Phone number" required value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} placeholder="+234" />
             <TextField label="Group" value={form.group} onChange={(event) => setForm((prev) => ({ ...prev, group: event.target.value }))} placeholder="Friends, Family, Colleagues..." />
-            <TextField
-              label="Notes"
-              value={form.notes}
-              onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-              placeholder="Dietary restrictions, seating preferences, etc."
-              multiline
-              rows={2}
-            />
+            <Accordion elevation={0} sx={{ border: '1px solid #E2E8F0', borderRadius: '8px !important', '&:before': { display: 'none' } }}>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>Optional Details</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Stack spacing={2}>
+                  <TextField label="Email" value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} />
+                  <TextField
+                    label="Notes"
+                    value={form.notes}
+                    onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+                    placeholder="Dietary restrictions, seating preferences, etc."
+                    multiline
+                    rows={2}
+                  />
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
           </Stack>
         </DialogContent>
         <DialogActions>

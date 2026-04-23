@@ -32,9 +32,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import CouplePageShell from '@/components/couple/CouplePageShell'
 import { mockVendors } from '@/data/mockVendors'
 import { useShortlist } from '@/contexts/ShortlistContext'
+import VendorPreviewModal from '@/components/couple/VendorPreviewModal'
+import FloatingNoteButton from '@/components/couple/FloatingNoteButton'
 
 const PAGE_SIZE = 8
-const MAX_BUDGET = 5000000  // Unlimited budget for vendors
+const MAX_BUDGET = 10000000  // 10M+ budget for vendors
 
 const parsePrice = (value: string) => Number.parseInt(value.replace(/[^0-9]/g, ''), 10) || 0
 
@@ -50,6 +52,9 @@ export default function SearchResults() {
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const [maxPrice, setMaxPrice] = useState(MAX_BUDGET)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [selectedVendor, setSelectedVendor] = useState<typeof mockVendors[0] | null>(null)
+  const [selectedVendorIndex, setSelectedVendorIndex] = useState(0)
+  const [modalOpen, setModalOpen] = useState(false)
 
   const categories = useMemo(() => ['all', ...new Set(mockVendors.map((vendor) => vendor.category.toLowerCase()))], [])
 
@@ -72,6 +77,28 @@ export default function SearchResults() {
   }, [query, category, maxPrice])
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
+
+  const handleOpenModal = (vendor: typeof mockVendors[0], index: number) => {
+    setSelectedVendor(vendor)
+    setSelectedVendorIndex(index)
+    setModalOpen(true)
+  }
+
+  const handlePrevVendor = () => {
+    const newIndex = selectedVendorIndex - 1
+    if (newIndex >= 0 && newIndex < visible.length) {
+      setSelectedVendor(visible[newIndex])
+      setSelectedVendorIndex(newIndex)
+    }
+  }
+
+  const handleNextVendor = () => {
+    const newIndex = selectedVendorIndex + 1
+    if (newIndex < visible.length) {
+      setSelectedVendor(visible[newIndex])
+      setSelectedVendorIndex(newIndex)
+    }
+  }
 
   return (
     <CouplePageShell
@@ -126,7 +153,7 @@ export default function SearchResults() {
             </Tooltip>
           </Stack>
           
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr auto' }, gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr auto' }, gap: 2, alignItems: 'flex-start' }}>
             <Slider
               value={maxPrice}
               onChange={(_, newValue) => {
@@ -140,8 +167,6 @@ export default function SearchResults() {
                 { value: 100000, label: 'N100K' },
                 { value: 500000, label: 'N500K' },
                 { value: 1000000, label: 'N1M' },
-                { value: 2000000, label: 'N2M' },
-                { value: 5000000, label: 'N5M+' },
               ]}
               valueLabelDisplay="auto"
               valueLabelFormat={(value) => `N${(value / 1000000).toFixed(1)}M`}
@@ -149,11 +174,12 @@ export default function SearchResults() {
                 '& .MuiSlider-track': { bgcolor: '#0F766E', border: 'none' },
                 '& .MuiSlider-thumb': { bgcolor: '#0F766E', border: '3px solid white', boxShadow: '0 2px 8px rgba(15,118,110,0.3)' },
                 '& .MuiSlider-mark[data-index]': { bgcolor: '#E2E8F0' },
-                '& .MuiSlider-markLabel': { fontSize: 11, color: '#64748B', top: 24 },
+                '& .MuiSlider-markLabel': { fontSize: 11, color: '#64748B', top: 24, whiteSpace: 'nowrap' },
+                mt: 3,
               }}
             />
             
-            <Box sx={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+            <Box sx={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: 'fit-content' }}>
               <Typography sx={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>N{maxPrice.toLocaleString()}</Typography>
               <Typography sx={{ fontSize: 11, color: '#94A3B8' }}>{filtered.length} vendors match</Typography>
             </Box>
@@ -189,7 +215,7 @@ export default function SearchResults() {
 
       {view === 'grid' ? (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2 }}>
-          {visible.map((vendor) => {
+          {visible.map((vendor, index) => {
             const inShortlist = isInShortlist(vendor.id)
 
             return (
@@ -267,7 +293,7 @@ export default function SearchResults() {
                   <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1.2 }}>
                     <Typography sx={{ fontWeight: 800, fontSize: 13, color: '#0F766E' }}>{vendor.price}</Typography>
                   </Stack>
-                  <Button onClick={() => navigate(`/couple/vendor/${vendor.id}`)} fullWidth variant="contained" sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: '#00838F', fontSize: 12, py: 1, '&:hover': { bgcolor: '#006670' } }}>
+                  <Button onClick={() => handleOpenModal(vendor, index)} fullWidth variant="contained" sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: '#00838F', fontSize: 12, py: 1, '&:hover': { bgcolor: '#006670' } }}>
                     View Details
                   </Button>
                 </Box>
@@ -277,7 +303,7 @@ export default function SearchResults() {
         </Box>
       ) : (
         <Stack spacing={1.8}>
-          {visible.map((vendor) => {
+          {visible.map((vendor, index) => {
             const inShortlist = isInShortlist(vendor.id)
 
             return (
@@ -343,7 +369,7 @@ export default function SearchResults() {
                   </Stack>
 
                   <Button
-                    onClick={() => navigate(`/couple/vendor/${vendor.id}`)}
+                    onClick={() => handleOpenModal(vendor, index)}
                     variant="contained"
                     size="small"
                     sx={{
@@ -372,6 +398,33 @@ export default function SearchResults() {
           </Button>
         </Box>
       )}
+
+      {selectedVendor && (
+        <VendorPreviewModal
+          open={modalOpen}
+          onClose={() => {
+            setModalOpen(false)
+            setSelectedVendor(null)
+          }}
+          vendor={selectedVendor}
+          isInShortlist={isInShortlist(selectedVendor.id)}
+          onAddToShortlist={() => {
+            addToShortlist({
+              id: selectedVendor.id,
+              name: selectedVendor.name,
+              category: selectedVendor.category,
+              image: selectedVendor.image,
+              price: parsePrice(selectedVendor.price),
+            })
+          }}
+          onRemoveFromShortlist={() => removeFromShortlist(selectedVendor.id)}
+          onPrevVendor={handlePrevVendor}
+          onNextVendor={handleNextVendor}
+          canGoPrev={selectedVendorIndex > 0}
+          canGoNext={selectedVendorIndex < visible.length - 1}
+        />
+      )}
+      <FloatingNoteButton page="search" />
     </CouplePageShell>
   )
 }

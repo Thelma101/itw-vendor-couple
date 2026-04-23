@@ -139,7 +139,7 @@ export default function Nav() {
 
                     <Button 
                         component={Link}
-                        to="/couple/website"
+                        to="/couple/wedding-website"
                         sx={{ 
                             color: 'primary.main',
                             fontFamily: "'Open Sans', sans-serif",

@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
 import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from '@mui/material'
-import { ExpandMore, ArrowForward, ChecklistRtl, Groups, AccountBalanceWallet, Language, Search, TrendingUp, Alert, CheckCircle, Clock } from '@mui/icons-material'
+import { ExpandMore, ArrowForward, ChecklistRtl, Groups, AccountBalanceWallet, Language, Search, TrendingUp, WarningAmber, CheckCircle, AccessTime } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 import CouplePageShell from '@/components/couple/CouplePageShell'
+import FloatingNotesButton from '@/components/couple/FloatingNotesButton'
 
 interface ChecklistTask {
   id: string
@@ -146,7 +147,7 @@ export default function Dashboard() {
             </Box>
             <Typography sx={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Budget Health</Typography>
             <Chip
-              icon={stats.budgetHealthy ? <CheckCircle sx={{ fontSize: 16 }} /> : <Alert sx={{ fontSize: 16 }} />}
+              icon={stats.budgetHealthy ? <CheckCircle sx={{ fontSize: 16 }} /> : <WarningAmber sx={{ fontSize: 16 }} />}
               label={stats.budgetHealthy ? 'On Track' : 'Review'}
               size="small"
               sx={{ ml: 'auto', bgcolor: stats.budgetHealthy ? '#ECFDF5' : '#FEF2F2', color: stats.budgetHealthy ? '#15803D' : '#B42349', fontWeight: 700, fontSize: 12 }}
@@ -260,7 +261,7 @@ export default function Dashboard() {
             <Stack spacing={0.8}>
               {[
                 ['Guest List', '/couple/guests'],
-                ['Wedding Website', '/couple/website'],
+                ['Wedding Website', '/couple/wedding-website'],
                 ['Day-of Timeline', '/couple/timeline'],
                 ['AskWed Assistant', '/couple/askwed'],
               ].map(([label, path]) => (
@@ -279,7 +280,7 @@ export default function Dashboard() {
                 {stats.upcomingTasksList.map((task) => (
                   <Box key={task.id} sx={{ p: 1, borderRadius: 2, bgcolor: '#F8FAFC', border: '1px solid #EDF2F7' }}>
                     <Stack direction="row" spacing={1} alignItems="flex-start">
-                      <Clock sx={{ fontSize: 16, color: '#F97316', mt: 0.2 }} />
+                      <AccessTime sx={{ fontSize: 16, color: '#F97316', mt: 0.2 }} />
                       <Box sx={{ flex: 1 }}>
                         <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{task.title}</Typography>
                         <Typography sx={{ fontSize: 11, color: '#64748B', mt: 0.2 }}>Due: {new Date(task.dueDate).toLocaleDateString()}</Typography>
@@ -294,6 +295,9 @@ export default function Dashboard() {
           </Paper>
         </Stack>
       </Box>
+
+      {/* Floating Notes Button */}
+      <FloatingNotesButton />
     </CouplePageShell>
   )
 }
