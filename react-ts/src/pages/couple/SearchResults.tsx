@@ -34,7 +34,7 @@ import { mockVendors } from '@/data/mockVendors'
 import { useShortlist } from '@/contexts/ShortlistContext'
 
 const PAGE_SIZE = 8
-const MAX_BUDGET = 2000000
+const MAX_BUDGET = 5000000  // Unlimited budget for vendors
 
 const parsePrice = (value: string) => Number.parseInt(value.replace(/[^0-9]/g, ''), 10) || 0
 
@@ -140,8 +140,8 @@ export default function SearchResults() {
                 { value: 100000, label: 'N100K' },
                 { value: 500000, label: 'N500K' },
                 { value: 1000000, label: 'N1M' },
-                { value: 1500000, label: 'N1.5M' },
-                { value: MAX_BUDGET, label: 'N2M' },
+                { value: 2000000, label: 'N2M' },
+                { value: 5000000, label: 'N5M+' },
               ]}
               valueLabelDisplay="auto"
               valueLabelFormat={(value) => `N${(value / 1000000).toFixed(1)}M`}
@@ -187,93 +187,183 @@ export default function SearchResults() {
         </AccordionDetails>
       </Accordion>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: view === 'grid' ? { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' } : '1fr', gap: 2 }}>
-        {visible.map((vendor) => {
-          const inShortlist = isInShortlist(vendor.id)
+      {view === 'grid' ? (
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2 }}>
+          {visible.map((vendor) => {
+            const inShortlist = isInShortlist(vendor.id)
 
-          return (
-            <Paper
-              key={vendor.id}
-              elevation={0}
-              sx={{
-                borderRadius: 3,
-                border: '1px solid #E2E8F0',
-                overflow: 'hidden',
-                transition: 'all 0.22s ease',
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-                '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 28px rgba(15,23,42,0.12)' },
-              }}
-            >
-              <Box sx={{ position: 'relative', height: 180, backgroundColor: '#F0F4F8', overflow: 'hidden' }}>
-                <Box component="img" src={vendor.image} alt={vendor.name} loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }} />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'linear-gradient(to bottom, transparent 70%, rgba(15,23,42,0.2))',
-                  }}
-                />
-                <IconButton
-                  aria-label={inShortlist ? `Remove ${vendor.name} from shortlist` : `Add ${vendor.name} to shortlist`}
-                  onClick={() => {
-                    if (inShortlist) removeFromShortlist(vendor.id)
-                    else addToShortlist({ id: vendor.id, name: vendor.name, category: vendor.category, image: vendor.image, price: parsePrice(vendor.price) })
-                  }}
-                  sx={{
-                    position: 'absolute',
-                    right: 8,
-                    top: 8,
-                    bgcolor: '#FFFFFFD9',
-                    backdropFilter: 'blur(4px)',
-                    transition: 'all 0.2s ease',
-                    '&:hover': { bgcolor: '#FFFFFF', transform: 'scale(1.1)' },
-                  }}
-                >
-                  {inShortlist ? <Favorite sx={{ color: '#EB1948', fontSize: 20 }} /> : <FavoriteBorder sx={{ color: '#334155', fontSize: 20 }} />}
-                </IconButton>
-                <Chip
-                  label={vendor.category}
-                  size="small"
-                  sx={{
-                    position: 'absolute',
-                    left: 8,
-                    bottom: 8,
-                    borderRadius: 2,
-                    bgcolor: '#FFFFFF',
-                    color: '#4338CA',
-                    fontWeight: 700,
-                    fontSize: 11,
-                  }}
-                />
-              </Box>
+            return (
+              <Paper
+                key={vendor.id}
+                elevation={0}
+                sx={{
+                  borderRadius: 3,
+                  border: '1px solid #E2E8F0',
+                  overflow: 'hidden',
+                  transition: 'all 0.22s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                  '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 28px rgba(15,23,42,0.12)' },
+                }}
+              >
+                <Box sx={{ position: 'relative', height: 180, backgroundColor: '#F0F4F8', overflow: 'hidden' }}>
+                  <Box component="img" src={vendor.image} alt={vendor.name} loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }} />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'linear-gradient(to bottom, transparent 70%, rgba(15,23,42,0.2))',
+                    }}
+                  />
+                  <IconButton
+                    aria-label={inShortlist ? `Remove ${vendor.name} from shortlist` : `Add ${vendor.name} to shortlist`}
+                    onClick={() => {
+                      if (inShortlist) removeFromShortlist(vendor.id)
+                      else addToShortlist({ id: vendor.id, name: vendor.name, category: vendor.category, image: vendor.image, price: parsePrice(vendor.price) })
+                    }}
+                    sx={{
+                      position: 'absolute',
+                      right: 8,
+                      top: 8,
+                      bgcolor: '#FFFFFFD9',
+                      backdropFilter: 'blur(4px)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': { bgcolor: '#FFFFFF', transform: 'scale(1.1)' },
+                    }}
+                  >
+                    {inShortlist ? <Favorite sx={{ color: '#EB1948', fontSize: 20 }} /> : <FavoriteBorder sx={{ color: '#334155', fontSize: 20 }} />}
+                  </IconButton>
+                  <Chip
+                    label={vendor.category}
+                    size="small"
+                    sx={{
+                      position: 'absolute',
+                      left: 8,
+                      bottom: 8,
+                      borderRadius: 2,
+                      bgcolor: '#FFFFFF',
+                      color: '#4338CA',
+                      fontWeight: 700,
+                      fontSize: 11,
+                    }}
+                  />
+                </Box>
 
-              <Box sx={{ p: 1.8, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#0F172A', lineHeight: 1.3 }}>{vendor.name}</Typography>
-                <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 0.8, mb: 0.6 }}>
-                  <Rating value={vendor.rating} readOnly precision={0.1} size="small" />
-                  <Typography sx={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>({vendor.reviewCount})</Typography>
-                </Stack>
-                <Stack direction="row" spacing={0.6} alignItems="flex-start" sx={{ mb: 1 }}>
-                  <LocationOn sx={{ fontSize: 13, color: '#64748B', mt: 0.2, flexShrink: 0 }} />
-                  <Typography sx={{ fontSize: 12, color: '#64748B', lineHeight: 1.3 }}>{vendor.location}</Typography>
-                </Stack>
-                <Box sx={{ flex: 1 }} />
-                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1.2 }}>
-                  <Typography sx={{ fontWeight: 800, fontSize: 13, color: '#0F766E' }}>{vendor.price}</Typography>
-                </Stack>
-                <Button onClick={() => navigate(`/couple/vendor/${vendor.id}`)} fullWidth variant="contained" sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: '#00838F', fontSize: 12, py: 1, '&:hover': { bgcolor: '#006670' } }}>
-                  View Details
-                </Button>
-              </Box>
-            </Paper>
-          )
-        })}
-      </Box>
+                <Box sx={{ p: 1.8, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#0F172A', lineHeight: 1.3 }}>{vendor.name}</Typography>
+                  <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 0.8, mb: 0.6 }}>
+                    <Rating value={vendor.rating} readOnly precision={0.1} size="small" />
+                    <Typography sx={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>({vendor.reviewCount})</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={0.6} alignItems="flex-start" sx={{ mb: 1 }}>
+                    <LocationOn sx={{ fontSize: 13, color: '#64748B', mt: 0.2, flexShrink: 0 }} />
+                    <Typography sx={{ fontSize: 12, color: '#64748B', lineHeight: 1.3 }}>{vendor.location}</Typography>
+                  </Stack>
+                  <Box sx={{ flex: 1 }} />
+                  <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1.2 }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: 13, color: '#0F766E' }}>{vendor.price}</Typography>
+                  </Stack>
+                  <Button onClick={() => navigate(`/couple/vendor/${vendor.id}`)} fullWidth variant="contained" sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: '#00838F', fontSize: 12, py: 1, '&:hover': { bgcolor: '#006670' } }}>
+                    View Details
+                  </Button>
+                </Box>
+              </Paper>
+            )
+          })}
+        </Box>
+      ) : (
+        <Stack spacing={1.8}>
+          {visible.map((vendor) => {
+            const inShortlist = isInShortlist(vendor.id)
+
+            return (
+              <Paper
+                key={vendor.id}
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  border: '1px solid #E2E8F0',
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '90px 1fr', sm: '110px 1fr' },
+                  gap: 1.8,
+                  alignItems: 'start',
+                  transition: 'all 0.2s ease',
+                  '&:hover': { boxShadow: '0 8px 20px rgba(15,23,42,0.1)', borderColor: '#0F766E' },
+                }}
+              >
+                {/* Image */}
+                <Box sx={{ position: 'relative', height: 90, borderRadius: 2.5, overflow: 'hidden', backgroundColor: '#F0F4F8' }}>
+                  <Box component="img" src={vendor.image} alt={vendor.name} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <IconButton
+                    aria-label={inShortlist ? `Remove from shortlist` : `Add to shortlist`}
+                    onClick={() => {
+                      if (inShortlist) removeFromShortlist(vendor.id)
+                      else addToShortlist({ id: vendor.id, name: vendor.name, category: vendor.category, image: vendor.image, price: parsePrice(vendor.price) })
+                    }}
+                    sx={{
+                      position: 'absolute',
+                      right: 2,
+                      top: 2,
+                      width: 32,
+                      height: 32,
+                      bgcolor: '#FFFFFFD9',
+                      backdropFilter: 'blur(4px)',
+                      '&:hover': { bgcolor: '#FFFFFF' },
+                    }}
+                  >
+                    {inShortlist ? <Favorite sx={{ color: '#EB1948', fontSize: 16 }} /> : <FavoriteBorder sx={{ color: '#334155', fontSize: 16 }} />}
+                  </IconButton>
+                </Box>
+
+                {/* Content */}
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 1.6, alignItems: 'center' }}>
+                  <Stack spacing={1}>
+                    <Box>
+                      <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>{vendor.name}</Typography>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.4 }}>
+                        <Rating value={vendor.rating} readOnly precision={0.1} size="small" />
+                        <Typography sx={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>({vendor.reviewCount})</Typography>
+                      </Stack>
+                    </Box>
+
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <LocationOn sx={{ fontSize: 13, color: '#64748B' }} />
+                      <Typography sx={{ fontSize: 12, color: '#64748B' }}>{vendor.location}</Typography>
+                    </Stack>
+
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <Chip label={vendor.category} size="small" sx={{ borderRadius: 1.5, bgcolor: '#EEF2FF', color: '#4338CA', fontWeight: 700, fontSize: 11 }} />
+                      <Typography sx={{ fontSize: 13, fontWeight: 800, color: '#0F766E' }}>{vendor.price}</Typography>
+                    </Box>
+                  </Stack>
+
+                  <Button
+                    onClick={() => navigate(`/couple/vendor/${vendor.id}`)}
+                    variant="contained"
+                    size="small"
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      borderRadius: 2,
+                      bgcolor: '#00838F',
+                      whiteSpace: 'nowrap',
+                      height: 'fit-content',
+                      '&:hover': { bgcolor: '#006670' },
+                    }}
+                  >
+                    View
+                  </Button>
+                </Box>
+              </Paper>
+            )
+          })}
+        </Stack>
+      )}
 
       {visibleCount < filtered.length && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2.5 }}>

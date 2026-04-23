@@ -100,6 +100,8 @@ export default function BudgetTracker() {
         <Stack direction="row" spacing={1}>
           <Button
             onClick={() => {
+              // Save the total budget to localStorage so it persists across page refreshes
+              // This ensures your wedding budget envelope is retained even after closing/reopening
               localStorage.setItem(budgetKey, String(totalBudget))
             }}
             variant="outlined"

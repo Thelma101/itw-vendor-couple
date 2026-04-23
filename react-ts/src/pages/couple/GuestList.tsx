@@ -20,7 +20,9 @@ interface Guest {
   id: string
   name: string
   email: string
+  phone?: string
   group: string
+  notes?: string
   status: 'Invited' | 'Confirmed' | 'Pending'
 }
 
@@ -52,7 +54,7 @@ export default function GuestList() {
   const [guests, setGuests] = useState<Guest[]>(readGuests)
   const [filter, setFilter] = useState<'All' | Guest['status']>('All')
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', group: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', group: '', notes: '' })
   const [search, setSearch] = useState('')
 
   const sync = (next: Guest[]) => {
@@ -87,13 +89,15 @@ export default function GuestList() {
       id: String(Date.now()),
       name: form.name.trim(),
       email: form.email.trim(),
+      phone: form.phone.trim(),
       group: form.group.trim() || 'Friends',
+      notes: form.notes.trim(),
       status: 'Invited',
     }
 
     sync([...guests, guest])
     setDialogOpen(false)
-    setForm({ name: '', email: '', group: '' })
+    setForm({ name: '', email: '', phone: '', group: '', notes: '' })
   }
 
   const cycleStatus = (id: string) => {
@@ -240,7 +244,16 @@ export default function GuestList() {
           <Stack spacing={2} sx={{ mt: 0.5 }}>
             <TextField label="Full name" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
             <TextField label="Email" value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} />
-            <TextField label="Group" value={form.group} onChange={(event) => setForm((prev) => ({ ...prev, group: event.target.value }))} />
+            <TextField label="Phone number" value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} placeholder="+234 (optional)" />
+            <TextField label="Group" value={form.group} onChange={(event) => setForm((prev) => ({ ...prev, group: event.target.value }))} placeholder="Friends, Family, Colleagues..." />
+            <TextField
+              label="Notes"
+              value={form.notes}
+              onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+              placeholder="Dietary restrictions, seating preferences, etc."
+              multiline
+              rows={2}
+            />
           </Stack>
         </DialogContent>
         <DialogActions>

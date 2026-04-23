@@ -73,6 +73,11 @@ export default function Checklist() {
   const progress = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
 
   const orderedTasks = useMemo(() => {
+    // "What to focus on next" algorithm:
+    // 1. Incomplete tasks always come before completed ones
+    // 2. Among incomplete tasks, those with due dates appear first
+    // 3. Tasks are sorted by due date (earliest/soonest first)
+    // This ensures the most urgent, time-sensitive tasks bubble to the top
     return [...tasks].sort((a, b) => {
       if (a.completed !== b.completed) return a.completed ? 1 : -1
       if (!a.dueDate && !b.dueDate) return 0
