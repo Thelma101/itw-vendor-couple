@@ -4,6 +4,7 @@ import AppErrorBoundary from './components/AppErrorBoundary'
 import RouteLoader from './components/RouteLoader'
 import { NotificationProvider } from './contexts/NotificationContext'
 import { ShortlistProvider } from './contexts/ShortlistContext'
+import { NotesProvider } from './contexts/NotesContext'
 import { useAuthFromUrl } from './hooks/useAuthFromUrl'
 
 const SelectVendors = lazy(() => import('./pages/couple/SelectVendors'))
@@ -12,6 +13,7 @@ const SearchResults = lazy(() => import('./pages/couple/SearchResults'))
 const EnhancedSearchResults = lazy(() => import('./pages/couple/EnhancedSearchResults'))
 const HomePage = lazy(() => import('./pages/couple/HomePage'))
 const Dashboard = lazy(() => import('./pages/couple/Dashboard'))
+const Notes = lazy(() => import('./pages/couple/Notes'))
 const MyVendors = lazy(() => import('./pages/couple/MyVendors'))
 const VendorProfile = lazy(() => import('./pages/couple/VendorProfile'))
 const Messages = lazy(() => import('./pages/couple/Messages'))
@@ -71,36 +73,38 @@ export default function App() {
   return (
     <NotificationProvider>
       <ShortlistProvider>
-        <a href="#main-content" className="skip-link">Skip to main content</a>
-        <BrowserRouter>
-          <AuthReceiver>
-            <Routes>
-              <Route path="/" element={<RoutedPage><HomePage /></RoutedPage>} />
-              <Route path="/landing" element={<RoutedPage><LandingPage /></RoutedPage>} />
-              <Route path="/landing-blush" element={<RoutedPage><BlushLandingPage /></RoutedPage>} />
+        <NotesProvider>
+          <a href="#main-content" className="skip-link">Skip to main content</a>
+          <BrowserRouter>
+            <AuthReceiver>
+              <Routes>
+                <Route path="/" element={<RoutedPage><HomePage /></RoutedPage>} />
+                <Route path="/landing" element={<RoutedPage><LandingPage /></RoutedPage>} />
+                <Route path="/landing-blush" element={<RoutedPage><BlushLandingPage /></RoutedPage>} />
 
-              <Route path="/couple/dashboard" element={<RoutedPage><Dashboard /></RoutedPage>} />
-              <Route path="/couple/search-results" element={<RoutedPage><SearchResults /></RoutedPage>} />
-              <Route path="/couple/search" element={<RoutedPage><EnhancedSearchResults /></RoutedPage>} />
-              <Route path="/couple/select-vendors" element={<RoutedPage><SelectVendors /></RoutedPage>} />
-              <Route path="/couple/vendor/:id" element={<RoutedPage><VendorProfile /></RoutedPage>} />
-              <Route path="/couple/shortlist" element={<RoutedPage><Shortlist /></RoutedPage>} />
-              <Route path="/couple/my-vendors" element={<RoutedPage><MyVendors /></RoutedPage>} />
-              <Route path="/couple/messages" element={<RoutedPage><Messages /></RoutedPage>} />
-              <Route path="/couple/booking" element={<RoutedPage><Booking /></RoutedPage>} />
-              <Route path="/couple/profile" element={<RoutedPage><CoupleProfile /></RoutedPage>} />
-              <Route path="/couple/checklist" element={<RoutedPage><Checklist /></RoutedPage>} />
-              <Route path="/couple/budget" element={<RoutedPage><BudgetTracker /></RoutedPage>} />
-              <Route path="/couple/guests" element={<RoutedPage><GuestList /></RoutedPage>} />
-              <Route path="/couple/website" element={<RoutedPage><WeddingWebsite /></RoutedPage>} />
-              <Route path="/couple/timeline" element={<RoutedPage><DayOfTimeline /></RoutedPage>} />
-              <Route path="/couple/compare" element={<RoutedPage><VendorCompare /></RoutedPage>} />
-              <Route path="/couple/inspiration" element={<RoutedPage><InspirationGallery /></RoutedPage>} />
-              <Route path="/couple/seating" element={<RoutedPage><SeatingChart /></RoutedPage>} />
-              <Route path="/couple/favourites" element={<RoutedPage><Favourites /></RoutedPage>} />
-              <Route path="/couple/askwed" element={<RoutedPage><AskWed /></RoutedPage>} />
-              <Route path="/couple/vendor-matching" element={<RoutedPage><VendorMatching /></RoutedPage>} />
-              <Route path="/couple/guest-hub" element={<RoutedPage><GuestExperienceHub /></RoutedPage>} />
+                <Route path="/couple/dashboard" element={<RoutedPage><Dashboard /></RoutedPage>} />
+                <Route path="/couple/search-results" element={<RoutedPage><SearchResults /></RoutedPage>} />
+                <Route path="/couple/search" element={<RoutedPage><EnhancedSearchResults /></RoutedPage>} />
+                <Route path="/couple/select-vendors" element={<RoutedPage><SelectVendors /></RoutedPage>} />
+                <Route path="/couple/vendor/:id" element={<RoutedPage><VendorProfile /></RoutedPage>} />
+                <Route path="/couple/shortlist" element={<RoutedPage><Shortlist /></RoutedPage>} />
+                <Route path="/couple/my-vendors" element={<RoutedPage><MyVendors /></RoutedPage>} />
+                <Route path="/couple/messages" element={<RoutedPage><Messages /></RoutedPage>} />
+                <Route path="/couple/booking" element={<RoutedPage><Booking /></RoutedPage>} />
+                <Route path="/couple/profile" element={<RoutedPage><CoupleProfile /></RoutedPage>} />
+                <Route path="/couple/checklist" element={<RoutedPage><Checklist /></RoutedPage>} />
+                <Route path="/couple/budget" element={<RoutedPage><BudgetTracker /></RoutedPage>} />
+                <Route path="/couple/guests" element={<RoutedPage><GuestList /></RoutedPage>} />
+                <Route path="/couple/website" element={<RoutedPage><WeddingWebsite /></RoutedPage>} />
+                <Route path="/couple/timeline" element={<RoutedPage><DayOfTimeline /></RoutedPage>} />
+                <Route path="/couple/compare" element={<RoutedPage><VendorCompare /></RoutedPage>} />
+                <Route path="/couple/inspiration" element={<RoutedPage><InspirationGallery /></RoutedPage>} />
+                <Route path="/couple/seating" element={<RoutedPage><SeatingChart /></RoutedPage>} />
+                <Route path="/couple/favourites" element={<RoutedPage><Favourites /></RoutedPage>} />
+                <Route path="/couple/askwed" element={<RoutedPage><AskWed /></RoutedPage>} />
+                <Route path="/couple/vendor-matching" element={<RoutedPage><VendorMatching /></RoutedPage>} />
+                <Route path="/couple/guest-hub" element={<RoutedPage><GuestExperienceHub /></RoutedPage>} />
+                <Route path="/couple/notes" element={<RoutedPage><Notes /></RoutedPage>} />
 
               <Route path="/vendor" element={<RoutedPage><VendorDashboardLayout /></RoutedPage>}>
                 <Route index element={<RoutedPage><VendorOverview /></RoutedPage>} />
@@ -126,6 +130,7 @@ export default function App() {
             </Routes>
           </AuthReceiver>
         </BrowserRouter>
+        </NotesProvider>
       </ShortlistProvider>
     </NotificationProvider>
   )

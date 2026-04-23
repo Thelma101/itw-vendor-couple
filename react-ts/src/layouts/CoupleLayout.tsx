@@ -1,7 +1,8 @@
 import { AppBar, Toolbar, Typography, Box, Button, IconButton, Avatar, Badge } from '@mui/material'
 import { Notifications, Menu as MenuIcon } from '@mui/icons-material'
 import { Outlet, useNavigate } from 'react-router-dom'
-import Logo from '@/components/Logo';
+import Logo from '@/components/Logo'
+import FloatingNoteButton from '@/components/couple/FloatingNoteButton'
 
 const navItems = [
   { label: 'Find Vendors', path: '/couple/vendor-selection' },
@@ -100,6 +101,7 @@ export default function CoupleLayout() {
       {/* Main Content */}
       <Box component="main" sx={{ flexGrow: 1 }}>
         <Outlet />
+        <FloatingNoteButton />
       </Box>
     </Box>
   )

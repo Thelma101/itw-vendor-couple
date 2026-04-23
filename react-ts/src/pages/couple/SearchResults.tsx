@@ -10,10 +10,12 @@ import {
   InputAdornment,
   Paper,
   Rating,
+  Slider,
   Stack,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import {
@@ -24,6 +26,7 @@ import {
   LocationOn,
   Search,
   ViewList,
+  Info,
 } from '@mui/icons-material'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import CouplePageShell from '@/components/couple/CouplePageShell'
@@ -31,6 +34,7 @@ import { mockVendors } from '@/data/mockVendors'
 import { useShortlist } from '@/contexts/ShortlistContext'
 
 const PAGE_SIZE = 8
+const MAX_BUDGET = 2000000
 
 const parsePrice = (value: string) => Number.parseInt(value.replace(/[^0-9]/g, ''), 10) || 0
 
@@ -44,7 +48,7 @@ export default function SearchResults() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(initialCategory ? initialCategory.toLowerCase() : 'all')
   const [view, setView] = useState<'grid' | 'list'>('grid')
-  const [maxPrice, setMaxPrice] = useState(1500000)
+  const [maxPrice, setMaxPrice] = useState(MAX_BUDGET)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   const categories = useMemo(() => ['all', ...new Set(mockVendors.map((vendor) => vendor.category.toLowerCase()))], [])
@@ -111,13 +115,50 @@ export default function SearchResults() {
               <ToggleButton value="list" aria-label="List view"><ViewList fontSize="small" /></ToggleButton>
             </ToggleButtonGroup>
           </Stack>
-
-          <Chip
-            label={`Budget cap: N${maxPrice.toLocaleString()}`}
-            onClick={() => setMaxPrice((prev) => (prev >= 1500000 ? 250000 : prev + 250000))}
-            sx={{ bgcolor: '#E6F7F8', color: '#0F766E', fontWeight: 700, borderRadius: 2.2 }}
-          />
         </Stack>
+
+        {/* Budget Filter Section */}
+        <Box sx={{ mt: 2.5, pt: 2.5, borderTop: '1px solid #EDF2F7' }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>Maximum Budget Per Vendor</Typography>
+            <Tooltip title="This filter shows only vendors whose pricing is within your maximum budget" placement="top">
+              <Info sx={{ fontSize: 16, color: '#94A3B8', cursor: 'help' }} />
+            </Tooltip>
+          </Stack>
+          
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr auto' }, gap: 2, alignItems: 'center' }}>
+            <Slider
+              value={maxPrice}
+              onChange={(_, newValue) => {
+                setMaxPrice(newValue as number)
+                setVisibleCount(PAGE_SIZE)
+              }}
+              min={100000}
+              max={MAX_BUDGET}
+              step={50000}
+              marks={[
+                { value: 100000, label: 'N100K' },
+                { value: 500000, label: 'N500K' },
+                { value: 1000000, label: 'N1M' },
+                { value: 1500000, label: 'N1.5M' },
+                { value: MAX_BUDGET, label: 'N2M' },
+              ]}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `N${(value / 1000000).toFixed(1)}M`}
+              sx={{
+                '& .MuiSlider-track': { bgcolor: '#0F766E', border: 'none' },
+                '& .MuiSlider-thumb': { bgcolor: '#0F766E', border: '3px solid white', boxShadow: '0 2px 8px rgba(15,118,110,0.3)' },
+                '& .MuiSlider-mark[data-index]': { bgcolor: '#E2E8F0' },
+                '& .MuiSlider-markLabel': { fontSize: 11, color: '#64748B', top: 24 },
+              }}
+            />
+            
+            <Box sx={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>N{maxPrice.toLocaleString()}</Typography>
+              <Typography sx={{ fontSize: 11, color: '#94A3B8' }}>{filtered.length} vendors match</Typography>
+            </Box>
+          </Box>
+        </Box>
       </Paper>
 
       <Accordion elevation={0} disableGutters sx={{ border: '1px solid #E2E8F0', borderRadius: '12px !important', mb: 2.5, '&:before': { display: 'none' } }}>
@@ -146,7 +187,7 @@ export default function SearchResults() {
         </AccordionDetails>
       </Accordion>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: view === 'grid' ? { xs: '1fr', sm: '1fr 1fr', xl: 'repeat(3, 1fr)' } : '1fr', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: view === 'grid' ? { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' } : '1fr', gap: 2 }}>
         {visible.map((vendor) => {
           const inShortlist = isInShortlist(vendor.id)
 
@@ -159,39 +200,74 @@ export default function SearchResults() {
                 border: '1px solid #E2E8F0',
                 overflow: 'hidden',
                 transition: 'all 0.22s ease',
-                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 10px 24px rgba(15,23,42,0.08)' },
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 28px rgba(15,23,42,0.12)' },
               }}
             >
-              <Box sx={{ position: 'relative', height: 170 }}>
-                <Box component="img" src={vendor.image} alt={vendor.name} loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Box sx={{ position: 'relative', height: 180, backgroundColor: '#F0F4F8', overflow: 'hidden' }}>
+                <Box component="img" src={vendor.image} alt={vendor.name} loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }} />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'linear-gradient(to bottom, transparent 70%, rgba(15,23,42,0.2))',
+                  }}
+                />
                 <IconButton
                   aria-label={inShortlist ? `Remove ${vendor.name} from shortlist` : `Add ${vendor.name} to shortlist`}
                   onClick={() => {
                     if (inShortlist) removeFromShortlist(vendor.id)
                     else addToShortlist({ id: vendor.id, name: vendor.name, category: vendor.category, image: vendor.image, price: parsePrice(vendor.price) })
                   }}
-                  sx={{ position: 'absolute', right: 10, top: 10, bgcolor: '#FFFFFFD9', '&:hover': { bgcolor: '#FFFFFF' } }}
+                  sx={{
+                    position: 'absolute',
+                    right: 8,
+                    top: 8,
+                    bgcolor: '#FFFFFFD9',
+                    backdropFilter: 'blur(4px)',
+                    transition: 'all 0.2s ease',
+                    '&:hover': { bgcolor: '#FFFFFF', transform: 'scale(1.1)' },
+                  }}
                 >
-                  {inShortlist ? <Favorite sx={{ color: '#EB1948' }} /> : <FavoriteBorder sx={{ color: '#334155' }} />}
+                  {inShortlist ? <Favorite sx={{ color: '#EB1948', fontSize: 20 }} /> : <FavoriteBorder sx={{ color: '#334155', fontSize: 20 }} />}
                 </IconButton>
+                <Chip
+                  label={vendor.category}
+                  size="small"
+                  sx={{
+                    position: 'absolute',
+                    left: 8,
+                    bottom: 8,
+                    borderRadius: 2,
+                    bgcolor: '#FFFFFF',
+                    color: '#4338CA',
+                    fontWeight: 700,
+                    fontSize: 11,
+                  }}
+                />
               </Box>
 
-              <Box sx={{ p: 2 }}>
-                <Typography sx={{ fontSize: 17, fontWeight: 800, color: '#0F172A' }}>{vendor.name}</Typography>
-                <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 0.6 }}>
+              <Box sx={{ p: 1.8, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#0F172A', lineHeight: 1.3 }}>{vendor.name}</Typography>
+                <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 0.8, mb: 0.6 }}>
                   <Rating value={vendor.rating} readOnly precision={0.1} size="small" />
-                  <Typography sx={{ fontSize: 12, color: '#64748B' }}>({vendor.reviewCount})</Typography>
+                  <Typography sx={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>({vendor.reviewCount})</Typography>
                 </Stack>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.7 }}>
-                  <LocationOn sx={{ fontSize: 15, color: '#64748B' }} />
-                  <Typography sx={{ fontSize: 13, color: '#64748B' }}>{vendor.location}</Typography>
+                <Stack direction="row" spacing={0.6} alignItems="flex-start" sx={{ mb: 1 }}>
+                  <LocationOn sx={{ fontSize: 13, color: '#64748B', mt: 0.2, flexShrink: 0 }} />
+                  <Typography sx={{ fontSize: 12, color: '#64748B', lineHeight: 1.3 }}>{vendor.location}</Typography>
                 </Stack>
-                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mt: 1.4 }}>
-                  <Chip label={vendor.category} size="small" sx={{ borderRadius: 2, bgcolor: '#EEF2FF', color: '#4338CA', fontWeight: 700 }} />
-                  <Typography sx={{ fontWeight: 800, fontSize: 14, color: '#0F766E' }}>{vendor.price}</Typography>
+                <Box sx={{ flex: 1 }} />
+                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1.2 }}>
+                  <Typography sx={{ fontWeight: 800, fontSize: 13, color: '#0F766E' }}>{vendor.price}</Typography>
                 </Stack>
-                <Button onClick={() => navigate(`/couple/vendor/${vendor.id}`)} fullWidth variant="contained" sx={{ mt: 1.6, textTransform: 'none', fontWeight: 700, borderRadius: 2.2, bgcolor: '#00838F', '&:hover': { bgcolor: '#006670' } }}>
-                  View Vendor
+                <Button onClick={() => navigate(`/couple/vendor/${vendor.id}`)} fullWidth variant="contained" sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: '#00838F', fontSize: 12, py: 1, '&:hover': { bgcolor: '#006670' } }}>
+                  View Details
                 </Button>
               </Box>
             </Paper>
