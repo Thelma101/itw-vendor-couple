@@ -1,25 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { 
   Box, 
-  Typography, 
-  Card, 
-  Avatar, 
-  TextField,
-  IconButton,
-  Badge,
-  InputAdornment,
-  Chip,
+  Typography,
 } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import SearchIcon from '@mui/icons-material/Search';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import ImageIcon from '@mui/icons-material/Image';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Nav from '../../components/Nav';
 import Footer from '../../components/Footer';
 import BackButton from '../../components/BackButton';
 import { useNotifications } from '../../contexts/NotificationContext';
+import ConversationList from '../../components/couple/messages/ConversationList';
+import MessageThread from '../../components/couple/messages/MessageThread';
 
 interface Message {
   id: number;
@@ -184,13 +173,6 @@ const Messages: React.FC = () => {
     setSelectedConversation(updated);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   const filteredConversations = conversations.filter(conv =>
     conv.vendorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.vendorType.toLowerCase().includes(searchQuery.toLowerCase())
@@ -230,316 +212,20 @@ const Messages: React.FC = () => {
         pb: 4,
         minHeight: 600
       }}>
-        
-        {/* Conversations List */}
-        <Card sx={{ 
-          width: 360, 
-          border: '0.25px solid #00838F', 
-          backgroundColor: 'white',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          {/* Search */}
-          <Box sx={{ p: 2, borderBottom: '1px solid #eee' }}>
-            <TextField
-              fullWidth
-              placeholder="Search conversations..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: '#999', fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-                sx: { 
-                  fontFamily: "'Open Sans', sans-serif",
-                  borderRadius: 2,
-                  backgroundColor: '#f5f5f5'
-                }
-              }}
-            />
-          </Box>
+        <ConversationList
+          conversations={filteredConversations}
+          selectedConversation={selectedConversation}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSelectConversation={selectConversation}
+        />
 
-          {/* Conversation List */}
-          <Box sx={{ flex: 1, overflow: 'auto' }}>
-            {filteredConversations.map((conv) => (
-              <Box
-                key={conv.id}
-                onClick={() => selectConversation(conv)}
-                sx={{
-                  display: 'flex',
-                  gap: 2,
-                  p: 2,
-                  cursor: 'pointer',
-                  backgroundColor: selectedConversation.id === conv.id ? '#f0fdfa' : 'white',
-                  borderLeft: selectedConversation.id === conv.id ? '3px solid #00838F' : '3px solid transparent',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    backgroundColor: '#f9fafb'
-                  }
-                }}
-              >
-                <Badge
-                  overlap="circular"
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                  badgeContent={
-                    conv.online ? (
-                      <Box sx={{
-                        width: 12,
-                        height: 12,
-                        backgroundColor: '#22c55e',
-                        borderRadius: '50%',
-                        border: '2px solid white'
-                      }} />
-                    ) : null
-                  }
-                >
-                  <Avatar src={conv.avatar} sx={{ width: 48, height: 48 }} />
-                </Badge>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography sx={{ 
-                      fontFamily: "'Open Sans', sans-serif", 
-                      fontWeight: conv.unread > 0 ? 700 : 600, 
-                      fontSize: 14, 
-                      color: '#002528' 
-                    }}>
-                      {conv.vendorName}
-                    </Typography>
-                    <Typography sx={{ 
-                      fontFamily: "'Open Sans', sans-serif", 
-                      fontSize: 11, 
-                      color: '#999' 
-                    }}>
-                      {conv.timestamp}
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ 
-                    fontFamily: "'Open Sans', sans-serif", 
-                    fontSize: 11, 
-                    color: '#00838F',
-                    mb: 0.5
-                  }}>
-                    {conv.vendorType}
-                  </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography sx={{ 
-                      fontFamily: "'Open Sans', sans-serif", 
-                      fontSize: 12, 
-                      color: conv.unread > 0 ? '#002528' : '#666',
-                      fontWeight: conv.unread > 0 ? 600 : 400,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '200px'
-                    }}>
-                      {conv.lastMessage}
-                    </Typography>
-                    {conv.unread > 0 && (
-                      <Chip 
-                        label={conv.unread} 
-                        size="small"
-                        sx={{ 
-                          height: 20, 
-                          minWidth: 20,
-                          backgroundColor: '#EB1948',
-                          color: 'white',
-                          fontFamily: "'Open Sans', sans-serif",
-                          fontSize: 11,
-                          fontWeight: 600
-                        }} 
-                      />
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        </Card>
-
-        {/* Chat Window */}
-        <Card sx={{ 
-          flex: 1, 
-          border: '0.25px solid #00838F', 
-          backgroundColor: 'white',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          {/* Chat Header */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 2, 
-            p: 2, 
-            borderBottom: '1px solid #eee' 
-          }}>
-            <Badge
-              overlap="circular"
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              badgeContent={
-                selectedConversation.online ? (
-                  <Box sx={{
-                    width: 10,
-                    height: 10,
-                    backgroundColor: '#22c55e',
-                    borderRadius: '50%',
-                    border: '2px solid white'
-                  }} />
-                ) : null
-              }
-            >
-              <Avatar src={selectedConversation.avatar} sx={{ width: 44, height: 44 }} />
-            </Badge>
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ 
-                fontFamily: "'Open Sans', sans-serif", 
-                fontWeight: 600, 
-                fontSize: 16, 
-                color: '#002528' 
-              }}>
-                {selectedConversation.vendorName}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography sx={{ 
-                  fontFamily: "'Open Sans', sans-serif", 
-                  fontSize: 12, 
-                  color: '#666' 
-                }}>
-                  {selectedConversation.vendorType}
-                </Typography>
-                {selectedConversation.online ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Box sx={{ width: 6, height: 6, backgroundColor: '#22c55e', borderRadius: '50%' }} />
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#22c55e' }}>
-                      Online
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <AccessTimeIcon sx={{ fontSize: 12, color: '#999' }} />
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#999' }}>
-                      Last seen {selectedConversation.timestamp}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Messages Area */}
-          <Box sx={{ 
-            flex: 1, 
-            overflow: 'auto', 
-            p: 2, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 2,
-            backgroundColor: '#fafafa'
-          }}>
-            {selectedConversation.messages.map((msg) => (
-              <Box
-                key={msg.id}
-                sx={{
-                  display: 'flex',
-                  justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start'
-                }}
-              >
-                <Box
-                  sx={{
-                    maxWidth: '70%',
-                    backgroundColor: msg.sender === 'user' ? '#00838F' : 'white',
-                    color: msg.sender === 'user' ? 'white' : '#002528',
-                    borderRadius: msg.sender === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                    p: 2,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  <Typography sx={{ 
-                    fontFamily: "'Open Sans', sans-serif", 
-                    fontSize: 14,
-                    lineHeight: 1.5
-                  }}>
-                    {msg.text}
-                  </Typography>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'flex-end', 
-                    alignItems: 'center', 
-                    gap: 0.5, 
-                    mt: 1 
-                  }}>
-                    <Typography sx={{ 
-                      fontFamily: "'Open Sans', sans-serif", 
-                      fontSize: 10,
-                      color: msg.sender === 'user' ? 'rgba(255,255,255,0.7)' : '#999'
-                    }}>
-                      {msg.time}
-                    </Typography>
-                    {msg.sender === 'user' && (
-                      <CheckCircleIcon sx={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }} />
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-            ))}
-            <div ref={messagesEndRef} />
-          </Box>
-
-          {/* Message Input */}
-          <Box sx={{ 
-            p: 2, 
-            borderTop: '1px solid #eee',
-            backgroundColor: 'white'
-          }}>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-              <IconButton size="small" sx={{ color: '#666' }}>
-                <AttachFileIcon />
-              </IconButton>
-              <IconButton size="small" sx={{ color: '#666' }}>
-                <ImageIcon />
-              </IconButton>
-              <TextField
-                fullWidth
-                multiline
-                maxRows={4}
-                placeholder="Type your message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    fontFamily: "'Open Sans', sans-serif",
-                    borderRadius: 2,
-                    backgroundColor: '#f5f5f5',
-                    '& fieldset': {
-                      borderColor: 'transparent'
-                    },
-                    '&:hover fieldset': {
-                      borderColor: '#00838F'
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#00838F'
-                    }
-                  }
-                }}
-              />
-              <IconButton 
-                onClick={handleSendMessage}
-                sx={{ 
-                  backgroundColor: '#00838F',
-                  color: 'white',
-                  '&:hover': {
-                    backgroundColor: '#006d75'
-                  }
-                }}
-              >
-                <SendIcon />
-              </IconButton>
-            </Box>
-          </Box>
-        </Card>
+        <MessageThread
+          conversation={selectedConversation}
+          newMessage={newMessage}
+          onMessageChange={setNewMessage}
+          onSendMessage={handleSendMessage}
+        />
       </Box>
 
       <Footer />

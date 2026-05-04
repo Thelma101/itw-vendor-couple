@@ -4,14 +4,10 @@ import {
   Typography,
   Card,
   Button,
-  TextField,
   Stepper,
   Step,
   StepLabel,
   Divider,
-  Avatar,
-  Checkbox,
-  FormControlLabel,
   Dialog,
   DialogContent,
   Snackbar,
@@ -20,14 +16,15 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../../components/BackButton';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CelebrationIcon from '@mui/icons-material/Celebration';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import PaymentIcon from '@mui/icons-material/Payment';
 import Nav from '../../components/Nav';
 import Footer from '../../components/Footer';
 import { useShortlist } from '../../contexts/ShortlistContext';
 import { useNotifications } from '../../contexts/NotificationContext';
+import BookingStep0 from '../../components/couple/booking/BookingStep0';
+import BookingStep1 from '../../components/couple/booking/BookingStep1';
+import BookingStep2 from '../../components/couple/booking/BookingStep2';
+import BookingStep3 from '../../components/couple/booking/BookingStep3';
 
 const steps = ['Review Vendors', 'Event Details', 'Payment', 'Confirmation'];
 
@@ -175,694 +172,77 @@ const Booking: React.FC = () => {
         </Stepper>
       </Box>
 
-      {/* Main Content */}
-      <Box sx={{ px: 4, pb: 4, display: 'flex', gap: 3 }}>
-        
-        {/* Left Column - Step Content */}
-        <Box sx={{ flex: 1 }}>
-          <Card sx={{ border: '0.25px solid #00838F', p: 3 }}>
-            
-            {/* Step 0: Review Vendors */}
-            {activeStep === 0 && (
-              <>
-                <Typography sx={{
-                  fontFamily: "'Open Sans', sans-serif",
-                  fontWeight: 700,
-                  fontSize: 18,
-                  color: '#002528',
-                  mb: 3
-                }}>
-                  Selected Vendors ({items.length})
-                </Typography>
-                
-                {items.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', mb: 2 }}>
-                      No vendors in your shortlist
-                    </Typography>
-                    <Button
-                      onClick={() => navigate('/couple/search-results')}
-                      sx={{
-                        backgroundColor: '#00838F',
-                        color: 'white',
-                        fontFamily: "'Open Sans', sans-serif",
-                        textTransform: 'none',
-                        '&:hover': { backgroundColor: '#006d75' }
-                      }}
-                    >
-                      Browse Vendors
-                    </Button>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {items.map((item) => (
-                      <Box
-                        key={item.id}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 2,
-                          p: 2,
-                          backgroundColor: '#f9fafb',
-                          borderRadius: 2
-                        }}
-                      >
-                        <Avatar
-                          src={item.image}
-                          variant="rounded"
-                          sx={{ width: 60, height: 60 }}
-                        />
-                        <Box sx={{ flex: 1 }}>
-                          <Typography sx={{
-                            fontFamily: "'Open Sans', sans-serif",
-                            fontWeight: 600,
-                            fontSize: 14,
-                            color: '#002528'
-                          }}>
-                            {item.name}
-                          </Typography>
-                          <Typography sx={{
-                            fontFamily: "'Open Sans', sans-serif",
-                            fontSize: 12,
-                            color: '#666'
-                          }}>
-                            {item.category}
-                          </Typography>
-                        </Box>
-                        <Typography sx={{
-                          fontFamily: "'Open Sans', sans-serif",
-                          fontWeight: 700,
-                          fontSize: 16,
-                          color: '#00838F'
-                        }}>
-                          {formatPrice(item.price)}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                )}
-              </>
-            )}
-
-            {/* Step 1: Event Details */}
-            {activeStep === 1 && (
-              <>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-                  <CalendarMonthIcon sx={{ color: '#00838F' }} />
-                  <Typography sx={{
-                    fontFamily: "'Open Sans', sans-serif",
-                    fontWeight: 700,
-                    fontSize: 18,
-                    color: '#002528'
-                  }}>
-                    Service Delivery Details
-                  </Typography>
-                </Box>
-                
-                {/* Required: Service Delivery */}
-                <Box sx={{
-                  p: 2,
-                  backgroundColor: '#f0fdfa',
-                  borderRadius: 2,
-                  border: '1px solid #00838F',
-                  mb: 3
-                }}>
-                  <Typography sx={{
-                    fontFamily: "'Open Sans', sans-serif",
-                    fontWeight: 600,
-                    fontSize: 14,
-                    color: '#002528',
-                    mb: 2
-                  }}>
-                    When do you need the service? *
-                  </Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
-                    <TextField
-                      label="Service Date"
-                      type="date"
-                      fullWidth
-                      required
-                      value={formData.serviceDate}
-                      onChange={(e) => setFormData({ ...formData, serviceDate: e.target.value })}
-                      InputLabelProps={{ shrink: true }}
-                      sx={{ '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif", backgroundColor: 'white' } }}
-                    />
-                    <TextField
-                      label="Service Time"
-                      type="time"
-                      fullWidth
-                      required
-                      value={formData.serviceTime}
-                      onChange={(e) => setFormData({ ...formData, serviceTime: e.target.value })}
-                      InputLabelProps={{ shrink: true }}
-                      sx={{ '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif", backgroundColor: 'white' } }}
-                    />
-                  </Box>
-                </Box>
-
-                {/* Optional: Wedding Details */}
-                <Typography sx={{
-                  fontFamily: "'Open Sans', sans-serif",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: '#666',
-                  mb: 2
-                }}>
-                  Wedding Details (Optional)
-                </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
-                  <TextField
-                    label="Wedding Date"
-                    type="date"
-                    fullWidth
-                    value={formData.weddingDate}
-                    onChange={(e) => setFormData({ ...formData, weddingDate: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                    sx={{ '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } }}
-                    helperText="If different from service date"
-                  />
-                  <TextField
-                    label="Expected Guests"
-                    type="number"
-                    fullWidth
-                    placeholder="e.g., 200"
-                    value={formData.guestCount}
-                    onChange={(e) => setFormData({ ...formData, guestCount: e.target.value })}
-                    sx={{ '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } }}
-                  />
-                  <TextField
-                    label="Ceremony Time"
-                    type="time"
-                    fullWidth
-                    value={formData.ceremonyTime}
-                    onChange={(e) => setFormData({ ...formData, ceremonyTime: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                    sx={{ '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } }}
-                  />
-                  <TextField
-                    label="Reception Time"
-                    type="time"
-                    fullWidth
-                    value={formData.receptionTime}
-                    onChange={(e) => setFormData({ ...formData, receptionTime: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                    sx={{ '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } }}
-                  />
-                </Box>
-                
-                <TextField
-                  label="Venue Address"
-                  fullWidth
-                  placeholder="Enter event venue address"
-                  value={formData.venue}
-                  onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
-                  sx={{ mt: 2, '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } }}
+        {/* Main Content */}
+        <Box sx={{ px: 4, pb: 4, display: 'flex', gap: 3 }}>
+          
+          {/* Left Column - Step Content */}
+          <Box sx={{ flex: 1 }}>
+            <Card sx={{ border: '0.25px solid #00838F', p: 3 }}>
+              {activeStep === 0 && <BookingStep0 items={items} onNext={() => setActiveStep(1)} />}
+              {activeStep === 1 && (
+                <BookingStep1
+                  formData={formData}
+                  onFormChange={(field: string, value: string) => setFormData({ ...formData, [field]: value })}
+                  onNext={() => setActiveStep(2)}
+                  isNextDisabled={!formData.serviceDate || !formData.venue}
                 />
-                
-                <TextField
-                  label="Special Requests"
-                  fullWidth
-                  multiline
-                  rows={3}
-                  placeholder="Any special requirements or notes for the vendors..."
-                  value={formData.specialRequests}
-                  onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
-                  sx={{ mt: 2, '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } }}
+              )}
+              {activeStep === 2 && (
+                <BookingStep2
+                  formData={formData}
+                  onFormChange={(field: string, value: any) => setFormData({ ...formData, [field]: value })}
+                  onNext={() => setActiveStep(3)}
+                  totalPrice={totalPrice}
+                  depositAmount={depositAmount}
                 />
-              </>
-            )}
-
-            {/* Step 2: Payment */}
-            {activeStep === 2 && (
-              <>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-                  <PaymentIcon sx={{ color: '#00838F' }} />
-                  <Typography sx={{
-                    fontFamily: "'Open Sans', sans-serif",
-                    fontWeight: 700,
-                    fontSize: 18,
-                    color: '#002528'
-                  }}>
-                    Secure Payment
-                  </Typography>
-                </Box>
-                
-                <Box sx={{
-                  p: 2,
-                  backgroundColor: '#f0fdf4',
-                  borderRadius: 2,
-                  border: '1px solid #22c55e',
-                  mb: 3
-                }}>
-                  <Typography sx={{
-                    fontFamily: "'Open Sans', sans-serif",
-                    fontSize: 14,
-                    color: '#166534'
-                  }}>
-                    💡 You only need to pay 30% deposit now. The remaining balance will be due 7 days before your event.
-                  </Typography>
-                </Box>
-
-                {/* Platform Protection Notice */}
-                <Box sx={{
-                  p: 2,
-                  backgroundColor: '#fef3c7',
-                  borderRadius: 2,
-                  border: '1px solid #f59e0b',
-                  mb: 3
-                }}>
-                  <Typography sx={{
-                    fontFamily: "'Open Sans', sans-serif",
-                    fontWeight: 600,
-                    fontSize: 14,
-                    color: '#92400e',
-                    mb: 1
-                  }}>
-                    🛡️ Platform Protection
-                  </Typography>
-                  <Typography sx={{
-                    fontFamily: "'Open Sans', sans-serif",
-                    fontSize: 13,
-                    color: '#92400e'
-                  }}>
-                    All payments are processed securely through our platform. This protects both you and the vendor with our satisfaction guarantee, dispute resolution, and refund protection.
-                  </Typography>
-                </Box>
-
-                <Typography sx={{
-                  fontFamily: "'Open Sans', sans-serif",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: '#002528',
-                  mb: 2
-                }}>
-                  Select Payment Gateway
-                </Typography>
-
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-                  {/* Paystack */}
-                  <Box
-                    onClick={() => setFormData({ ...formData, paymentMethod: 'paystack' })}
-                    sx={{
-                      p: 3,
-                      borderRadius: 2,
-                      border: '2px solid',
-                      borderColor: formData.paymentMethod === 'paystack' ? '#00838F' : '#e0e0e0',
-                      backgroundColor: formData.paymentMethod === 'paystack' ? '#f0fdfa' : 'white',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '&:hover': { borderColor: '#00838F' }
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ 
-                          width: 48, height: 48, borderRadius: 2, 
-                          backgroundColor: '#00C3F7', 
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                          <Typography sx={{ color: 'white', fontWeight: 700, fontSize: 14 }}>PS</Typography>
-                        </Box>
-                        <Box>
-                          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 16, color: '#002528' }}>
-                            Paystack
-                          </Typography>
-                          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-                            Cards, Bank Transfer, USSD, Mobile Money
-                          </Typography>
-                        </Box>
-                      </Box>
-                      {formData.paymentMethod === 'paystack' && (
-                        <CheckCircleIcon sx={{ color: '#00838F' }} />
-                      )}
-                    </Box>
-                  </Box>
-
-                  {/* Flutterwave */}
-                  <Box
-                    onClick={() => setFormData({ ...formData, paymentMethod: 'flutterwave' })}
-                    sx={{
-                      p: 3,
-                      borderRadius: 2,
-                      border: '2px solid',
-                      borderColor: formData.paymentMethod === 'flutterwave' ? '#00838F' : '#e0e0e0',
-                      backgroundColor: formData.paymentMethod === 'flutterwave' ? '#f0fdfa' : 'white',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '&:hover': { borderColor: '#00838F' }
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ 
-                          width: 48, height: 48, borderRadius: 2, 
-                          backgroundColor: '#F5A623', 
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                          <Typography sx={{ color: 'white', fontWeight: 700, fontSize: 14 }}>FW</Typography>
-                        </Box>
-                        <Box>
-                          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 16, color: '#002528' }}>
-                            Flutterwave
-                          </Typography>
-                          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-                            Cards, Bank Transfer, Barter, Mobile Money
-                          </Typography>
-                        </Box>
-                      </Box>
-                      {formData.paymentMethod === 'flutterwave' && (
-                        <CheckCircleIcon sx={{ color: '#00838F' }} />
-                      )}
-                    </Box>
-                  </Box>
-
-                  {/* Stripe */}
-                  <Box
-                    onClick={() => setFormData({ ...formData, paymentMethod: 'stripe' })}
-                    sx={{
-                      p: 3,
-                      borderRadius: 2,
-                      border: '2px solid',
-                      borderColor: formData.paymentMethod === 'stripe' ? '#00838F' : '#e0e0e0',
-                      backgroundColor: formData.paymentMethod === 'stripe' ? '#f0fdfa' : 'white',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '&:hover': { borderColor: '#00838F' }
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ 
-                          width: 48, height: 48, borderRadius: 2, 
-                          backgroundColor: '#635BFF', 
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                          <Typography sx={{ color: 'white', fontWeight: 700, fontSize: 14 }}>S</Typography>
-                        </Box>
-                        <Box>
-                          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 16, color: '#002528' }}>
-                            Stripe
-                          </Typography>
-                          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-                            Cards, Apple Pay, Google Pay
-                          </Typography>
-                        </Box>
-                      </Box>
-                      {formData.paymentMethod === 'stripe' && (
-                        <CheckCircleIcon sx={{ color: '#00838F' }} />
-                      )}
-                    </Box>
-                  </Box>
-                </Box>
-
-                <Box sx={{ 
-                  p: 2, 
-                  backgroundColor: '#f8fafc', 
-                  borderRadius: 2, 
-                  border: '1px solid #e2e8f0',
-                  mb: 2
-                }}>
-                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#64748b', textAlign: 'center' }}>
-                    🔒 Your payment is secured with industry-standard encryption. You'll be redirected to {formData.paymentMethod === 'paystack' ? 'Paystack' : formData.paymentMethod === 'flutterwave' ? 'Flutterwave' : 'Stripe'}'s secure checkout to complete payment.
-                  </Typography>
-                </Box>
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={formData.agreeTerms}
-                      onChange={(e) => setFormData({ ...formData, agreeTerms: e.target.checked })}
-                      sx={{ color: '#00838F', '&.Mui-checked': { color: '#00838F' } }}
-                    />
-                  }
-                  label={
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13 }}>
-                      I agree to the Terms of Service, Cancellation Policy, and understand that all transactions must go through the platform
-                    </Typography>
-                  }
-                  sx={{ mt: 1 }}
+              )}
+              {activeStep === 3 && (
+                <BookingStep3
+                  formData={formData}
+                  items={items}
+                  totalPrice={totalPrice}
+                  depositAmount={depositAmount}
                 />
-              </>
-            )}
+              )}
 
-            {/* Step 3: Confirmation */}
-            {activeStep === 3 && (
-              <>
-                <Box sx={{ textAlign: 'center', py: 2 }}>
-                  <CheckCircleIcon sx={{ fontSize: 64, color: '#22c55e', mb: 2 }} />
-                  <Typography sx={{
+              {/* Navigation Buttons */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4, pt: 3, borderTop: '1px solid #e0e0e0' }}>
+                <Button
+                  disabled={activeStep === 0 || isProcessing}
+                  onClick={handleBack}
+                  sx={{
                     fontFamily: "'Open Sans', sans-serif",
-                    fontWeight: 700,
-                    fontSize: 24,
-                    color: '#002528',
-                    mb: 1
-                  }}>
-                    Review Your Booking
-                  </Typography>
-                  <Typography sx={{
-                    fontFamily: "'Open Sans', sans-serif",
-                    fontSize: 14,
+                    textTransform: 'none',
                     color: '#666'
-                  }}>
-                    Please review the details before confirming
-                  </Typography>
-                </Box>
-                
-                <Divider sx={{ my: 3 }} />
-                
-                {/* Event Details Section */}
-                <Typography sx={{
-                  fontFamily: "'Open Sans', sans-serif",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: '#00838F',
-                  mb: 2,
-                  textTransform: 'uppercase',
-                  letterSpacing: 1
-                }}>
-                  Service Delivery Details
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', fontSize: 14 }}>
-                      Service Date
-                    </Typography>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14 }}>
-                      {formData.serviceDate ? new Date(formData.serviceDate).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      }) : 'Not set'}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', fontSize: 14 }}>
-                      Service Time
-                    </Typography>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14 }}>
-                      {formData.serviceTime || 'Not set'}
-                    </Typography>
-                  </Box>
-                  {formData.weddingDate && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', fontSize: 14 }}>
-                        Wedding Date
-                      </Typography>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14 }}>
-                        {new Date(formData.weddingDate).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </Typography>
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={handleNext}
+                  disabled={isNextDisabled() || isProcessing}
+                  sx={{
+                    background: 'linear-gradient(229.87deg, #EB1948 65.18%, #B52344 232.03%)',
+                    color: 'white',
+                    fontFamily: "'Open Sans', sans-serif",
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    px: 4,
+                    minWidth: 180,
+                    '&:hover': { opacity: 0.9 },
+                    '&:disabled': { backgroundColor: '#ccc', color: '#999' }
+                  }}
+                >
+                  {isProcessing ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={18} sx={{ color: 'white' }} />
+                      <span>Processing...</span>
                     </Box>
-                  )}
-                  {formData.ceremonyTime && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', fontSize: 14 }}>
-                        Ceremony Time
-                      </Typography>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14 }}>
-                        {formData.ceremonyTime}
-                      </Typography>
-                    </Box>
-                  )}
-                  {formData.receptionTime && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', fontSize: 14 }}>
-                        Reception Time
-                      </Typography>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14 }}>
-                        {formData.receptionTime}
-                      </Typography>
-                    </Box>
-                  )}
-                  {formData.guestCount && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', fontSize: 14 }}>
-                        Expected Guests
-                      </Typography>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14 }}>
-                        {formData.guestCount}
-                      </Typography>
-                    </Box>
-                  )}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', fontSize: 14 }}>
-                      Venue
-                    </Typography>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14, maxWidth: '60%', textAlign: 'right' }}>
-                      {formData.venue || 'Not set'}
-                    </Typography>
-                  </Box>
-                </Box>
-                
-                <Divider sx={{ my: 2 }} />
-                
-                {/* Vendors Section */}
-                <Typography sx={{
-                  fontFamily: "'Open Sans', sans-serif",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: '#00838F',
-                  mb: 2,
-                  textTransform: 'uppercase',
-                  letterSpacing: 1
-                }}>
-                  Vendors ({items.length})
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
-                  {items.map((item) => (
-                    <Box key={item.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Avatar src={item.image} sx={{ width: 32, height: 32 }} />
-                        <Box>
-                          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, fontWeight: 600 }}>
-                            {item.name}
-                          </Typography>
-                          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>
-                            {item.category}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, fontWeight: 600 }}>
-                        {formatPrice(item.price)}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-                
-                <Divider sx={{ my: 2 }} />
-                
-                {/* Payment Section */}
-                <Typography sx={{
-                  fontFamily: "'Open Sans', sans-serif",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: '#00838F',
-                  mb: 2,
-                  textTransform: 'uppercase',
-                  letterSpacing: 1
-                }}>
-                  Payment Summary
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', fontSize: 14 }}>
-                      Payment Method
-                    </Typography>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>
-                      {formData.paymentMethod === 'paystack' ? 'Paystack' : 
-                       formData.paymentMethod === 'flutterwave' ? 'Flutterwave' : 'Stripe'}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", color: '#666', fontSize: 14 }}>
-                      Total Amount
-                    </Typography>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 14 }}>
-                      {formatPrice(totalPrice * 1.05)}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    p: 2,
-                    backgroundColor: '#f0fdfa',
-                    borderRadius: 2,
-                    mt: 1
-                  }}>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 16 }}>
-                      Deposit Due Now
-                    </Typography>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 700, fontSize: 18, color: '#00838F' }}>
-                      {formatPrice(depositAmount * 1.05)}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {formData.specialRequests && (
-                  <>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography sx={{
-                      fontFamily: "'Open Sans', sans-serif",
-                      fontWeight: 600,
-                      fontSize: 14,
-                      color: '#00838F',
-                      mb: 1,
-                      textTransform: 'uppercase',
-                      letterSpacing: 1
-                    }}>
-                      Special Requests
-                    </Typography>
-                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666', fontStyle: 'italic' }}>
-                      "{formData.specialRequests}"
-                    </Typography>
-                  </>
-                )}
-              </>
-            )}
-
-            {/* Navigation Buttons */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4, pt: 3, borderTop: '1px solid #e0e0e0' }}>
-              <Button
-                disabled={activeStep === 0 || isProcessing}
-                onClick={handleBack}
-                sx={{
-                  fontFamily: "'Open Sans', sans-serif",
-                  textTransform: 'none',
-                  color: '#666'
-                }}
-              >
-                Back
-              </Button>
-              <Button
-                onClick={handleNext}
-                disabled={isNextDisabled() || isProcessing}
-                sx={{
-                  background: 'linear-gradient(229.87deg, #EB1948 65.18%, #B52344 232.03%)',
-                  color: 'white',
-                  fontFamily: "'Open Sans', sans-serif",
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  px: 4,
-                  minWidth: 180,
-                  '&:hover': { opacity: 0.9 },
-                  '&:disabled': { backgroundColor: '#ccc', color: '#999' }
-                }}
-              >
-                {isProcessing ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CircularProgress size={18} sx={{ color: 'white' }} />
-                    <span>Processing...</span>
-                  </Box>
-                ) : activeStep === steps.length - 1 ? 'Confirm & Pay' : 'Continue'}
-              </Button>
-            </Box>
-          </Card>
-        </Box>
+                  ) : activeStep === steps.length - 1 ? 'Confirm & Pay' : 'Continue'}
+                </Button>
+              </Box>
+            </Card>
+          </Box>
 
         {/* Right Column - Order Summary */}
         <Box sx={{ width: 350 }}>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Box, Button, Card, Dialog, DialogActions, DialogContent, DialogTitle, Divider, IconButton, Paper, Stack, TextField, Typography } from '@mui/material'
-import { Delete, Edit, Calendar } from '@mui/icons-material'
+import { Box, Button, Card, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography } from '@mui/material'
+import { Delete, Edit, EventNote } from '@mui/icons-material'
 import CouplePageShell from '@/components/couple/CouplePageShell'
 import { useNotes } from '@/contexts/NotesContext'
 import FloatingNoteButton from '@/components/couple/FloatingNoteButton'
@@ -80,7 +80,7 @@ export default function NotesPage() {
                       {note.page.replace(/-/g, ' ').toUpperCase()}
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#94A3B8' }}>
-                      <Calendar sx={{ fontSize: 13 }} />
+                      <EventNote sx={{ fontSize: 13 }} />
                       <Typography sx={{ fontSize: 11, color: '#94A3B8' }}>{formatDate(note.timestamp)}</Typography>
                     </Box>
                   </Box>
@@ -143,21 +143,8 @@ export default function NotesPage() {
         </DialogActions>
       </Dialog>
       
-      <FloatingNoteButton page="notes" />
+      <FloatingNoteButton />
     </CouplePageShell>
   )
 }
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button onClick={handleCancel} variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}>
-            Cancel
-          </Button>
-          <Button onClick={handleSaveEdit} variant="contained" sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, bgcolor: '#0F766E' }} disabled={!editText.trim()}>
-            Save Changes
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </CouplePageShell>
-  )
-}
+

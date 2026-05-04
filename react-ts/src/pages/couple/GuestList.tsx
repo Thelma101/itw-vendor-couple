@@ -20,6 +20,9 @@ import {
 import { Add, ExpandMore, Delete, Edit as EditNote } from '@mui/icons-material'
 import CouplePageShell from '@/components/couple/CouplePageShell'
 import EditNoteDrawer from '@/components/couple/EditNoteDrawer'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+import { useFormDialog } from '@/hooks/useFormDialog'
+import { STATUS_STYLES, STORAGE_KEYS } from '@/lib/constants'
 
 interface Guest {
   id: string
@@ -31,43 +34,34 @@ interface Guest {
   status: 'Invited' | 'Confirmed' | 'Pending'
 }
 
-const key = 'itw_guestlist'
-
 const defaultGuests: Guest[] = [
   { id: '1', name: 'John Doe', email: 'john@example.com', group: 'Friends', status: 'Confirmed' },
   { id: '2', name: 'Jane Smith', email: 'jane@example.com', group: "Bride's Family", status: 'Pending' },
   { id: '3', name: 'Michael Johnson', email: 'michael.j@example.com', group: "Groom's Family", status: 'Invited' }
 ]
 
-const readGuests = (): Guest[] => {
-  try {
-    const raw = localStorage.getItem(key)
-    const stored = raw ? (JSON.parse(raw) as Guest[]) : []
-    return stored.length > 0 ? stored : defaultGuests
-  } catch {
-    return defaultGuests
-  }
-}
-
-const statusStyles: Record<Guest['status'], { bg: string; color: string }> = {
-  Invited: { bg: '#EFF6FF', color: '#1D4ED8' },
-  Pending: { bg: '#FFF7ED', color: '#B45309' },
-  Confirmed: { bg: '#ECFDF5', color: '#15803D' },
-}
-
 export default function GuestList() {
-  const [guests, setGuests] = useState<Guest[]>(readGuests)
+  const { data: guests, save: sync } = useLocalStorage<Guest[]>(STORAGE_KEYS.GUEST_LIST, defaultGuests)
   const [filter, setFilter] = useState<'All' | Guest['status']>('All')
-  const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', group: '', notes: '' })
   const [search, setSearch] = useState('')
-
-  const sync = (next: Guest[]) => {
-    setGuests(next)
-    localStorage.setItem(key, JSON.stringify(next))
-  }
+  const { form, updateForm, dialogOpen, openDialog, closeDialog, handleSave: saveGuest } = useFormDialog(
+    { name: '', email: '', phone: '', group: '', notes: '' },
+    (formData) => {
+      const guest: Guest = {
+        id: String(Date.now()),
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        group: formData.group.trim() || 'Friends',
+        notes: formData.notes.trim(),
+        status: 'Invited',
+      }
+      sync([...guests, guest])
+    },
+    (formData) => formData.name.trim().length > 0
+  )
 
   const visible = useMemo(() => {
     const filtered = filter === 'All' ? guests : guests.filter((guest) => guest.status === filter)
@@ -90,21 +84,7 @@ export default function GuestList() {
   }, [guests])
 
   const addGuest = () => {
-    if (!form.name.trim()) return
-
-    const guest: Guest = {
-      id: String(Date.now()),
-      name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      group: form.group.trim() || 'Friends',
-      notes: form.notes.trim(),
-      status: 'Invited',
-    }
-
-    sync([...guests, guest])
-    setDialogOpen(false)
-    setForm({ name: '', email: '', phone: '', group: '', notes: '' })
+    saveGuest()
   }
 
   const cycleStatus = (id: string) => {
@@ -149,7 +129,7 @@ export default function GuestList() {
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => setDialogOpen(true)}
+            onClick={openDialog}
             sx={{ bgcolor: '#00838F', textTransform: 'none', fontWeight: 700, borderRadius: 6, '&:hover': { bgcolor: '#006670' } }}
           >
             Add Guest
@@ -201,7 +181,7 @@ export default function GuestList() {
 
           <Stack spacing={1.2}>
             {visible.map((guest) => {
-              const tone = statusStyles[guest.status]
+              const tone = STATUS_STYLES[guest.status]
 
               return (
                 <Paper key={guest.id} elevation={0} sx={{ border: '1px solid #E2E8F0', borderRadius: 4, transition: 'all 0.2s ease', '&:hover': { boxShadow: '0 12px 24px rgba(15,23,42,0.06)' } }}>
@@ -314,24 +294,24 @@ export default function GuestList() {
       {/* Edit Note Drawer */}
       <EditNoteDrawer open={noteDrawerOpen} onClose={() => setNoteDrawerOpen(false)} />
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>Add Guest</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 0.5 }}>
-            <TextField label="Full name" required value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
-            <TextField label="Phone number" required value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} placeholder="+234" />
-            <TextField label="Group" value={form.group} onChange={(event) => setForm((prev) => ({ ...prev, group: event.target.value }))} placeholder="Friends, Family, Colleagues..." />
+            <TextField label="Full name" required value={form.name} onChange={(event) => updateForm({ name: event.target.value })} />
+            <TextField label="Phone number" required value={form.phone} onChange={(event) => updateForm({ phone: event.target.value })} placeholder="+234" />
+            <TextField label="Group" value={form.group} onChange={(event) => updateForm({ group: event.target.value })} placeholder="Friends, Family, Colleagues..." />
             <Accordion elevation={0} sx={{ border: '1px solid #E2E8F0', borderRadius: '8px !important', '&:before': { display: 'none' } }}>
               <AccordionSummary expandIcon={<ExpandMore />}>
                 <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>Optional Details</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <Stack spacing={2}>
-                  <TextField label="Email" value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} />
+                  <TextField label="Email" value={form.email} onChange={(event) => updateForm({ email: event.target.value })} />
                   <TextField
                     label="Notes"
                     value={form.notes}
-                    onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+                    onChange={(event) => updateForm({ notes: event.target.value })}
                     placeholder="Dietary restrictions, seating preferences, etc."
                     multiline
                     rows={2}
@@ -342,7 +322,7 @@ export default function GuestList() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
+          <Button onClick={closeDialog} sx={{ textTransform: 'none' }}>Cancel</Button>
           <Button onClick={addGuest} variant="contained" sx={{ textTransform: 'none', bgcolor: '#00838F' }}>Save Guest</Button>
         </DialogActions>
       </Dialog>

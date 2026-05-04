@@ -2,23 +2,26 @@ import { useMemo, useState } from 'react'
 import {
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
-  LinearProgress,
   Paper,
   Stack,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material'
-import { Add, CheckCircle, Savings, TrendingUp, WarningAmber, Edit, Delete, Edit as EditNote } from '@mui/icons-material'
+import { Add, CheckCircle, WarningAmber, EditNote } from '@mui/icons-material'
 import CouplePageShell from '@/components/couple/CouplePageShell'
 import EditNoteDrawer from '@/components/couple/EditNoteDrawer'
 import EditExpenseDrawer from '@/components/couple/drawers/EditExpenseDrawer'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+import { useFormDialog } from '@/hooks/useFormDialog'
+import { formatCurrency } from '@/lib/formatters'
+import { STORAGE_KEYS } from '@/lib/constants'
+import BudgetSummary from '@/components/couple/budget/BudgetSummary'
+import ExpensesList from '@/components/couple/budget/ExpensesList'
 
 interface Expense {
   id: string
@@ -27,67 +30,36 @@ interface Expense {
   actual: number
 }
 
-const budgetKey = 'itw_total_budget'
-const expenseKey = 'itw_budget'
-
 const defaultExpenses: Expense[] = [
   { id: '1', category: 'Venue & Logistics', estimated: 1000000, actual: 1200000 },
   { id: '2', category: 'Catering & Drinks', estimated: 500000, actual: 450000 },
   { id: '3', category: 'Photography & Video', estimated: 250000, actual: 0 },
 ]
 
-const readExpenses = (): Expense[] => {
-  try {
-    const raw = localStorage.getItem(expenseKey)
-    const stored = raw ? (JSON.parse(raw) as Expense[]) : []
-    return stored.length > 0 ? stored : defaultExpenses
-  } catch {
-    return defaultExpenses
-  }
-}
-
-const formatCurrency = (value: number) => `N${value.toLocaleString()}`
-
 export default function BudgetTracker() {
-  const [totalBudget, setTotalBudget] = useState(Number(localStorage.getItem(budgetKey)) || 2500000)
-  const [expenses, setExpenses] = useState<Expense[]>(readExpenses)
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const { data: totalBudgetData } = useLocalStorage<number>(STORAGE_KEYS.BUDGET_TOTAL, 2500000)
+  const { data: expenses, save: syncExpenses } = useLocalStorage<Expense[]>(STORAGE_KEYS.BUDGET_EXPENSES, defaultExpenses)
+  const [totalBudget, setTotalBudget] = useState(totalBudgetData)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
-  const [form, setForm] = useState({ category: '', estimated: '', actual: '' })
-
-  const syncExpenses = (next: Expense[]) => {
-    setExpenses(next)
-    localStorage.setItem(expenseKey, JSON.stringify(next))
-  }
-
-  const addOrUpdateExpense = () => {
-    if (!form.category.trim()) return
-    
-    if (editingId) {
-      // Update existing expense
-      const updated = expenses.map(exp => 
-        exp.id === editingId 
-          ? { ...exp, category: form.category.trim(), estimated: Number(form.estimated) || 0, actual: Number(form.actual) || 0 }
-          : exp
-      )
-      syncExpenses(updated)
-      setEditingId(null)
-    } else {
-      // Add new expense
+  const { form, updateForm, dialogOpen, openDialog, closeDialog, handleSave: saveExpense } = useFormDialog(
+    { category: '', estimated: '', actual: '' },
+    (formData) => {
       const next: Expense = {
         id: String(Date.now()),
-        category: form.category.trim(),
-        estimated: Number(form.estimated) || 0,
-        actual: Number(form.actual) || 0,
+        category: formData.category.trim(),
+        estimated: Number(formData.estimated) || 0,
+        actual: Number(formData.actual) || 0,
       }
       syncExpenses([...expenses, next])
-    }
-    
-    setForm({ category: '', estimated: '', actual: '' })
-    setDialogOpen(false)
+    },
+    (formData) => formData.category.trim().length > 0
+  )
+
+  const addExpense = () => {
+    saveExpense()
   }
 
   const handleEditClick = (expense: Expense) => {
@@ -119,12 +91,6 @@ export default function BudgetTracker() {
   const handleDeleteExpense = (id: string) => {
     syncExpenses(expenses.filter(exp => exp.id !== id))
     setDeleteConfirm(null)
-  }
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false)
-    setEditingId(null)
-    setForm({ category: '', estimated: '', actual: '' })
   }
 
   const committed = useMemo(() => expenses.reduce((sum, item) => sum + item.actual, 0), [expenses])
@@ -160,7 +126,7 @@ export default function BudgetTracker() {
           <Tooltip title="Saves your total budget envelope so it persists across sessions">
             <Button
               onClick={() => {
-                localStorage.setItem(budgetKey, String(totalBudget))
+                localStorage.setItem(STORAGE_KEYS.BUDGET_TOTAL, String(totalBudget))
               }}
               variant="outlined"
               sx={{ textTransform: 'none', borderRadius: 6, fontWeight: 700 }}
@@ -179,7 +145,7 @@ export default function BudgetTracker() {
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => setDialogOpen(true)}
+            onClick={openDialog}
             sx={{ bgcolor: '#00838F', textTransform: 'none', fontWeight: 700, borderRadius: 6, '&:hover': { bgcolor: '#006670' } }}
           >
             Add Expense
@@ -189,113 +155,26 @@ export default function BudgetTracker() {
     >
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: '1.2fr 0.95fr' }, gap: 2.5 }}>
         <Box>
-          <Paper
-            elevation={0}
-            sx={{
-              p: 2.5,
-              borderRadius: 4,
-              border: '1px solid #E2E8F0',
-              background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 45%, #FFF7F7 100%)',
-              mb: 2.5,
-            }}
-          >
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }}>
-              <TextField
-                label="Total wedding budget"
-                type="number"
-                value={totalBudget}
-                onChange={(event) => setTotalBudget(Number(event.target.value) || 0)}
-                sx={{ maxWidth: 280 }}
-              />
-              <Box sx={{ flex: 1 }}>
-                <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.8 }}>
-                  <Typography sx={{ fontSize: 13, color: '#64748B', fontWeight: 700 }}>Budget usage</Typography>
-                  <Typography sx={{ fontSize: 13, color: overBudget > 0 ? '#B91C1C' : '#0F766E', fontWeight: 800 }}>
-                    {Math.round(progress)}%
-                  </Typography>
-                </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={progress}
-                  sx={{
-                    height: 10,
-                    borderRadius: 999,
-                    bgcolor: '#E5E7EB',
-                    '& .MuiLinearProgress-bar': {
-                      borderRadius: 999,
-                      bgcolor: overBudget > 0 ? '#DC2626' : '#00838F',
-                    },
-                  }}
-                />
-                <Typography sx={{ fontSize: 13, color: '#64748B', mt: 1.2 }}>
-                  {formatCurrency(committed)} committed out of {formatCurrency(totalBudget)}.
-                </Typography>
-              </Box>
-            </Stack>
-          </Paper>
+          <BudgetSummary
+            totalBudget={totalBudget}
+            setTotalBudget={setTotalBudget}
+            planned={planned}
+            committed={committed}
+            remaining={remaining}
+            progress={progress}
+            overBudget={overBudget}
+            formatCurrency={formatCurrency}
+            onAddExpenseClick={openDialog}
+            onNoteClick={() => setNoteDrawerOpen(true)}
+            onSaveClick={() => {}}
+          />
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2, mb: 2.5 }}>
-            {[
-              { label: 'Planned', value: planned, color: '#4338CA', icon: <TrendingUp sx={{ color: '#4338CA' }} />, bg: '#EEF2FF' },
-              { label: 'Committed', value: committed, color: '#B42349', icon: <WarningAmber sx={{ color: '#B42349' }} />, bg: '#FFF1F5' },
-              { label: 'Remaining', value: remaining, color: '#0F766E', icon: <Savings sx={{ color: '#0F766E' }} />, bg: '#ECFDF5' },
-            ].map((stat) => (
-              <Paper key={stat.label} elevation={0} sx={{ border: '1px solid #E2E8F0', borderRadius: 4, p: 2.1 }}>
-                <Stack direction="row" spacing={1.1} alignItems="center" sx={{ mb: 1 }}>
-                  <Box sx={{ width: 34, height: 34, borderRadius: 2.5, bgcolor: stat.bg, display: 'grid', placeItems: 'center' }}>{stat.icon}</Box>
-                  <Typography sx={{ fontSize: 12, color: '#64748B', fontWeight: 700 }}>{stat.label}</Typography>
-                </Stack>
-                <Typography sx={{ fontSize: 25, color: stat.color, fontWeight: 800 }}>{formatCurrency(stat.value)}</Typography>
-              </Paper>
-            ))}
-          </Box>
-
-          <Stack spacing={1.2}>
-            {expenses.map((expense) => {
-              const categoryProgress = expense.estimated > 0 ? Math.min((expense.actual / expense.estimated) * 100, 100) : 0
-              const categoryOver = Math.max(expense.actual - expense.estimated, 0)
-
-              return (
-                <Paper key={expense.id} elevation={0} sx={{ border: '1px solid #E2E8F0', borderRadius: 4, p: 2.1 }}>
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
-                    <Box sx={{ flex: 1, width: '100%' }}>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                        <Typography sx={{ fontWeight: 800, color: '#0F172A' }}>{expense.category}</Typography>
-                        {categoryOver > 0 ? (
-                          <Chip label={`+${formatCurrency(categoryOver)}`} size="small" sx={{ bgcolor: '#FEF2F2', color: '#B91C1C', fontWeight: 700 }} />
-                        ) : null}
-                      </Stack>
-                      <LinearProgress
-                        variant="determinate"
-                        value={categoryProgress}
-                        sx={{
-                          height: 8,
-                          borderRadius: 999,
-                          bgcolor: '#E2E8F0',
-                          '& .MuiLinearProgress-bar': {
-                            borderRadius: 999,
-                            bgcolor: categoryOver > 0 ? '#DC2626' : '#00838F',
-                          },
-                        }}
-                      />
-                    </Box>
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                      <Chip label={`Estimate ${formatCurrency(expense.estimated)}`} sx={{ bgcolor: '#EEF2FF', color: '#4338CA', fontWeight: 700 }} />
-                      <Chip label={`Actual ${formatCurrency(expense.actual)}`} sx={{ bgcolor: '#FDE8EE', color: '#B42349', fontWeight: 700 }} />
-                      <IconButton size="small" onClick={() => handleEditClick(expense)} sx={{ color: '#00838F', '&:hover': { bgcolor: '#E0F2F1' } }}>
-                        <Edit sx={{ fontSize: 18 }} />
-                      </IconButton>
-                      <IconButton size="small" onClick={() => setDeleteConfirm(expense.id)} sx={{ color: '#B91C1C', '&:hover': { bgcolor: '#FEF2F2' } }}>
-                        <Delete sx={{ fontSize: 18 }} />
-                      </IconButton>
-                    </Stack>
-                  </Stack>
-                </Paper>
-              )
-            })}
-
-            {expenses.length === 0 && <Typography sx={{ color: '#64748B' }}>No expenses recorded yet.</Typography>}
-          </Stack>
+          <ExpensesList
+            expenses={expenses}
+            onEdit={handleEditClick}
+            onDelete={(id) => setDeleteConfirm(id)}
+            formatCurrency={formatCurrency}
+          />
         </Box>
 
         <Stack spacing={2.5}>
@@ -329,19 +208,19 @@ export default function BudgetTracker() {
         </Stack>
       </Box>
 
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>{editingId ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
+      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Add Expense</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 0.5 }}>
-            <TextField label="Category" value={form.category} onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))} />
-            <TextField label="Estimated" type="number" value={form.estimated} onChange={(event) => setForm((prev) => ({ ...prev, estimated: event.target.value }))} />
-            <TextField label="Actual" type="number" value={form.actual} onChange={(event) => setForm((prev) => ({ ...prev, actual: event.target.value }))} />
+            <TextField label="Category" value={form.category} onChange={(event) => updateForm({ category: event.target.value })} />
+            <TextField label="Estimated" type="number" value={form.estimated} onChange={(event) => updateForm({ estimated: event.target.value })} />
+            <TextField label="Actual" type="number" value={form.actual} onChange={(event) => updateForm({ actual: event.target.value })} />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} sx={{ textTransform: 'none' }}>Cancel</Button>
-          <Button onClick={addOrUpdateExpense} variant="contained" sx={{ textTransform: 'none', bgcolor: '#00838F' }}>
-            {editingId ? 'Update' : 'Save'}
+          <Button onClick={closeDialog} sx={{ textTransform: 'none' }}>Cancel</Button>
+          <Button onClick={addExpense} variant="contained" sx={{ textTransform: 'none', bgcolor: '#00838F' }}>
+            Save
           </Button>
         </DialogActions>
       </Dialog>

@@ -137,6 +137,8 @@ export default function Nav() {
                         Guests
                     </Button>
 
+                    {/* TODO: Feature flag - Wedding website feature */}
+                    {true && (
                     <Button 
                         component={Link}
                         to="/couple/wedding-website"
@@ -154,7 +156,10 @@ export default function Nav() {
                     >
                         Website
                     </Button>
+                    )}
 
+                    {/* TODO: Feature flag - Day-of timeline feature */}
+                    {true && (
                     <Button 
                         component={Link}
                         to="/couple/timeline"
@@ -172,7 +177,10 @@ export default function Nav() {
                     >
                         Timeline
                     </Button>
+                    )}
 
+                    {/* TODO: Feature flag - AskWed AI assistant feature */}
+                    {true && (
                     <Button 
                         component={Link}
                         to="/couple/askwed"
@@ -190,6 +198,7 @@ export default function Nav() {
                     >
                         AskWed
                     </Button>
+                    )}
                 </Box>
 
                 {/* Right Section */}

@@ -28,7 +28,7 @@ import {
   ViewList,
   Info,
 } from '@mui/icons-material'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import CouplePageShell from '@/components/couple/CouplePageShell'
 import { mockVendors } from '@/data/mockVendors'
 import { useShortlist } from '@/contexts/ShortlistContext'
@@ -41,7 +41,7 @@ const MAX_BUDGET = 10000000  // 10M+ budget for vendors
 const parsePrice = (value: string) => Number.parseInt(value.replace(/[^0-9]/g, ''), 10) || 0
 
 export default function SearchResults() {
-  const navigate = useNavigate()
+
   const [params] = useSearchParams()
   const initialCategory = params.get('category')
 
@@ -189,7 +189,7 @@ export default function SearchResults() {
 
       <Accordion elevation={0} disableGutters sx={{ border: '1px solid #E2E8F0', borderRadius: '12px !important', mb: 2.5, '&:before': { display: 'none' } }}>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography sx={{ fontWeight: 700, color: '#0F172A' }}>Category Filters</Typography>
+          <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Category Filters</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
@@ -424,7 +424,7 @@ export default function SearchResults() {
           canGoNext={selectedVendorIndex < visible.length - 1}
         />
       )}
-      <FloatingNoteButton page="search" />
+      <FloatingNoteButton />
     </CouplePageShell>
   )
 }

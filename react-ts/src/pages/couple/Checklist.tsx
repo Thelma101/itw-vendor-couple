@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import {
   Accordion,
   AccordionDetails,
@@ -20,6 +20,10 @@ import {
 } from '@mui/material'
 import { Add, Delete, EventAvailable, ExpandMore, Schedule, TaskAlt } from '@mui/icons-material'
 import CouplePageShell from '@/components/couple/CouplePageShell'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+import { useFormDialog } from '@/hooks/useFormDialog'
+import { formatDate } from '@/lib/formatters'
+import { STORAGE_KEYS } from '@/lib/constants'
 
 interface Task {
   id: string
@@ -29,40 +33,28 @@ interface Task {
   dueDate: string
 }
 
-const storageKey = 'itw_checklist'
-
 const defaultTasks: Task[] = [
   { id: '1', title: 'Book a Wedding Venue', notes: 'Ensure it fits 300 guests with indoor and outdoor options.', completed: true, dueDate: '2026-05-10' },
   { id: '2', title: 'Hire a Caterer', notes: 'Tastings arranged for next week.', completed: false, dueDate: '2026-06-15' },
   { id: '3', title: 'Send Invitations', notes: 'Finalize the design first.', completed: false, dueDate: '2026-07-01' }
 ]
 
-const readTasks = (): Task[] => {
-  try {
-    const raw = localStorage.getItem(storageKey)
-    const stored = raw ? (JSON.parse(raw) as Task[]) : []
-    return stored.length > 0 ? stored : defaultTasks
-  } catch {
-    return defaultTasks
-  }
-}
-
-const formatDate = (value: string) => {
-  if (!value) return 'No due date'
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
 export default function Checklist() {
-  const [tasks, setTasks] = useState<Task[]>(readTasks)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [newTask, setNewTask] = useState({ title: '', notes: '', dueDate: '' })
-
-  const save = (next: Task[]) => {
-    setTasks(next)
-    localStorage.setItem(storageKey, JSON.stringify(next))
-  }
+  const { data: tasks, save } = useLocalStorage<Task[]>(STORAGE_KEYS.CHECKLIST, defaultTasks)
+  const { form, updateForm, dialogOpen, closeDialog, openDialog, handleSave: saveForm } = useFormDialog(
+    { title: '', notes: '', dueDate: '' },
+    (formData) => {
+      const task: Task = {
+        id: String(Date.now()),
+        title: formData.title.trim(),
+        notes: formData.notes.trim(),
+        dueDate: formData.dueDate,
+        completed: false,
+      }
+      save([...tasks, task])
+    },
+    (formData) => formData.title.trim().length > 0
+  )
 
   const stats = useMemo(() => {
     const completed = tasks.filter((task) => task.completed).length
@@ -88,19 +80,7 @@ export default function Checklist() {
   }, [tasks])
 
   const addTask = () => {
-    if (!newTask.title.trim()) return
-
-    const task: Task = {
-      id: String(Date.now()),
-      title: newTask.title.trim(),
-      notes: newTask.notes.trim(),
-      dueDate: newTask.dueDate,
-      completed: false,
-    }
-
-    save([...tasks, task])
-    setNewTask({ title: '', notes: '', dueDate: '' })
-    setDialogOpen(false)
+    saveForm()
   }
 
   const toggleTask = (id: string) => {
@@ -140,7 +120,7 @@ export default function Checklist() {
         <Button
           variant="contained"
           startIcon={<Add />}
-          onClick={() => setDialogOpen(true)}
+          onClick={openDialog}
           sx={{ bgcolor: '#00838F', textTransform: 'none', fontWeight: 700, borderRadius: 6, px: 2.8, '&:hover': { bgcolor: '#006670' } }}
         >
           Add Task
@@ -270,23 +250,23 @@ export default function Checklist() {
         </Stack>
       </Box>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>Create Task</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 0.5 }}>
-            <TextField label="Task title" value={newTask.title} onChange={(event) => setNewTask((prev) => ({ ...prev, title: event.target.value }))} fullWidth />
+            <TextField label="Task title" value={form.title} onChange={(event) => updateForm({ title: event.target.value })} fullWidth />
             <TextField
               label="Due date"
               type="date"
-              value={newTask.dueDate}
-              onChange={(event) => setNewTask((prev) => ({ ...prev, dueDate: event.target.value }))}
+              value={form.dueDate}
+              onChange={(event) => updateForm({ dueDate: event.target.value })}
               slotProps={{ inputLabel: { shrink: true } }}
             />
-            <TextField label="Notes" value={newTask.notes} onChange={(event) => setNewTask((prev) => ({ ...prev, notes: event.target.value }))} multiline rows={3} fullWidth />
+            <TextField label="Notes" value={form.notes} onChange={(event) => updateForm({ notes: event.target.value })} multiline rows={3} fullWidth />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
+          <Button onClick={closeDialog} sx={{ textTransform: 'none' }}>Cancel</Button>
           <Button onClick={addTask} variant="contained" sx={{ textTransform: 'none', bgcolor: '#00838F' }}>Save Task</Button>
         </DialogActions>
       </Dialog>

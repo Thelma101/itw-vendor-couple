@@ -1,77 +1,63 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
-    './index.html',
-    './src/**/*.{ts,tsx}',
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
       colors: {
-        // Brand primary
-        primary: {
-          50: '#e6f6f8',
-          100: '#c0ebf0',
-          200: '#99dfe7',
-          300: '#73d4df',
-          400: '#4cc8d6',
-          500: '#26bdce',
-          600: '#009fb0',
-          700: '#00838F',
-          800: '#00626b',
-          900: '#004148',
-          DEFAULT: '#00838F',
+        'primary-red': '#EB1948',
+        'primary-dark': '#002528',
+        'primary-gray': '#212529',
+        'primary-light': '#F5F5F5',
+        blush: {
+          50:  '#FFF8F6',
+          100: '#FFF0EB',
+          200: '#FDDDD4',
+          300: '#F5C4B8',
+          400: '#E8A899',
+          500: '#D4897A',
         },
+        warm: {
+          50:  '#FFFAF7',
+          100: '#FEF3EC',
+          200: '#FDE8D8',
+          300: '#F5D4BE',
+          400: '#DEB89E',
+          500: '#C49B80',
+        },
+        nude: {
+          50:  '#FDFAF8',
+          100: '#F9F1EC',
+          200: '#F0E2D8',
+          300: '#E2CEBF',
+          400: '#C9AC97',
+        },
+      },
+      fontFamily: {
+        primary2: ['Montserrat', 'sans-serif'],
+        primary:['Open Sans', 'sans-serif'],
+        primary3: ['Roboto', 'sans-serif'],
+      },
 
-        segment: '#CCFDF2',
-        
-        // Accent gradient stops for buttons
-        accentFrom: '#EB1948',
-        accentTo: '#B52344',
-        // Neutrals
-        gray: {
-          50: '#f9fafb',
-          100: '#f3f4f6',
-          200: '#e5e7eb',
-          300: '#d1d5db',
-          400: '#9ca3af',
-          500: '#6b7280',
-          600: '#4b5563',
-          700: '#374151',
-          800: '#1f2937',
-          900: '#111827',
+      animation: {
+        'reveal': 'reveal 0.5s ease-out forwards',
+      },
+      keyframes: {
+        reveal: {
+          '0%': { 
+            opacity: 0,
+            clipPath: 'polygon(0 0, 0 0, 0 100%, 0% 100%)'
+          },
+          '100%': { 
+            opacity: 1,
+            clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0% 100%)'
+          }
         },
-        success: '#10b981',
-        warning: '#f59e0b',
-        error: '#ef4444',
-        info: '#26bdce',
       },
-      borderRadius: {
-        'sm': '6px',
-        'md': '8px',
-        'lg': '12px',
-        'xl': '16px',
-        '2xl': '20px',
-      },
-      boxShadow: {
-        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      },
-      spacing: {
-        '18': '4.5rem',
-        '88': '22rem',
-        '112': '28rem',
-      },
-      fontSize: {
-        'xs': ['0.75rem', { lineHeight: '1rem' }],
-        'sm': ['0.875rem', { lineHeight: '1.25rem' }],
-        'base': ['1rem', { lineHeight: '1.5rem' }],
-        'lg': ['1.125rem', { lineHeight: '1.75rem' }],
-        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
-        '2xl': ['1.5rem', { lineHeight: '2rem' }],
-        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
-        '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
-      },
+
     },
-  },
-  plugins: [],
-}
+    plugins: [],
+  }
+};

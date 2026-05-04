@@ -1,30 +1,15 @@
-import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Card,
-  Grid,
-  Button,
-  Rating,
-  Chip,
-  IconButton,
-  Skeleton,
-  Pagination,
-} from '@mui/material';
-import {
-  FavoriteBorder,
-  Favorite,
-  LocationOn,
-  Verified,
-} from '@mui/icons-material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import Nav from '../../components/Nav';
-import Footer from '../../components/Footer';
-import { useShortlist } from '../../contexts/ShortlistContext';
-import AdvancedSearchFilters from '../../components/AdvancedSearchFilters';
-import type { SearchFilters } from '../../components/AdvancedSearchFilters';
-import VendorSearchBar from '../../components/VendorSearchBar';
-import VendorPreviewModal from '../../components/VendorPreviewModal';
+import { useState, useEffect } from 'react'
+import { Box, Typography, Grid } from '@mui/material'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import Nav from '../../components/Nav'
+import Footer from '../../components/Footer'
+import { useShortlist } from '../../contexts/ShortlistContext'
+import type { SearchFilters } from '../../components/AdvancedSearchFilters'
+import VendorSearchBar from '../../components/VendorSearchBar'
+import VendorPreviewModal from '../../components/VendorPreviewModal'
+import SearchFiltersPanel from '@/components/couple/search/SearchFiltersPanel'
+import VendorsGridContent from '@/components/couple/search/VendorsGridContent'
+import ResultsPagination from '@/components/couple/search/ResultsPagination'
 
 interface Vendor {
   id: string;
@@ -302,8 +287,6 @@ export default function EnhancedSearchResults() {
     setPreviewOpen(true);
   };
 
-  const formatPrice = (price: number) => `₦${price.toLocaleString()}`;
-
   // Pagination
   const indexOfLastVendor = page * vendorsPerPage;
   const indexOfFirstVendor = indexOfLastVendor - vendorsPerPage;
@@ -339,244 +322,21 @@ export default function EnhancedSearchResults() {
 
         <Grid container spacing={3}>
           {/* Filters Sidebar */}
-          <Grid size={{ xs: 12, md: 3 }}>
-            <AdvancedSearchFilters
-              onFilterChange={handleFilterChange}
-              onClear={handleClearFilters}
-            />
-          </Grid>
+          <SearchFiltersPanel onFilterChange={handleFilterChange} onClear={handleClearFilters} />
 
           {/* Vendors Grid */}
           <Grid size={{ xs: 12, md: 9 }}>
-            {loading ? (
-              <Grid container spacing={3}>
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={n}>
-                    <Card sx={{ p: 0 }}>
-                      <Skeleton variant="rectangular" height={200} />
-                      <Box sx={{ p: 2 }}>
-                        <Skeleton width="60%" />
-                        <Skeleton width="40%" />
-                        <Skeleton width="80%" />
-                      </Box>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            ) : filteredVendors.length === 0 ? (
-              <Card sx={{ p: 6, textAlign: 'center' }}>
-                <Typography sx={{ fontSize: 18, color: '#666', mb: 2 }}>
-                  No vendors found matching your criteria
-                </Typography>
-                <Button
-                  variant="outlined"
-                  onClick={handleClearFilters}
-                  sx={{
-                    textTransform: 'none',
-                    borderColor: '#00838F',
-                    color: '#00838F',
-                  }}
-                >
-                  Clear All Filters
-                </Button>
-              </Card>
-            ) : (
-              <>
-                <Grid container spacing={3}>
-                  {currentVendors.map((vendor) => (
-                    <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={vendor.id}>
-                      <Card
-                        sx={{
-                          position: 'relative',
-                          border: '1px solid #CCFDF2',
-                          borderRadius: 2,
-                          overflow: 'hidden',
-                          transition: 'all 0.3s',
-                          '&:hover': {
-                            transform: 'translateY(-4px)',
-                            boxShadow: '0 8px 24px rgba(0,131,143,0.15)',
-                          },
-                        }}
-                      >
-                        {/* Image */}
-                        <Box
-                          onClick={() => handleVendorClick(vendor)}
-                          sx={{
-                            position: 'relative',
-                            height: 220,
-                            cursor: 'pointer',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <Box
-                            component="img"
-                            src={vendor.image}
-                            sx={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                              transition: 'transform 0.3s',
-                              '&:hover': { transform: 'scale(1.05)' },
-                            }}
-                          />
-                          
-                          {/* Badges */}
-                          <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 1 }}>
-                            {vendor.featured && (
-                              <Chip
-                                label="Featured"
-                                size="small"
-                                sx={{
-                                  bgcolor: '#FF6B6B',
-                                  color: 'white',
-                                  fontWeight: 600,
-                                  fontSize: 11,
-                                }}
-                              />
-                            )}
-                            {vendor.verified && (
-                              <Chip
-                                icon={<Verified sx={{ fontSize: 14, color: 'white !important' }} />}
-                                label="Verified"
-                                size="small"
-                                sx={{
-                                  bgcolor: '#4CAF50',
-                                  color: 'white',
-                                  fontWeight: 600,
-                                  fontSize: 11,
-                                }}
-                              />
-                            )}
-                          </Box>
+            <VendorsGridContent
+              loading={loading}
+              vendors={currentVendors}
+              isShortlisted={isShortlisted}
+              onToggleShortlist={toggleShortlist}
+              onVendorClick={handleVendorClick}
+              onClearFilters={handleClearFilters}
+            />
 
-                          {/* Shortlist Button */}
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleShortlist(vendor);
-                            }}
-                            sx={{
-                              position: 'absolute',
-                              top: 12,
-                              right: 12,
-                              bgcolor: 'white',
-                              '&:hover': { bgcolor: '#FFFFFF' },
-                            }}
-                          >
-                            {isShortlisted(vendor.id) ? (
-                              <Favorite sx={{ color: '#FF6B6B' }} />
-                            ) : (
-                              <FavoriteBorder />
-                            )}
-                          </IconButton>
-                        </Box>
-
-                        {/* Content */}
-                        <Box sx={{ p: 2.5 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography
-                                onClick={() => handleVendorClick(vendor)}
-                                sx={{
-                                  fontWeight: 700,
-                                  fontSize: 16,
-                                  color: '#002528',
-                                  mb: 0.5,
-                                  cursor: 'pointer',
-                                  '&:hover': { color: '#00838F' },
-                                }}
-                              >
-                                {vendor.name}
-                              </Typography>
-                              <Chip
-                                label={vendor.category}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#E0F7FA',
-                                  color: '#00838F',
-                                  fontSize: 11,
-                                  height: 20,
-                                }}
-                              />
-                            </Box>
-                          </Box>
-
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                            <Rating
-                              value={vendor.rating}
-                              precision={0.1}
-                              size="small"
-                              readOnly
-                              sx={{ color: '#FFC107' }}
-                            />
-                            <Typography sx={{ fontSize: 13, color: '#666' }}>
-                              {vendor.rating} ({vendor.reviewCount})
-                            </Typography>
-                          </Box>
-
-                          <Typography sx={{ fontSize: 13, color: '#666', display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
-                            <LocationOn sx={{ fontSize: 16 }} /> {vendor.location}
-                          </Typography>
-
-                          {vendor.responseTime && (
-                            <Typography sx={{ fontSize: 12, color: '#4CAF50', mb: 1 }}>
-                              ⚡ Responds in {vendor.responseTime}
-                            </Typography>
-                          )}
-
-                          <Divider sx={{ my: 1.5 }} />
-
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#00838F' }}>
-                              {formatPrice(vendor.price)}
-                            </Typography>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => navigate(`/couple/vendor/${vendor.id}`)}
-                              sx={{
-                                textTransform: 'none',
-                                borderColor: '#00838F',
-                                color: '#00838F',
-                                fontSize: 12,
-                                '&:hover': {
-                                  borderColor: '#006064',
-                                  bgcolor: '#E0F7FA',
-                                },
-                              }}
-                            >
-                              View Details
-                            </Button>
-                          </Box>
-                        </Box>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                    <Pagination
-                      count={totalPages}
-                      page={page}
-                      onChange={(_e, value) => setPage(value)}
-                      color="primary"
-                      size="large"
-                      sx={{
-                        '& .MuiPaginationItem-root': {
-                          color: '#00838F',
-                        },
-                        '& .Mui-selected': {
-                          bgcolor: '#00838F !important',
-                          color: 'white',
-                        },
-                      }}
-                    />
-                  </Box>
-                )}
-              </>
-            )}
+            {/* Pagination */}
+            <ResultsPagination page={page} totalPages={totalPages} onChange={setPage} />
           </Grid>
         </Grid>
       </Box>
@@ -608,6 +368,3 @@ export default function EnhancedSearchResults() {
     </Box>
   );
 }
-
-// Import Divider if not already imported
-import { Divider } from '@mui/material';

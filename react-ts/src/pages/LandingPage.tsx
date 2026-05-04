@@ -269,7 +269,7 @@ export default function LandingPage() {
                 <>
                   <Button
                     component={Link}
-                    to="/"
+                    to="/login"
                     sx={{
                       color: '#00838F',
                       fontWeight: 600,
@@ -282,7 +282,7 @@ export default function LandingPage() {
                   <Button
                     variant="contained"
                     component={Link}
-                    to="/"
+                    to="/signup"
                     sx={{
                       backgroundImage: 'linear-gradient(90deg, #EB1948 0%, #B52344 100%)',
                       color: 'white',
@@ -364,11 +364,12 @@ export default function LandingPage() {
       <Box
         sx={{
           position: 'relative',
-          minHeight: { xs: '520px', md: '600px' },
+          minHeight: { xs: '560px', md: '680px' },
           display: 'flex',
           alignItems: 'center',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, #002528 0%, #00838F 50%, #26bdce 100%)',
+          background: 'linear-gradient(135deg, #0D1B2A 0%, #00838F 40%, #00C9DB 100%)',
+          backgroundAttachment: { md: 'fixed' },
         }}
       >
         {/* Decorative shapes */}
@@ -398,29 +399,39 @@ export default function LandingPage() {
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2, py: { xs: 6, md: 8 } }}>
           <Box sx={{ maxWidth: 720 }}>
             <Chip
-              label="Nigeria's #1 Wedding Planning Platform"
+              label="🇳🇬 Nigeria's #1 Wedding Planning Platform"
               sx={{
-                bgcolor: 'rgba(255,255,255,0.15)',
+                bgcolor: 'rgba(255,255,255,0.12)',
                 color: 'white',
-                fontWeight: 600,
-                fontSize: '0.8rem',
+                fontWeight: 700,
+                fontSize: '0.85rem',
                 mb: 3,
-                backdropFilter: 'blur(4px)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                animation: 'pulse 2s ease-in-out infinite',
+                '@keyframes pulse': {
+                  '0%, 100%': { opacity: 1 },
+                  '50%': { opacity: 0.7 },
+                },
               }}
             />
             <Typography
               variant="h1"
               sx={{
                 color: 'white',
-                fontWeight: 800,
-                fontSize: { xs: '2.2rem', sm: '2.8rem', md: '3.5rem' },
-                lineHeight: 1.15,
-                mb: 2,
-                letterSpacing: '-1px',
+                fontWeight: 900,
+                fontSize: { xs: '2.4rem', sm: '3rem', md: '3.8rem' },
+                lineHeight: 1.1,
+                mb: 3,
+                letterSpacing: '-1.5px',
+                background: 'linear-gradient(135deg, #ffffff 0%, #e0f7fa 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
             >
               Plan Your Dream{' '}
-              <Box component="span" sx={{ color: '#FFD700' }}>
+              <Box component="span" sx={{ background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 Wedding
               </Box>
               <br />
@@ -447,11 +458,13 @@ export default function LandingPage() {
                 display: 'flex',
                 flexDirection: { xs: 'column', md: 'row' },
                 gap: 1.5,
-                bgcolor: 'white',
-                p: 1.5,
-                borderRadius: 2,
-                boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-                maxWidth: 680,
+                bgcolor: 'rgba(255,255,255,0.95)',
+                p: 2,
+                borderRadius: 3,
+                boxShadow: '0 25px 80px rgba(0,0,0,0.35)',
+                maxWidth: 700,
+                backdropFilter: 'blur(4px)',
+                border: '1px solid rgba(255,255,255,0.2)',
               }}
             >
               <TextField
@@ -686,14 +699,17 @@ export default function LandingPage() {
                       textAlign: 'center',
                       p: 4,
                       bgcolor: 'white',
-                      borderRadius: 3,
+                      borderRadius: 4,
                       height: '100%',
-                      transition: 'all 0.3s',
-                      border: '1px solid',
-                      borderColor: 'grey.200',
+                      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                      border: '2px solid',
+                      borderColor: 'transparent',
+                      backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #00838F 0%, #26bdce 100%)',
+                      backgroundOrigin: 'border-box',
+                      backgroundClip: 'padding-box, border-box',
                       '&:hover': {
-                        borderColor: '#00838F',
-                        boxShadow: '0 8px 24px rgba(0,131,143,0.1)',
+                        boxShadow: '0 12px 32px rgba(0,131,143,0.15)',
+                        transform: 'translateY(-4px)',
                       },
                     }}
                   >
@@ -862,16 +878,20 @@ export default function LandingPage() {
                 <Card
                   sx={{
                     p: 3.5,
-                    borderRadius: 3,
+                    borderRadius: 4,
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    border: '1px solid',
-                    borderColor: 'grey.100',
-                    transition: 'all 0.3s',
+                    border: '2px solid',
+                    borderColor: 'transparent',
+                    backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #FFE5E5 0%, #FFF5E5 100%)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: '0 2px 8px rgba(235,25,72,0.04)',
                     '&:hover': {
-                      boxShadow: '0 8px 24px rgba(235,25,72,0.08)',
-                      borderColor: 'rgba(235,25,72,0.2)',
+                      boxShadow: '0 12px 32px rgba(235,25,72,0.12)',
+                      transform: 'translateY(-4px)',
                     },
                   }}
                 >
@@ -976,8 +996,9 @@ export default function LandingPage() {
       {/* ───── CTA SECTION ───── */}
       <Box
         sx={{
-          py: { xs: 6, md: 8 },
-          background: 'linear-gradient(135deg, #002528 0%, #00838F 100%)',
+          py: { xs: 8, md: 10 },
+          background: 'linear-gradient(135deg, #0D1B2A 0%, #00838F 40%, #00C9DB 100%)',
+          backgroundAttachment: { md: 'fixed' },
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',

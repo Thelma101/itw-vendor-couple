@@ -60,7 +60,7 @@ export const FEATURE_MAP: FeatureDefinition[] = [
   { id: 'website-hotels',    name: 'Hotel Blocks & Travel',       tier: 'free',    description: 'Hotel recommendations and travel information',         category: 'Website' },
   { id: 'website-stationery',name: 'Matching Stationery',         tier: 'free',    description: 'Toggle stationery items to match website theme',       category: 'Website' },
   { id: 'website-privacy',   name: 'Privacy Controls',            tier: 'free',    description: 'Password-protect your wedding website',                category: 'Website' },
-  { id: 'website-custom-domain', name: 'Custom Domain',           tier: 'premium', description: 'Use your own domain (e.g. sarah-and-james.wedding)',   category: 'Website' },
+  { id: 'website-custom-domain', name: 'Custom Domain',           tier: 'premium', description: 'Use your own domain (e.g. sarah-and-james.com)',   category: 'Website' },
   { id: 'website-analytics', name: 'Website Analytics',           tier: 'premium', description: 'Track visits, RSVP rates, and engagement',            category: 'Website' },
   { id: 'website-rsvp-adv',  name: 'Advanced RSVP + Meal Choice', tier: 'premium', description: 'Meal selection, dietary notes, and song requests in RSVP', category: 'Website' },
 

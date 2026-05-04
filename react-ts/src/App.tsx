@@ -1,7 +1,8 @@
 import { lazy, Suspense, type ReactNode } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import AppErrorBoundary from './components/AppErrorBoundary'
 import RouteLoader from './components/RouteLoader'
+import ProtectedRoute from './components/ProtectedRoute'
 import { NotificationProvider } from './contexts/NotificationContext'
 import { ShortlistProvider } from './contexts/ShortlistContext'
 import { NotesProvider } from './contexts/NotesContext'
@@ -11,7 +12,6 @@ const SelectVendors = lazy(() => import('./pages/couple/SelectVendors'))
 const Shortlist = lazy(() => import('./pages/couple/Shortlist'))
 const SearchResults = lazy(() => import('./pages/couple/SearchResults'))
 const EnhancedSearchResults = lazy(() => import('./pages/couple/EnhancedSearchResults'))
-const HomePage = lazy(() => import('./pages/couple/HomePage'))
 const Dashboard = lazy(() => import('./pages/couple/Dashboard'))
 const MyVendors = lazy(() => import('./pages/couple/MyVendors'))
 const VendorProfile = lazy(() => import('./pages/couple/VendorProfile'))
@@ -30,6 +30,8 @@ const Favourites = lazy(() => import('./pages/couple/Favourites'))
 const AskWed = lazy(() => import('./pages/couple/AskWed'))
 const VendorMatching = lazy(() => import('./pages/couple/VendorMatching'))
 const GuestExperienceHub = lazy(() => import('./pages/couple/GuestExperienceHub'))
+const OnboardingPage = lazy(() => import('./pages/auth/OnboardingPage'))
+const ImprovedLandingPage = lazy(() => import('./pages/ImprovedLandingPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const BlushLandingPage = lazy(() => import('./pages/BlushLandingPage'))
 
@@ -73,17 +75,17 @@ export default function App() {
     <NotificationProvider>
       <ShortlistProvider>
         <NotesProvider>
-          <a href="#main-content" className="skip-link">Skip to main content</a>
-          <BrowserRouter>
-            <AuthReceiver>
-              <Routes>
-                <Route path="/" element={<RoutedPage><HomePage /></RoutedPage>} />
-                <Route path="/landing" element={<RoutedPage><LandingPage /></RoutedPage>} />
-                <Route path="/landing-blush" element={<RoutedPage><BlushLandingPage /></RoutedPage>} />
+          <AuthReceiver>
+            <Routes>
+              <Route path="/" element={<RoutedPage><LandingPage /></RoutedPage>} />
+              <Route path="/landing-improved" element={<RoutedPage><ImprovedLandingPage /></RoutedPage>} />
+              <Route path="/landing-blush" element={<RoutedPage><BlushLandingPage /></RoutedPage>} />
+              <Route path="/signin" element={<RoutedPage><OnboardingPage /></RoutedPage>} />
+              <Route path="/signup" element={<RoutedPage><OnboardingPage /></RoutedPage>} />
 
-                <Route path="/couple/dashboard" element={<RoutedPage><Dashboard /></RoutedPage>} />
-                <Route path="/couple/search-results" element={<RoutedPage><SearchResults /></RoutedPage>} />
-                <Route path="/couple/search" element={<RoutedPage><EnhancedSearchResults /></RoutedPage>} />
+              <Route path="/couple/dashboard" element={<ProtectedRoute><RoutedPage><Dashboard /></RoutedPage></ProtectedRoute>} />
+              <Route path="/couple/search-results" element={<ProtectedRoute><RoutedPage><SearchResults /></RoutedPage></ProtectedRoute>} />
+              <Route path="/couple/search" element={<ProtectedRoute><RoutedPage><EnhancedSearchResults /></RoutedPage></ProtectedRoute>} />
                 <Route path="/couple/select-vendors" element={<RoutedPage><SelectVendors /></RoutedPage>} />
                 <Route path="/couple/vendor/:id" element={<RoutedPage><VendorProfile /></RoutedPage>} />
                 <Route path="/couple/shortlist" element={<RoutedPage><Shortlist /></RoutedPage>} />
@@ -127,7 +129,6 @@ export default function App() {
               </Route>
             </Routes>
           </AuthReceiver>
-        </BrowserRouter>
         </NotesProvider>
       </ShortlistProvider>
     </NotificationProvider>
