@@ -101,9 +101,9 @@ const WeddingWebsite: React.FC = () => {
                                     ))}
                                 </nav>
                             </div>
-                            <div className="absolute bottom-4 left-0 right-0 text-center z-20 text-white px-5">
-                                <h3 className="text-lg font-light tracking-widest">{navItems[prevIndex].couple}</h3>
-                                <p className="text-sm mt-1">June 15, 2024</p>
+                            <div className="absolute bottom-4 left-0 right-0 text-center z-20 px-5">
+                                <h3 className="text-white text-lg font-light tracking-widest">{navItems[prevIndex].couple}</h3>
+                                <p className="text-white text-sm mt-1">June 15, 2024</p>
                             </div>
                         </motion.div>
 
@@ -139,11 +139,11 @@ const WeddingWebsite: React.FC = () => {
                                         ))}
                                     </nav>
                                 </div>
-                                <div className="absolute bottom-6 left-0 right-0 text-center z-20 text-white py-28">
-                                    <h2 className="text-2xl font-light tracking-widest">{navItems[index].couple}</h2>
-                                    <p className="text-sm mt-2">May 10, 2025</p>
-                                    <p className="text-xs mt-1 opacity-80">The Grand Ballroom</p>
-                                    <p className='text-xs mt-1 opacity-60'>VI, Lagos  </p>
+                                <div className="absolute bottom-6 left-0 right-0 text-center z-20 py-28">
+                                    <h2 className="text-white text-2xl font-light tracking-widest">{navItems[index].couple}</h2>
+                                    <p className="text-white text-sm mt-2">May 10, 2025</p>
+                                    <p className="text-white text-xs mt-1 opacity-80">The Grand Ballroom</p>
+                                    <p className='text-white text-xs mt-1 opacity-60'>VI, Lagos  </p>
                                 </div>
                             </motion.div>
                         </AnimatePresence>
@@ -178,9 +178,9 @@ const WeddingWebsite: React.FC = () => {
                                         ))}
                                     </nav>
                                 </div>
-          <div className="absolute bottom-4 left-0 right-0 text-center z-20 text-white">
-            <h3 className="text-lg font-light tracking-widest">{navItems[nextIndex].couple}</h3>
-                                    <p className='text-sm mt-2'>August 20, 2025</p>
+          <div className="absolute bottom-4 left-0 right-0 text-center z-20">
+            <h3 className="text-white text-lg font-light tracking-widest">{navItems[nextIndex].couple}</h3>
+                                    <p className='text-white text-sm mt-2'>August 20, 2025</p>
                                 </div>
                             </motion.div>
                         </AnimatePresence>

@@ -25,7 +25,7 @@ const footerLinks = {
 export default function Footer() {
   return (
     <Box sx={{ 
-      bgcolor: 'primary.main', 
+      bgcolor: 'var(--color-primary)', 
       color: 'white', 
       py: 6, 
       px: 4,
@@ -106,9 +106,9 @@ export default function Footer() {
                   textAlign: 'center'
                 }}>
                   <IconButton disabled>
-                    <QrCode sx={{ fontSize: 60, color: 'primary.main' }} />
+                    <QrCode sx={{ fontSize: 60, color: 'var(--color-primary)' }} />
                   </IconButton>
-                  <Typography variant="caption" sx={{ color: 'primary.main', display: 'block' }}>
+                  <Typography variant="caption" sx={{ color: 'var(--color-primary)', display: 'block' }}>
                     iOS
                   </Typography>
                 </Box>
@@ -120,9 +120,9 @@ export default function Footer() {
                   textAlign: 'center'
                 }}>
                   <IconButton disabled>
-                    <QrCode sx={{ fontSize: 60, color: 'primary.main' }} />
+                    <QrCode sx={{ fontSize: 60, color: 'var(--color-primary)' }} />
                   </IconButton>
-                  <Typography variant="caption" sx={{ color: 'primary.main', display: 'block' }}>
+                  <Typography variant="caption" sx={{ color: 'var(--color-primary)', display: 'block' }}>
                     Android
                   </Typography>
                 </Box>

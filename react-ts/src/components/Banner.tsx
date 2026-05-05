@@ -182,7 +182,7 @@ const Banner: React.FC = () => {
                             {loading ? 'Signing In...' : 'Log In'}
                         </button>
                         
-                        <p className=" text-sm text-center">
+                        <p className="text-white text-sm text-center">
                             Do not have an account?{' '}
                             <span className="text-primary cursor-pointer hover:underline font-bold">Register</span>
                         </p>
@@ -192,7 +192,10 @@ const Banner: React.FC = () => {
 
             {/* Banner Section - Desktop */}
             <section className="hidden md:block relative w-full h-[713px] max-w-full mx-auto mt-[2px] px-4 sm:px-6 lg:px-8">
-                <div className="banner-bg"></div>
+                <div 
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${bannerBg})` }}
+                ></div>
                 <div className="absolute inset-0 bg-[#0E292B] opacity-80"></div>
                 <div className="relative z-10 flex items-start justify-center pt-20 h-full text-white text-center px-2 lg:pb-40">
                     <p className="text-2xl xs:text:3xl sm:text-3xl md:text-5xl lg:text-7xl font-primary3 max-w-[90vw]">
