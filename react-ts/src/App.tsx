@@ -33,6 +33,7 @@ const GuestExperienceHub = lazy(() => import('./pages/couple/GuestExperienceHub'
 const OnboardingPage = lazy(() => import('./pages/auth/OnboardingPage'))
 const ImprovedLandingPage = lazy(() => import('./pages/ImprovedLandingPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
+const LandingPageAlt = lazy(() => import('./pages/LandingPageAlt'))
 const BlushLandingPage = lazy(() => import('./pages/BlushLandingPage'))
 
 const VendorDashboardLayout = lazy(() => import('./layouts/VendorDashboardLayout'))
@@ -78,6 +79,7 @@ export default function App() {
           <AuthReceiver>
             <Routes>
               <Route path="/" element={<RoutedPage><LandingPage /></RoutedPage>} />
+              <Route path="/home-alt" element={<RoutedPage><LandingPageAlt /></RoutedPage>} />
               <Route path="/landing-improved" element={<RoutedPage><ImprovedLandingPage /></RoutedPage>} />
               <Route path="/landing-blush" element={<RoutedPage><BlushLandingPage /></RoutedPage>} />
               <Route path="/signin" element={<RoutedPage><OnboardingPage /></RoutedPage>} />
