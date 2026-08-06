@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="rings-icon">
+<circle id="left-ring" cx="17" cy="24" r="15.5" stroke="#00838F" stroke-width="3"/>
+<circle id="right-ring" cx="31" cy="17" r="15.5" stroke="#00838F" stroke-width="3"/>
+<circle id="overlap-accent" cx="17" cy="24" r="6" fill="#EB1948"/>
+</g>
+</svg>

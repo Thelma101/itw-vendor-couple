@@ -1,22 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Open+Sans:wght@300;400;600;700&family=Roboto:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Open+Sans:wght@300;400;600;700&display=swap');
 
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
 :root {
-  --color-primary: #00838F;
-  --color-primary-black: #002528;
+  --color-primary: #0F766E;
+  --color-primary-black: #0B2D31;
   --color-primary-red: #EB1948;
+  --color-accent-gold: #C9A227;
   --color-secondary: #6c757d;
   --color-success: #198754;
   --color-danger: #EB1948;
   --color-warning: #ffc107;
   --color-info: #0dcaf0;
   --color-light: #f8f9fa;
-  --color-dark: #212529;
-  --color-black: #002528;
+  --color-dark: #0B2D31;
+  --color-black: #0B2D31;
   --color-white: #fff;
-  --color-text: #212529;
+  --color-text: #1e293b;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-ui: 'DM Sans', 'Open Sans', sans-serif;
 }
 
 * {
@@ -28,21 +31,22 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
 
 body {
   color: var(--color-text);
-  font-family: 'Open Sans', sans-serif;
-  background-color: #f9f9f9;
+  font-family: var(--font-ui);
+  background-color: #F7F9FC;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Open Sans', sans-serif;
+h1, h2, h3 {
+  font-family: var(--font-display);
   color: var(--color-dark);
 }
 
-p {
-  font-family: 'Open Sans', sans-serif;
+h4, h5, h6, p {
+  font-family: var(--font-ui);
 }
 
 a {
@@ -82,8 +86,8 @@ a {
 }
 
 .button-primary:hover {
-  background-color: #006d75;
-  box-shadow: 0 4px 12px rgba(0, 131, 143, 0.25);
+  background-color: #0d5f59;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
 }
 
 .button-primary:active {

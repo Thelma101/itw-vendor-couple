@@ -1,0 +1,19 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="192" height="192" fill="#E5E5E5"/>
+<g id="itheewed-logo-system">
+<rect width="1440" height="2965" transform="matrix(4 0 0 4 -1176 -3280)" fill="#FAF9F6"/>
+<g id="variant-2-section">
+<g id="Frame">
+<g id="v2-light">
+<rect x="-695.5" y="-303.5" width="2335" height="799" rx="15.5" fill="white"/>
+<rect x="-695.5" y="-303.5" width="2335" height="799" rx="15.5" stroke="#E5E5E0"/>
+<g id="rings-icon">
+<circle id="left-ring" cx="68" cy="96" r="66.5" stroke="#00838F" stroke-width="3"/>
+<circle id="right-ring" cx="124" cy="68" r="66.5" stroke="#00838F" stroke-width="3"/>
+<circle id="overlap-accent" cx="68" cy="96" r="24" fill="#EB1948"/>
+</g>
+</g>
+</g>
+</g>
+</g>
+</svg>

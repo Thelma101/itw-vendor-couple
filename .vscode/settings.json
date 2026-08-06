@@ -1,0 +1,5 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "get_terminal_output": true
+    }
+}
