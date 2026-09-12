@@ -33,7 +33,7 @@ export default function DemoBanner() {
   return (
     <div
       role="status"
-      className="sticky top-0 z-[100] flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-[#0F766E] px-3 py-2 text-center text-sm text-white shadow-sm"
+      className="sticky top-0 z-[100] w-full flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-[#0F766E] px-3 py-2 text-center text-sm text-white shadow-sm"
     >
       <p className="m-0 max-w-2xl leading-snug text-xs sm:text-sm">
         <span className="font-semibold">Friends &amp; family preview</span>

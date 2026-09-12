@@ -191,107 +191,97 @@ const Banner: React.FC = () => {
             </section>
 
             {/* Banner Section - Desktop */}
-            <section className="hidden md:block relative w-full h-[713px] max-w-full mx-auto mt-[2px] px-4 sm:px-6 lg:px-8">
-                <div 
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${bannerBg})` }}
-                ></div>
-                <div className="absolute inset-0 bg-[#0E292B] opacity-80"></div>
-                <div className="relative z-10 flex items-start justify-center pt-20 h-full text-white text-center px-2 lg:pb-40">
-                    <p className="text-2xl xs:text:3xl sm:text-3xl md:text-5xl lg:text-7xl font-primary3 max-w-[90vw]">
-                        Wedding planning at your fingertips.
-                    </p>
-                </div>
-                <div className="absolute bottom-0 inset-x-0 flex items-start justify-center pt-48 w-full h-full text-white text-center">
-                    <p className="sm:text-xl md:text-2xl lg:text-4xl font-normal leading-[1.3] md:leading-[50px] max-w-[90%] md:max-w-[80%]">
-                        Discover vendors. Book effortlessly. Cherish forever.
-                    </p>
-                </div>
-            </section>
-
-            <section className="hidden md:flex flex-col md:flex-row w-full max-w-full absolute z-10 top-80 text-white px-4 sm:px-6 lg:px-8 py-6 sm:py-10 left-1/2 transform -translate-x-1/2">
-                {/* Form Section */}
-                <div className="w-full flex flex-col md:flex-row px-4 md:px-12 py-12 relative overflow-hidden">
-                    {/* Left Form */}
-                    <div className="w-full flex flex-col items-center justify-start text-xl z-10">
-                        <form 
-                            onSubmit={handleSignin}
-                            method="POST"
-                            className="flex flex-col gap-4 sm:gap-6 w-full max-w-lg py-11 md:pr-14"
-                            aria-label="Sign in form"
-                        >
-                            {/* Contact Input */}
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="signin-contact-desktop" className="sr-only">Email or Phone Number</label>
-                                <input
-                                    id="signin-contact-desktop"
-                                    type="text"
-                                    placeholder="Email or Phone Number"
-                                    name="contact"
-                                    value={contact}
-                                    onChange={handleInputMethod}
-                                    required
-                                    // className="w-full h-12 md:h-[50px] border border-[#E0E0E0] px-4 text-black rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                                     className="mt-1 w-full md:h-14 h-12 px-3 sm:px-4 rounded-3xl border border-color-focus focus:ring-2 focus:ring-color-focus focus:outline-none transition text-white placeholder-white text-sm md:text-base"
-                                    aria-label="Email or Phone Number"
-                                />
-                            </div>
-
-                            {/* Password Input */}
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="signin-password-desktop" className="sr-only">Password</label>
-                                <input
-                                    id="signin-password-desktop"
-                                    name="password"
-                                    type="password"
-                                    autoComplete="current-password"
-                                    placeholder="Password"
-                                    value={password}
-                                    onChange={handlePasswordChange}
-                                    required
-                                    className={`mt-1 w-full md:h-14 h-12 px-3 sm:px-4 rounded-3xl border border-color-focus focus:ring-2 focus:ring-color-focus focus:outline-none transition text-white placeholder-white text-sm md:text-base ${
-                                        passwordError ? 'border-red-500' : 'border-[#E0E0E0]'
-                                    }`}
-                                    aria-label="Password"
-                                />
-                                {passwordError && (
-                                    <span className="text-red-400 text-xs">{passwordError}</span>
-                                )}
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                // className="w-full h-12 md:h-[50px] bg-primary text-white font-bold rounded shadow transition-transform duration-150 ease-in-out transform hover:scale-105 hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF4081] mt-2 mb-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                className="w-full md:h-14 h-12 rounded-3xl bg-primary hover:bg-primary disabled:bg-gray-300 disabled:cursor-not-allowed transition text-white font-semibold text-center text-base sm:text-md shadow mt-1"
-                                aria-label="Sign in"
-                            >
-                                {loading ? 'Signing In...' : 'Sign In'}
-                            </button>
-                            
-                            <p className="text-white text-sm md:text-base text-center md:text-left ml-2 mt-2">
-                                Don&apos;t have an account?{' '}
-                                <Link to="/signup" className="text-[#FFE5A8] cursor-pointer hover:text-white font-bold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">Sign up here</Link>
-                            </p>
-                        </form>
+            <section className="hidden md:block relative w-full max-w-full overflow-x-clip">
+                <div className="relative w-full h-[640px] lg:h-[713px]">
+                    <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${bannerBg})` }}
+                    />
+                    <div className="absolute inset-0 bg-[#0E292B] opacity-80" />
+                    <div className="relative z-10 flex flex-col items-center justify-start pt-16 lg:pt-20 h-full text-white text-center px-6">
+                        <p className="text-4xl lg:text-6xl xl:text-7xl font-primary3 max-w-5xl leading-tight">
+                            Wedding planning at your fingertips.
+                        </p>
+                        <p className="mt-4 sm:text-xl md:text-2xl lg:text-3xl font-normal leading-snug max-w-3xl opacity-95">
+                            Discover vendors. Book effortlessly. Cherish forever.
+                        </p>
                     </div>
-                    {/* BANNER IMAGES - Desktop Only */}
-                    <div className="hidden md:flex w-full min-h-[800px] relative items-center justify-center">
-                        {/* Top */}
-                        <div className="absolute top-[-28px] left-[56%] -translate-x-1/2 w-[520px] h-[414px] bg-white border border-[#00838F] shadow-md z-10">
-                            <img src={bannerImg1} className="w-full h-[calc(100%-30px)] mx-auto object-cover mt-[27px] px-4" alt="Top" />
+                </div>
+
+                <div className="relative z-20 w-full max-w-7xl mx-auto -mt-48 lg:-mt-56 px-6 lg:px-8 pb-16">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
+                        <div className="w-full flex flex-col items-stretch text-white">
+                            <form
+                                onSubmit={handleSignin}
+                                method="POST"
+                                className="flex flex-col gap-4 sm:gap-5 w-full max-w-md"
+                                aria-label="Sign in form"
+                            >
+                                <div className="flex flex-col gap-1">
+                                    <label htmlFor="signin-contact-desktop" className="sr-only">Email or Phone Number</label>
+                                    <input
+                                        id="signin-contact-desktop"
+                                        type="text"
+                                        placeholder="Email or Phone Number"
+                                        name="contact"
+                                        value={contact}
+                                        onChange={handleInputMethod}
+                                        required
+                                        className="mt-1 w-full h-14 px-4 rounded-3xl border border-white/40 bg-white/5 focus:ring-2 focus:ring-color-focus focus:outline-none transition text-white placeholder-white text-base"
+                                        aria-label="Email or Phone Number"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1">
+                                    <label htmlFor="signin-password-desktop" className="sr-only">Password</label>
+                                    <input
+                                        id="signin-password-desktop"
+                                        name="password"
+                                        type="password"
+                                        autoComplete="current-password"
+                                        placeholder="Password"
+                                        value={password}
+                                        onChange={handlePasswordChange}
+                                        required
+                                        className={`mt-1 w-full h-14 px-4 rounded-3xl border bg-white/5 focus:ring-2 focus:ring-color-focus focus:outline-none transition text-white placeholder-white text-base ${
+                                            passwordError ? 'border-red-500' : 'border-white/40'
+                                        }`}
+                                        aria-label="Password"
+                                    />
+                                    {passwordError && (
+                                        <span className="text-red-400 text-xs">{passwordError}</span>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full h-14 rounded-3xl bg-primary hover:bg-[#0d5f59] disabled:bg-gray-300 disabled:cursor-not-allowed transition text-white font-semibold text-center text-base shadow"
+                                    aria-label="Sign in"
+                                >
+                                    {loading ? 'Signing In...' : 'Sign In'}
+                                </button>
+
+                                <p className="text-white text-sm md:text-base text-left mt-1">
+                                    Don&apos;t have an account?{' '}
+                                    <Link to="/signup" className="text-[#FFE5A8] cursor-pointer hover:text-white font-bold focus:outline-none transition-colors">Sign up here</Link>
+                                </p>
+                            </form>
                         </div>
-                        {/* Left */}
-                        <div className="absolute top-[130px] left-[calc(33%-260px)] w-[327px] h-[292px] bg-white border border-[#00838F] shadow-md z-20">
-                            <img src={bannerImg2} className="w-full h-[calc(100%-20px)] object-cover mx-auto pb-[40px] mt-3 px-3" alt="Left" />
-                        </div>
-                        {/* Right */}
-                        <div className="absolute top-[180px] left-[calc(30%+200px)] w-[263px] h-[234px] bg-white border border-[#00838F] shadow-md z-20">
-                            <img src={bannerImg4} className="w-full h-[calc(100%-20px)] object-cover mx-auto pb-[40px] mt-3 px-3" alt="Right" />
-                        </div>
-                        {/* Bottom */}
-                        <div className="absolute top-[260px] left-[50%] -translate-x-1/2 w-[327px] h-[292px] bg-white border border-[#00838F] shadow-md z-30">
-                            <img src={bannerImg3} className="w-full h-[calc(100%-20px)] object-cover mx-auto pb-[40px] mt-3 px-3" alt="Bottom" />
+
+                        <div className="relative hidden lg:block w-full min-h-[480px] overflow-hidden rounded-sm">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(100%,420px)] aspect-[5/4] bg-white border border-[#00838F] shadow-md z-10">
+                                <img src={bannerImg1} className="w-full h-[calc(100%-24px)] object-cover mt-6 px-3" alt="Wedding moment" />
+                            </div>
+                            <div className="absolute top-[28%] left-0 w-[42%] aspect-[10/9] bg-white border border-[#00838F] shadow-md z-20">
+                                <img src={bannerImg2} className="w-full h-[calc(100%-16px)] object-cover mt-2 px-2" alt="Couple" />
+                            </div>
+                            <div className="absolute top-[34%] right-0 w-[34%] aspect-[10/9] bg-white border border-[#00838F] shadow-md z-20">
+                                <img src={bannerImg4} className="w-full h-[calc(100%-16px)] object-cover mt-2 px-2" alt="Celebration" />
+                            </div>
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[48%] aspect-[10/9] bg-white border border-[#00838F] shadow-md z-30">
+                                <img src={bannerImg3} className="w-full h-[calc(100%-16px)] object-cover mt-2 px-2" alt="Venue" />
+                            </div>
                         </div>
                     </div>
                 </div>
