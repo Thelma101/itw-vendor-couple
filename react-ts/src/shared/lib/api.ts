@@ -2,7 +2,9 @@ import axios from 'axios'
 
 /** Prefer env; otherwise same host as the page (so phones on LAN hit your PC API). */
 function resolveApiBaseUrl() {
-  if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL as string
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return String(import.meta.env.VITE_API_BASE_URL).replace(/\/$/, '')
+  }
   if (typeof window !== 'undefined' && window.location?.hostname) {
     return `http://${window.location.hostname}:3000`
   }
@@ -280,6 +282,53 @@ export const searchApi = {
       }>
     }
   },
+}
+
+export const paymentsApi = {
+  listBoosts: async () =>
+    (await apiClient.get('/api/v1/payments/boosts')).data as {
+      boosts: Array<{
+        id: string
+        name: string
+        amountNaira: number
+        days: number
+        unlockCredits: number
+        upgradesPlan: boolean
+      }>
+    },
+  initBoost: async (boostId: string, callbackUrl?: string) =>
+    (
+      await apiClient.post('/api/v1/payments/boost/init', {
+        boostId,
+        callbackUrl: callbackUrl || `${window.location.origin}/vendor/subscription`,
+      })
+    ).data as {
+      reference: string
+      amountNaira: number
+      amountKobo: number
+      email: string
+      publicKey: string
+      authorizationUrl: string
+      accessCode: string
+      boost: {
+        id: string
+        name: string
+        unlockCredits: number
+        upgradesPlan: boolean
+        days: number
+      }
+    },
+  verify: async (reference: string) =>
+    (await apiClient.get(`/api/v1/payments/verify/${encodeURIComponent(reference)}`)).data as {
+      status: 'success'
+      reference: string
+      boostId: string
+      amountNaira: number
+      unlockCredits: number
+      upgradesPlan: boolean
+      boostName?: string
+      days?: number
+    },
 }
 
 function coupleHeaders() {

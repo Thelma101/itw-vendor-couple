@@ -32,7 +32,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Nav from '@/couple/components/Nav';
 import { useShortlist } from '@/shared/contexts/ShortlistContext';
-import { mockVendors } from '@/shared/data/mockVendors';
+import { mockVendors, resolveVendorId } from '@/shared/data/mockVendors';
 import { activeAddOns, activePackages } from '@/shared/lib/vendorServices';
 
 const defaultVendorData = {
@@ -127,7 +127,8 @@ const VendorProfile: React.FC = () => {
   });
 
   const vendorData = useMemo(() => {
-    const matched = mockVendors.find((v) => v.id === routeId);
+    const resolvedId = resolveVendorId(routeId) || routeId
+    const matched = mockVendors.find((v) => v.id === resolvedId || v.id === routeId);
     if (!matched) return defaultVendorData;
     const priceNum = Number.parseInt(matched.price.replace(/[^0-9]/g, ''), 10) || defaultVendorData.startingPrice;
     return {

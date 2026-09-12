@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Box,
   Button,
@@ -8,295 +8,258 @@ import {
   Fab,
   TextField,
   Typography,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon,
-  useMediaQuery,
 } from '@mui/material'
-import { Edit, ViewAgenda, Add } from '@mui/icons-material'
-import { useTheme } from '@mui/material/styles'
+import { Edit, ViewAgenda } from '@mui/icons-material'
 import { useNotes } from '@/shared/contexts/NotesContext'
 import { useLocation } from 'react-router-dom'
 import NotesDrawer from './NotesDrawer'
-import EditNoteDrawer from './EditNoteDrawer'
 
-export type FloatingNoteButtonVariant = 'dialog' | 'speed-dial-dual' | 'draggable' | 'speed-dial-view' | 'default'
+const POS_KEY = 'itw_note_fab_pos'
 
-interface FloatingNoteButtonProps {
-  variant?: FloatingNoteButtonVariant
+type Pos = { x: number; y: number }
+
+function loadPos(): Pos {
+  try {
+    const raw = localStorage.getItem(POS_KEY)
+    if (!raw) return { x: 24, y: 96 }
+    const p = JSON.parse(raw) as Pos
+    if (typeof p.x === 'number' && typeof p.y === 'number') return p
+  } catch {
+    /* ignore */
+  }
+  return { x: 24, y: 96 }
+}
+
+function clampPos(x: number, y: number, size = 56): Pos {
+  const pad = 8
+  const maxX = Math.max(pad, window.innerWidth - size - pad)
+  const maxY = Math.max(pad, window.innerHeight - size - pad)
+  return {
+    x: Math.min(Math.max(pad, x), maxX),
+    y: Math.min(Math.max(pad, y), maxY),
+  }
 }
 
 /**
- * Unified floating note button component supporting multiple variants
- * - 'dialog': FAB with quick note dialog (dashboard, notes page)
- * - 'speed-dial-dual': SpeedDial with Add/View options
- * - 'draggable': Draggable FAB that can be moved around
- * - 'speed-dial-view': SpeedDial with just View option
- * - 'default': Standard FAB (fallback)
+ * Draggable floating note FAB — available on couple pages.
+ * Drag to reposition; tap to open quick note. Position is remembered.
  */
-export default function FloatingNoteButton({ variant = 'dialog' }: FloatingNoteButtonProps) {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+export default function FloatingNoteButton() {
   const location = useLocation()
-  const isDashboard = location.pathname === '/couple/dashboard'
-  const pageName = location.pathname.split('/').pop() || 'page'
+  const pageName = location.pathname.split('/').filter(Boolean).pop() || 'page'
+  const size = 56
 
-  // State management
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editNoteDrawerOpen, setEditNoteDrawerOpen] = useState(false)
-  const [viewNotesDrawerOpen, setViewNotesDrawerOpen] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [position, setPosition] = useState({ x: 32, y: 32 })
+  const [viewNotesOpen, setViewNotesOpen] = useState(false)
+  const [pos, setPos] = useState<Pos>(() =>
+    typeof window !== 'undefined' ? clampPos(loadPos().x, loadPos().y, size) : { x: 24, y: 96 },
+  )
+  const [dragging, setDragging] = useState(false)
+
+  const dragRef = useRef({
+    active: false,
+    moved: false,
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0,
+  })
+  const posRef = useRef(pos)
+  posRef.current = pos
 
   const { currentNote, setCurrentNote, addNote } = useNotes()
 
-  // Handlers
-  const handleQuickNoteSave = () => {
+  useEffect(() => {
+    const onResize = () => setPos((p) => clampPos(p.x, p.y, size))
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const endDrag = useCallback(() => {
+    if (!dragRef.current.active) return
+    dragRef.current.active = false
+    setDragging(false)
+    const next = clampPos(posRef.current.x, posRef.current.y, size)
+    setPos(next)
+    localStorage.setItem(POS_KEY, JSON.stringify(next))
+  }, [])
+
+  useEffect(() => {
+    const onMove = (clientX: number, clientY: number) => {
+      if (!dragRef.current.active) return
+      const dx = clientX - dragRef.current.startX
+      const dy = clientY - dragRef.current.startY
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragRef.current.moved = true
+      setPos(
+        clampPos(
+          dragRef.current.originX + dx,
+          dragRef.current.originY + dy,
+          size,
+        ),
+      )
+    }
+
+    const onPointerMove = (e: PointerEvent) => onMove(e.clientX, e.clientY)
+    const onTouchMove = (e: TouchEvent) => {
+      if (!dragRef.current.active || !e.touches[0]) return
+      e.preventDefault()
+      onMove(e.touches[0].clientX, e.touches[0].clientY)
+    }
+
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', endDrag)
+    window.addEventListener('pointercancel', endDrag)
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('touchend', endDrag)
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', endDrag)
+      window.removeEventListener('pointercancel', endDrag)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', endDrag)
+    }
+  }, [endDrag])
+
+  const startDrag = (clientX: number, clientY: number) => {
+    dragRef.current = {
+      active: true,
+      moved: false,
+      startX: clientX,
+      startY: clientY,
+      originX: posRef.current.x,
+      originY: posRef.current.y,
+    }
+    setDragging(true)
+  }
+
+  const handleClick = () => {
+    if (dragRef.current.moved) {
+      dragRef.current.moved = false
+      return
+    }
+    setDialogOpen(true)
+  }
+
+  const handleSave = () => {
     addNote(currentNote, pageName)
     setDialogOpen(false)
   }
 
-  const handleDialogClose = () => {
-    setDialogOpen(false)
-  }
+  // Keep above couple bottom nav on mobile (left side default also works)
+  const bottomSafe = typeof window !== 'undefined' && window.innerWidth < 600 ? 88 : 24
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true)
-    setDragStart({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
+  useEffect(() => {
+    // nudge first load away from bottom nav if still at default-ish bottom
+    setPos((p) => {
+      const maxY = window.innerHeight - size - bottomSafe
+      if (p.y > maxY) return clampPos(p.x, maxY, size)
+      return p
     })
-  }
+  }, [bottomSafe])
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return
-
-    const newX = e.clientX - dragStart.x
-    const newY = e.clientY - dragStart.y
-
-    const maxX = window.innerWidth - 80
-    const maxY = window.innerHeight - 80
-
-    setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY)),
-    })
-  }
-
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
-
-  // Render variants
-  if (variant === 'dialog') {
-    if (!isDashboard) return null
-
-    return (
-      <>
-        <Fab
-          onClick={() => setDialogOpen(true)}
-          sx={{
-            position: 'fixed',
-            bottom: 32,
-            right: 32,
-            bgcolor: '#0F766E',
-            color: '#FFFFFF',
-            width: 56,
-            height: 56,
-            '&:hover': {
-              bgcolor: '#006670',
-              transform: 'scale(1.1)',
-            },
-            transition: 'all 0.3s ease',
-            zIndex: 999,
-            boxShadow: '0 8px 24px rgba(15, 118, 110, 0.3)',
-          }}
-          aria-label="Add note"
-        >
-          <Edit />
-        </Fab>
-
-        <Dialog open={dialogOpen} onClose={handleDialogClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-          <DialogTitle sx={{ fontWeight: 800, fontSize: 16, color: '#0F172A', pb: 1 }}>Quick Note</DialogTitle>
-          <DialogContent sx={{ pt: 2 }}>
-            <Typography sx={{ fontSize: 12, color: '#64748B', mb: 1.5 }}>Page: {pageName.replace(/-/g, ' ').toUpperCase()}</Typography>
-            <TextField
-              autoFocus
-              fullWidth
-              multiline
-              rows={4}
-              placeholder="Jot down your thoughts, reminders, or ideas..."
-              value={currentNote}
-              onChange={(e) => setCurrentNote(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  fontSize: 13,
-                  fontFamily: 'inherit',
-                },
-              }}
-            />
-            <Box sx={{ display: 'flex', gap: 1, mt: 2, justifyContent: 'space-between', alignItems: 'center' }}>
-              <Button
-                onClick={() => setViewNotesDrawerOpen(true)}
-                variant="text"
-                startIcon={<ViewAgenda />}
-                sx={{ textTransform: 'none', fontWeight: 700, color: '#0F766E', fontSize: 12 }}
-              >
-                View all notes
-              </Button>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button onClick={handleDialogClose} variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}>
-                  Cancel
-                </Button>
-                <Button onClick={handleQuickNoteSave} variant="contained" sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, bgcolor: '#0F766E' }} disabled={!currentNote.trim()}>
-                  Save Note
-                </Button>
-              </Box>
-            </Box>
-          </DialogContent>
-        </Dialog>
-
-        <NotesDrawer open={viewNotesDrawerOpen} onClose={() => setViewNotesDrawerOpen(false)} />
-      </>
-    )
-  }
-
-  if (variant === 'speed-dial-dual') {
-    return (
-      <>
-        <SpeedDial
-          ariaLabel="Notes menu"
-          sx={{
-            position: 'fixed',
-            bottom: isMobile ? 88 : 32,
-            right: isMobile ? 16 : 32,
-            zIndex: 999,
-          }}
-          icon={<SpeedDialIcon />}
-        >
-          <SpeedDialAction
-            icon={<Add />}
-            tooltipTitle="Add Note"
-            onClick={() => setEditNoteDrawerOpen(true)}
-            tooltipPlacement="left"
-          />
-          <SpeedDialAction
-            icon={<ViewAgenda />}
-            tooltipTitle="View Notes"
-            onClick={() => setViewNotesDrawerOpen(true)}
-            tooltipPlacement="left"
-          />
-        </SpeedDial>
-
-        <EditNoteDrawer open={editNoteDrawerOpen} onClose={() => setEditNoteDrawerOpen(false)} />
-        <NotesDrawer open={viewNotesDrawerOpen} onClose={() => setViewNotesDrawerOpen(false)} />
-      </>
-    )
-  }
-
-  if (variant === 'draggable') {
-    return (
-      <>
-        <Box
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          sx={{ position: 'fixed', inset: 0, zIndex: isDragging ? 9998 : -1, cursor: isDragging ? 'grabbing' : 'auto' }}
-        />
-
-        <Fab
-          onClick={() => setEditNoteDrawerOpen(true)}
-          onMouseDown={handleMouseDown}
-          onTouchStart={(e) => {
-            setIsDragging(true)
-            setDragStart({
-              x: e.touches[0].clientX - position.x,
-              y: e.touches[0].clientY - position.y,
-            })
-          }}
-          sx={{
-            position: 'fixed',
-            bottom: `${position.y}px`,
-            right: `${position.x}px`,
-            bgcolor: '#0F766E',
-            color: '#FFFFFF',
-            width: 56,
-            height: 56,
-            '&:hover': {
-              bgcolor: '#006670',
-              transform: 'scale(1.1)',
-            },
-            transition: isDragging ? 'none' : 'all 0.3s ease',
-            zIndex: 999,
-            boxShadow: '0 8px 24px rgba(15, 118, 110, 0.3)',
-            cursor: 'grab',
-            '&:active': {
-              cursor: 'grabbing',
-            },
-          }}
-          aria-label="Add note"
-          title="Add note (drag to move)"
-        >
-          <Edit />
-        </Fab>
-
-        <EditNoteDrawer open={editNoteDrawerOpen} onClose={() => setEditNoteDrawerOpen(false)} />
-      </>
-    )
-  }
-
-  if (variant === 'speed-dial-view') {
-    return (
-      <>
-        <SpeedDial
-          ariaLabel="View notes menu"
-          sx={{
-            position: 'fixed',
-            bottom: 32,
-            left: 32,
-            zIndex: 999,
-          }}
-          icon={<SpeedDialIcon />}
-        >
-          <SpeedDialAction
-            icon={<ViewAgenda />}
-            tooltipTitle="View all notes"
-            tooltipOpen
-            onClick={() => setViewNotesDrawerOpen(true)}
-            aria-label="View all notes"
-          />
-        </SpeedDial>
-
-        <NotesDrawer open={viewNotesDrawerOpen} onClose={() => setViewNotesDrawerOpen(false)} />
-      </>
-    )
-  }
-
-  // Default variant - simple dialog FAB
   return (
-    <Fab
-      onClick={() => setDialogOpen(true)}
-      sx={{
-        position: 'fixed',
-        bottom: 32,
-        right: 32,
-        bgcolor: '#0F766E',
-        color: '#FFFFFF',
-        width: 56,
-        height: 56,
-        '&:hover': {
-          bgcolor: '#006670',
-          transform: 'scale(1.1)',
-        },
-        transition: 'all 0.3s ease',
-        zIndex: 999,
-        boxShadow: '0 8px 24px rgba(15, 118, 110, 0.3)',
-      }}
-      aria-label="Add note"
-    >
-      <Edit />
-    </Fab>
+    <>
+      <Fab
+        onPointerDown={(e) => {
+          if (e.button !== 0) return
+          e.currentTarget.setPointerCapture?.(e.pointerId)
+          startDrag(e.clientX, e.clientY)
+        }}
+        onClick={handleClick}
+        sx={{
+          position: 'fixed',
+          left: pos.x,
+          top: pos.y,
+          right: 'auto',
+          bottom: 'auto',
+          bgcolor: '#0F766E',
+          color: '#FFFFFF',
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          touchAction: 'none',
+          zIndex: 1200,
+          boxShadow: dragging
+            ? '0 12px 32px rgba(15, 118, 110, 0.45)'
+            : '0 8px 24px rgba(15, 118, 110, 0.3)',
+          cursor: dragging ? 'grabbing' : 'grab',
+          transition: dragging ? 'none' : 'box-shadow 0.2s ease, transform 0.2s ease',
+          '&:hover': {
+            bgcolor: '#0D9488',
+            transform: dragging ? 'none' : 'scale(1.05)',
+          },
+        }}
+        aria-label="Add note — drag to move"
+        title="Add note · drag to move"
+      >
+        <Edit />
+      </Fab>
+
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, fontSize: 16, color: '#0F172A', pb: 1 }}>
+          Quick Note
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Typography sx={{ fontSize: 12, color: '#64748B', mb: 1.5 }}>
+            Page: {pageName.replace(/-/g, ' ').toUpperCase()} · FAB is draggable anytime
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            multiline
+            rows={4}
+            placeholder="Jot down your thoughts, reminders, or ideas..."
+            value={currentNote}
+            onChange={(e) => setCurrentNote(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                fontSize: 13,
+              },
+            }}
+          />
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1,
+              mt: 2,
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <Button
+              onClick={() => setViewNotesOpen(true)}
+              variant="text"
+              startIcon={<ViewAgenda />}
+              sx={{ fontWeight: 700, color: '#0F766E', fontSize: 12 }}
+            >
+              View all notes
+            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button onClick={() => setDialogOpen(false)} variant="outlined">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                variant="contained"
+                color="secondary"
+                disabled={!currentNote.trim()}
+              >
+                Save Note
+              </Button>
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      <NotesDrawer open={viewNotesOpen} onClose={() => setViewNotesOpen(false)} />
+    </>
   )
 }

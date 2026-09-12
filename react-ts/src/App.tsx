@@ -28,7 +28,10 @@ const GuestList = lazy(() => import('@/couple/pages/GuestList'))
 const OnboardingPage = lazy(() => import('@/auth/pages/OnboardingPage'))
 const LandingPage = lazy(() => import('@/marketing/pages/LandingPage'))
 const WeddingWebsite = lazy(() => import('@/couple/pages/WeddingWebsite'))
+const WeddingWebsiteGuestPreview = lazy(() => import('@/couple/pages/WeddingWebsiteGuestPreview'))
 const GiftRegistry = lazy(() => import('@/couple/pages/GiftRegistry'))
+const PrivacyPolicy = lazy(() => import('@/shared/pages/PrivacyPolicy'))
+const TermsOfService = lazy(() => import('@/shared/pages/TermsOfService'))
 const PublicGiftRegistry = lazy(() => import('@/couple/pages/PublicGiftRegistry'))
 const CompareVendors = lazy(() => import('@/couple/pages/CompareVendors'))
 
@@ -77,6 +80,8 @@ export default function App() {
 
               <Route path="/signin" element={<RoutedPage><OnboardingPage /></RoutedPage>} />
               <Route path="/signup" element={<RoutedPage><OnboardingPage /></RoutedPage>} />
+              <Route path="/privacy" element={<RoutedPage><PrivacyPolicy /></RoutedPage>} />
+              <Route path="/terms" element={<RoutedPage><TermsOfService /></RoutedPage>} />
 
               {/* Couple core loop */}
               <Route path="/couple/dashboard" element={<ProtectedRoute><RoutedPage><Dashboard /></RoutedPage></ProtectedRoute>} />
@@ -93,6 +98,9 @@ export default function App() {
               <Route path="/couple/budget" element={<RoutedPage><BudgetTracker /></RoutedPage>} />
               <Route path="/couple/guests" element={<RoutedPage><GuestList /></RoutedPage>} />
               <Route path="/couple/wedding-website" element={<ProtectedRoute><RoutedPage><WeddingWebsite /></RoutedPage></ProtectedRoute>} />
+              <Route path="/couple/wedding-website/preview" element={<RoutedPage><WeddingWebsiteGuestPreview /></RoutedPage>} />
+              {/* Guest preview of wedding site — works on any host, no custom domain needed */}
+              <Route path="/w/:slug" element={<RoutedPage><WeddingWebsiteGuestPreview /></RoutedPage>} />
               <Route path="/couple/registry" element={<ProtectedRoute><RoutedPage><GiftRegistry /></RoutedPage></ProtectedRoute>} />
               <Route path="/couple/registry/public/:slug" element={<RoutedPage><PublicGiftRegistry /></RoutedPage>} />
               <Route path="/couple/compare" element={<ProtectedRoute><RoutedPage><CompareVendors /></RoutedPage></ProtectedRoute>} />

@@ -1,11 +1,14 @@
 /**
- * iTheeWed — Standard vs Premium feature registry
+ * iTheeWed — plan / feature registry
  *
- * Standard = core F&F product (formerly "free")
- * Premium = unlock extras / higher limits
+ * Vendor commercial ladder (soft-launch):
+ * Starter (free) → Professional → Business → Enterprise
+ * Plus optional Jiji-style boost packs on any plan.
+ *
+ * Couples: Standard core free; Premium couple extras soft-gated.
  */
 
-export type PlanId = 'standard' | 'premium' | 'enterprise'
+export type PlanId = 'standard' | 'premium' | 'business' | 'enterprise'
 
 /** @deprecated use PlanId — kept for older imports */
 export type FeatureTier = PlanId | 'free'
@@ -13,7 +16,7 @@ export type FeatureTier = PlanId | 'free'
 export interface FeatureDefinition {
   id: string
   name: string
-  tier: 'standard' | 'premium' | 'enterprise'
+  tier: 'standard' | 'premium' | 'business' | 'enterprise'
   description: string
   category: string
   audience: 'couple' | 'vendor' | 'both'
@@ -34,6 +37,14 @@ export const PLAN_LIMITS = {
     portfolioAlbums: Number.POSITIVE_INFINITY,
     teamSeats: 3,
   },
+  /** Between Professional and Enterprise — growing multi-person studios */
+  business: {
+    guestCap: Number.POSITIVE_INFINITY,
+    vendorMessagesPerMonth: Number.POSITIVE_INFINITY,
+    leadUnlocksPerMonth: Number.POSITIVE_INFINITY,
+    portfolioAlbums: Number.POSITIVE_INFINITY,
+    teamSeats: 8,
+  },
   enterprise: {
     guestCap: Number.POSITIVE_INFINITY,
     vendorMessagesPerMonth: Number.POSITIVE_INFINITY,
@@ -46,6 +57,7 @@ export const PLAN_LIMITS = {
 export const PLAN_DISPLAY = {
   standard: { name: 'Starter', monthlyNaira: 0, annualNaira: 0 },
   premium: { name: 'Professional', monthlyNaira: 15000, annualNaira: 150000 },
+  business: { name: 'Business', monthlyNaira: 28000, annualNaira: 280000 },
   enterprise: { name: 'Enterprise', monthlyNaira: 45000, annualNaira: 450000 },
 } as const
 
@@ -80,21 +92,26 @@ export const FEATURE_MAP: FeatureDefinition[] = [
   { id: 'vendor-services', name: 'Service Packages', tier: 'standard', description: 'List and price services in ₦', category: 'Vendor Business', audience: 'vendor' },
   { id: 'vendor-analytics', name: 'Advanced Analytics', tier: 'premium', description: 'Demand insights and competitor pricing', category: 'Vendor Business', audience: 'vendor' },
   { id: 'vendor-portfolio-u', name: 'Unlimited Portfolio', tier: 'premium', description: 'Unlimited gallery slots + priority placement', category: 'Vendor Business', audience: 'vendor' },
-  { id: 'vendor-team', name: 'Team Seats', tier: 'premium', description: 'Invite staff to manage leads and bookings', category: 'Vendor Business', audience: 'vendor' },
-  { id: 'vendor-featured', name: 'Featured Category Placement', tier: 'enterprise', description: 'Pinned featured slot in couple search by category', category: 'Vendor Business', audience: 'vendor' },
+  { id: 'vendor-team', name: 'Team Seats (up to 3)', tier: 'premium', description: 'Invite staff to manage leads and bookings', category: 'Vendor Business', audience: 'vendor' },
+  { id: 'vendor-team-business', name: 'Team Seats (up to 8)', tier: 'business', description: 'Larger studio seats + shared lead ownership', category: 'Vendor Business', audience: 'vendor' },
+  { id: 'vendor-featured', name: 'Featured Category Placement', tier: 'business', description: 'Pinned featured slot in couple search by category', category: 'Vendor Business', audience: 'vendor' },
+  { id: 'vendor-multi-city', name: 'Multi-city Profiles', tier: 'business', description: 'List in multiple Lagos corridors / cities', category: 'Vendor Business', audience: 'vendor' },
   { id: 'vendor-csm', name: 'Priority Support + CSM', tier: 'enterprise', description: 'Chat SLA and dedicated success contact', category: 'Vendor Business', audience: 'vendor' },
+  { id: 'vendor-api', name: 'API / White-label hooks', tier: 'enterprise', description: 'Integrations for chains and planners', category: 'Vendor Business', audience: 'vendor' },
 ]
 
 const PLAN_RANK: Record<PlanId, number> = {
   standard: 0,
   premium: 1,
-  enterprise: 2,
+  business: 2,
+  enterprise: 3,
 }
 
 export function normalizePlan(value: unknown): PlanId {
   if (value === 'enterprise') return 'enterprise'
+  if (value === 'business' || value === 'growth') return 'business'
   if (value === 'premium' || value === 'professional') return 'premium'
-  if (value === 'free' || value === 'starter') return 'standard'
+  if (value === 'free' || value === 'starter' || value === 'standard') return 'standard'
   return 'standard'
 }
 
@@ -105,14 +122,20 @@ export function getFeature(featureId: string): FeatureDefinition | undefined {
 /** True if this feature requires Premium or higher */
 export function isPremiumFeature(featureId: string): boolean {
   const tier = getFeature(featureId)?.tier
-  return tier === 'premium' || tier === 'enterprise'
+  return tier === 'premium' || tier === 'business' || tier === 'enterprise'
 }
 
 export function planIncludes(plan: PlanId, featureId: string): boolean {
   const feature = getFeature(featureId)
   if (!feature) return true
   const required: PlanId =
-    feature.tier === 'enterprise' ? 'enterprise' : feature.tier === 'premium' ? 'premium' : 'standard'
+    feature.tier === 'enterprise'
+      ? 'enterprise'
+      : feature.tier === 'business'
+        ? 'business'
+        : feature.tier === 'premium'
+          ? 'premium'
+          : 'standard'
   return PLAN_RANK[plan] >= PLAN_RANK[required]
 }
 
@@ -120,20 +143,10 @@ export function getFeaturesByCategory(category: string): FeatureDefinition[] {
   return FEATURE_MAP.filter((f) => f.category === category)
 }
 
-export function getPremiumFeatures(): FeatureDefinition[] {
-  return FEATURE_MAP.filter((f) => f.tier === 'premium')
+export function planIsPaid(plan: PlanId): boolean {
+  return plan !== 'standard'
 }
 
-export function getStandardFeatures(): FeatureDefinition[] {
-  return FEATURE_MAP.filter((f) => f.tier === 'standard')
+export function unlimitedUnlocks(plan: PlanId): boolean {
+  return plan === 'premium' || plan === 'business' || plan === 'enterprise'
 }
-
-/** @deprecated use getStandardFeatures */
-export const getFreeFeatures = getStandardFeatures
-
-export function getFeatureCategories(): string[] {
-  return Array.from(new Set(FEATURE_MAP.map((f) => f.category)))
-}
-
-/** @deprecated use isPremiumFeature */
-export const isPremium = isPremiumFeature

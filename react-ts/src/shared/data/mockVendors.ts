@@ -14,7 +14,7 @@ export interface Vendor {
 export const mockVendors: Vendor[] = [
   // VENUES
   {
-    id: '1',
+    id: 'rosevet-event-center',
     name: 'Rosevet Event Center',
     price: 'N187,000',
     image: 'https://images.unsplash.com/photo-1519167758481-83f2946fead6?w=400&h=300&fit=crop&crop=center',
@@ -25,7 +25,7 @@ export const mockVendors: Vendor[] = [
     reviewCount: 124
   },
   {
-    id: '2',
+    id: 'charly-inn',
     name: 'Charly Inn',
     price: 'N387,000',
     image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop&crop=center',
@@ -36,7 +36,7 @@ export const mockVendors: Vendor[] = [
     reviewCount: 89
   },
   {
-    id: '3',
+    id: 'esther-suit',
     name: 'Esther Suit',
     price: 'N132,000',
     image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop&crop=center',
@@ -47,7 +47,7 @@ export const mockVendors: Vendor[] = [
     reviewCount: 156
   },
   {
-    id: '4',
+    id: 'okeiran-even-homes',
     name: 'Okeiran Even Homes',
     price: 'N812,000',
     image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&crop=center',
@@ -58,7 +58,7 @@ export const mockVendors: Vendor[] = [
     reviewCount: 203
   },
   {
-    id: '5',
+    id: 'master-event-place',
     name: 'Master Event Place',
     price: 'N1,212,000',
     image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=400&h=300&fit=crop&crop=center',
@@ -71,7 +71,7 @@ export const mockVendors: Vendor[] = [
 
   // PHOTOGRAPHERS
   {
-    id: '6',
+    id: 'lens-love-photography',
     name: 'Lens & Love Photography',
     price: 'N150,000',
     image: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=400&h=300&fit=crop&crop=center',
@@ -82,7 +82,7 @@ export const mockVendors: Vendor[] = [
     reviewCount: 95
   },
   {
-    id: '7',
+    id: 'golden-moments-studio',
     name: 'Golden Moments Studio',
     price: 'N200,000',
     image: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=400&h=300&fit=crop&crop=center',
@@ -93,7 +93,7 @@ export const mockVendors: Vendor[] = [
     reviewCount: 142
   },
   {
-    id: '8',
+    id: 'wedding-lens-pro',
     name: 'Wedding Lens Pro',
     price: 'N120,000',
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=center',
@@ -106,7 +106,7 @@ export const mockVendors: Vendor[] = [
 
   // FLORISTS
   {
-    id: '9',
+    id: 'bloom-blossom',
     name: 'Bloom & Blossom',
     price: 'N80,000',
     image: 'https://images.unsplash.com/photo-1563241527-3004b7be99c3?w=400&h=300&fit=crop&crop=center',
@@ -117,7 +117,7 @@ export const mockVendors: Vendor[] = [
     reviewCount: 112
   },
   {
-    id: '10',
+    id: 'elegant-petals',
     name: 'Elegant Petals',
     price: 'N95,000',
     image: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=300&fit=crop&crop=center',
@@ -130,7 +130,7 @@ export const mockVendors: Vendor[] = [
 
   // CAKE & DESSERTS
   {
-    id: '11',
+    id: 'sweet-dreams-bakery',
     name: 'Sweet Dreams Bakery',
     price: 'N45,000',
     image: 'https://images.unsplash.com/photo-1578985545062-69928b1c9587?w=400&h=300&fit=crop&crop=center',
@@ -141,7 +141,7 @@ export const mockVendors: Vendor[] = [
     reviewCount: 156
   },
   {
-    id: '12',
+    id: 'royal-cakes-studio',
     name: 'Royal Cakes Studio',
     price: 'N65,000',
     image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=300&fit=crop&crop=center',
@@ -154,7 +154,7 @@ export const mockVendors: Vendor[] = [
 
   // CATERING
   {
-    id: '13',
+    id: 'gourmet-delights',
     name: 'Gourmet Delights',
     price: 'N120,000',
     image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop&crop=center',
@@ -165,7 +165,7 @@ export const mockVendors: Vendor[] = [
     reviewCount: 134
   },
   {
-    id: '14',
+    id: 'elite-catering-co',
     name: 'Elite Catering Co',
     price: 'N150,000',
     image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop&crop=center',
@@ -178,7 +178,7 @@ export const mockVendors: Vendor[] = [
 
   // DRESS & APPAREL
   {
-    id: '15',
+    id: 'bridal-elegance',
     name: 'Bridal Elegance',
     price: 'N250,000',
     image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=300&fit=crop&crop=center',
@@ -189,7 +189,7 @@ export const mockVendors: Vendor[] = [
     reviewCount: 95
   },
   {
-    id: '16',
+    id: 'designer-dreams',
     name: 'Designer Dreams',
     price: 'N180,000',
     image: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=400&h=300&fit=crop&crop=center',
@@ -204,7 +204,7 @@ export const mockVendors: Vendor[] = [
 
   // MUSIC & ENTERTAINMENT
   {
-    id: '17',
+    id: 'harmony-live-band',
     name: 'Harmony Live Band',
     price: 'N300,000',
     image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=300&fit=crop&crop=center',
@@ -217,7 +217,7 @@ export const mockVendors: Vendor[] = [
 
   // MAKEUP ARTISTS
   {
-    id: '18',
+    id: 'glamour-beauty-studio',
     name: 'Glamour Beauty Studio',
     price: 'N75,000',
     image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=300&fit=crop&crop=center',
@@ -230,7 +230,7 @@ export const mockVendors: Vendor[] = [
 
   // DECOR & RENTALS
   {
-    id: '19',
+    id: 'royal-decor-events',
     name: 'Royal Decor & Events',
     price: 'N180,000',
     image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400&h=300&fit=crop&crop=center',
@@ -243,7 +243,7 @@ export const mockVendors: Vendor[] = [
 
   // TRANSPORTATION
   {
-    id: '20',
+    id: 'luxury-wedding-cars',
     name: 'Luxury Wedding Cars',
     price: 'N95,000',
     image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400&h=300&fit=crop&crop=center',
@@ -256,7 +256,7 @@ export const mockVendors: Vendor[] = [
 
   // WEDDING PLANNERS
   {
-    id: '21',
+    id: 'perfect-day-planners',
     name: 'Perfect Day Planners',
     price: 'N200,000',
     image: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&h=300&fit=crop&crop=center',
@@ -268,12 +268,40 @@ export const mockVendors: Vendor[] = [
   }
 ]
 
-// Helper function to filter vendors by category
-export const getVendorsByCategory = (categories: string[]): Vendor[] => {
-  return mockVendors.filter(vendor => categories.includes(vendor.category))
+/** Legacy numeric IDs from early demos → slug ids */
+export const LEGACY_VENDOR_ID_MAP: Record<string, string> = {
+  "1": "rosevet-event-center",
+  "2": "charly-inn",
+  "3": "esther-suit",
+  "4": "okeiran-even-homes",
+  "5": "master-event-place",
+  "6": "lens-love-photography",
+  "7": "golden-moments-studio",
+  "8": "wedding-lens-pro",
+  "9": "bloom-blossom",
+  "10": "elegant-petals",
+  "11": "sweet-dreams-bakery",
+  "12": "royal-cakes-studio",
+  "13": "gourmet-delights",
+  "14": "elite-catering-co",
+  "15": "bridal-elegance",
+  "16": "designer-dreams",
+  "17": "harmony-live-band",
+  "18": "glamour-beauty-studio",
+  "19": "royal-decor-events",
+  "20": "luxury-wedding-cars",
+  "21": "perfect-day-planners"
 }
 
-// Helper function to get all unique categories
+export function resolveVendorId(id: string | undefined): string | undefined {
+  if (!id) return id
+  return LEGACY_VENDOR_ID_MAP[id] || id
+}
+
+export const getVendorsByCategory = (categories: string[]): Vendor[] => {
+  return mockVendors.filter((vendor) => categories.includes(vendor.category))
+}
+
 export const getAllCategories = (): string[] => {
-  return Array.from(new Set(mockVendors.map(vendor => vendor.category)))
+  return Array.from(new Set(mockVendors.map((vendor) => vendor.category)))
 }

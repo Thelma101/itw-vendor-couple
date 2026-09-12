@@ -1,0 +1,48 @@
+{
+  "importedAt": "2026-08-25T16:40:18.695Z",
+  "count": 3,
+  "vendors": [
+    {
+      "id": "lagos-light-photography",
+      "name": "Lagos Light Photography",
+      "category": "Photography",
+      "location": "Ikeja, Lagos",
+      "price": 250000,
+      "phone": "08030000001",
+      "whatsapp": "08030000001",
+      "instagram": "lagoslightphoto",
+      "email": "hello@example.com",
+      "bio": "Lagos wedding photographer — candid and traditional coverage",
+      "city": "Lagos",
+      "status": "seed_pending_claim"
+    },
+    {
+      "id": "gele-by-amara",
+      "name": "Gele by Amara",
+      "category": "Makeup",
+      "location": "Surulere, Lagos",
+      "price": 85000,
+      "phone": "08030000002",
+      "whatsapp": "08030000002",
+      "instagram": "gelebyamara",
+      "email": "",
+      "bio": "Bridal makeup and gele for traditional weddings",
+      "city": "Lagos",
+      "status": "seed_pending_claim"
+    },
+    {
+      "id": "vi-garden-venue",
+      "name": "VI Garden Venue",
+      "category": "Venue",
+      "location": "Victoria Island, Lagos",
+      "price": 1500000,
+      "phone": "08030000003",
+      "whatsapp": "08030000003",
+      "instagram": "vigardenevents",
+      "email": "bookings@example.com",
+      "bio": "Garden and indoor reception space · 200–400 guests",
+      "city": "Lagos",
+      "status": "seed_pending_claim"
+    }
+  ]
+}

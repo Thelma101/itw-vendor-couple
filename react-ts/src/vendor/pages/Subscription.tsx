@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Bolt, Check, InfoOutlined } from '@mui/icons-material'
 import VendorPageShell from '@/vendor/components/VendorPageShell'
 import ReferralInviteCard from '@/shared/components/ReferralInviteCard'
 import { usePlan } from '@/shared/contexts/PlanContext'
 import { PLAN_LIMITS } from '@/shared/data/featureTiers'
 import { showToast } from '@/shared/components/SimpleToast'
+import { isNetworkError, paymentsApi } from '@/shared/lib/api'
+import { openPaystackCheckout } from '@/shared/lib/paystack'
 
 type BoostId = 'week' | 'fortnight' | 'month' | 'quarter'
 
@@ -72,21 +74,101 @@ function naira(n: number) {
 }
 
 export default function Subscription() {
-  const { setPlan, leadUnlocksRemaining, leadUnlockCap, isPremium } = usePlan()
-  const [activeBoost, setActiveBoost] = useState<BoostId | null>(null)
+  const {
+    setPlan,
+    leadUnlocksRemaining,
+    leadUnlockCap,
+    isPremium,
+    addUnlockCredits,
+    activeBoostId,
+    setActiveBoostId,
+  } = usePlan()
+  const [payingId, setPayingId] = useState<BoostId | null>(null)
 
-  const buyBoost = (id: BoostId) => {
-    setActiveBoost(id)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const reference = params.get('reference') || params.get('trxref')
+    if (!reference) return
+    void (async () => {
+      try {
+        const result = await paymentsApi.verify(reference)
+        setActiveBoostId(result.boostId)
+        if (result.upgradesPlan) setPlan('premium')
+        if (result.unlockCredits) addUnlockCredits(result.unlockCredits)
+        showToast(`${result.boostName || 'Boost'} activated · +${result.unlockCredits} unlock(s)`, 'success')
+        window.history.replaceState({}, '', '/vendor/subscription')
+      } catch {
+        /* user may still complete via popup verify */
+      }
+    })()
+  }, [addUnlockCredits, setActiveBoostId, setPlan])
+
+  const buyBoost = async (id: BoostId) => {
     const b = boosts.find((x) => x.id === id)!
-    if (id === 'month' || id === 'quarter') setPlan('premium')
-    showToast(`${b.name} activated (demo) · +${b.unlockCredits} unlock credit(s)`, 'success')
+    const token = localStorage.getItem('authToken') || ''
+
+    // Offline / demo session — keep previous demo behaviour
+    if (!token || token.startsWith('demo-')) {
+      setActiveBoostId(id)
+      if (id === 'month' || id === 'quarter') setPlan('premium')
+      addUnlockCredits(b.unlockCredits)
+      showToast(`${b.name} activated (demo) · +${b.unlockCredits} unlock credit(s)`, 'success')
+      return
+    }
+
+    setPayingId(id)
+    try {
+      const init = await paymentsApi.initBoost(id)
+      const publicKey =
+        init.publicKey || (import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined) || ''
+      if (!publicKey) {
+        showToast('Paystack public key missing', 'error')
+        return
+      }
+
+      await openPaystackCheckout({
+        key: publicKey,
+        email: init.email,
+        amount: init.amountKobo,
+        ref: init.reference,
+        callback: (response) => {
+          void (async () => {
+            try {
+              const result = await paymentsApi.verify(response.reference)
+              setActiveBoostId(result.boostId)
+              if (result.upgradesPlan) setPlan('premium')
+              if (result.unlockCredits) addUnlockCredits(result.unlockCredits)
+              showToast(
+                `${result.boostName || b.name} paid · +${result.unlockCredits} unlock credit(s)`,
+                'success',
+              )
+            } catch (err) {
+              showToast(isNetworkError(err) ? 'Network error verifying payment' : 'Payment verify failed', 'error')
+            } finally {
+              setPayingId(null)
+            }
+          })()
+        },
+        onClose: () => setPayingId(null),
+      })
+    } catch (err) {
+      setPayingId(null)
+      if (isNetworkError(err)) {
+        showToast('API offline — use demo login or start the backend', 'error')
+        return
+      }
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Could not start payment'
+      showToast(String(message), 'error')
+    }
   }
 
   return (
     <VendorPageShell
       title="Grow & billing"
       subtitle="Free listing forever. Optional boosts when you want traffic. Invite other vendors for extra unlock credits."
-      badge={activeBoost ? `${boosts.find((b) => b.id === activeBoost)?.name} on` : 'Free listing'}
+      badge={activeBoostId ? `${boosts.find((b) => b.id === activeBoostId)?.name} on` : 'Free listing'}
     >
       <div className="rounded-2xl border border-teal-100 bg-teal-50/40 p-5 mb-6 font-[family-name:var(--font-ui)]">
         <div className="flex gap-3">
@@ -99,33 +181,59 @@ export default function Subscription() {
                 {PLAN_LIMITS.standard.leadUnlocksPerMonth} unlocks/mo.
               </li>
               <li>
-                <span className="font-semibold text-slate-800">Optional boosts</span> — ₦2k / ₦4k / ₦7k / ₦21k packs.
+                <span className="font-semibold text-slate-800">Optional boosts</span> — ₦2k / ₦4k / ₦7k / ₦21k packs via
+                Paystack (test mode).
               </li>
               <li>
                 <span className="font-semibold text-slate-800">Referrals</span> — invite vendors, earn unlock credits.
+              </li>
+              <li>
+                <span className="font-semibold text-slate-800">Optional plans</span> — Professional ₦15k ·{' '}
+                <span className="text-[#0F766E] font-semibold">Business ₦28k</span> · Enterprise ₦45k / mo.
               </li>
             </ol>
           </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 mb-6 font-[family-name:var(--font-ui)] flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-[#0F766E]">Listing</p>
-          <p className="font-[family-name:var(--font-display)] text-2xl font-semibold text-slate-900 mt-1">Free forever</p>
-          <p className="text-sm text-slate-500 mt-1">
-            {isPremium
-              ? 'Boost active — priority placement unlocked for this demo.'
-              : `${Number.isFinite(leadUnlocksRemaining) ? leadUnlocksRemaining : 0} of ${
-                  Number.isFinite(leadUnlockCap) ? leadUnlockCap : '∞'
-                } unlock credits left (includes referral bonuses).`}
-          </p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-6 font-[family-name:var(--font-ui)]">
+        {[
+          { id: 'standard' as const, name: 'Starter', price: '₦0', note: '5 unlocks / mo' },
+          { id: 'premium' as const, name: 'Professional', price: '₦15,000', note: 'Unlimited unlocks · 3 seats' },
+          { id: 'business' as const, name: 'Business', price: '₦28,000', note: 'Featured slot · 8 seats · multi-city' },
+          { id: 'enterprise' as const, name: 'Enterprise', price: '₦45,000', note: 'White-glove · API · 20 seats' },
+        ].map((tier) => (
+          <button
+            key={tier.id}
+            type="button"
+            onClick={() => {
+              setPlan(tier.id)
+              showToast(`${tier.name} selected (preview)`, 'info')
+            }}
+            className={`text-left rounded-2xl border p-4 transition ${
+              (tier.id === 'standard' && !isPremium) ||
+              (tier.id !== 'standard' && isPremium && tier.id === 'premium')
+                ? 'border-[#0F766E] bg-teal-50/50'
+                : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
+          >
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{tier.name}</p>
+            <p className="text-xl font-extrabold text-slate-900 mt-1">{tier.price}</p>
+            <p className="text-xs text-slate-500 mt-1">{tier.note}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 mb-8 text-sm text-slate-600 font-[family-name:var(--font-ui)]">
+        <span>
+          Lead unlocks left: <strong>{leadUnlocksRemaining === Number.POSITIVE_INFINITY ? '∞' : leadUnlocksRemaining}</strong>
+          {leadUnlockCap !== Number.POSITIVE_INFINITY ? ` / ${leadUnlockCap}` : ''}
+        </span>
         <button
           type="button"
           onClick={() => {
             setPlan('standard')
-            setActiveBoost(null)
+            setActiveBoostId(null)
             showToast('Back to free listing', 'info')
           }}
           className="px-4 py-2 rounded-xl text-sm font-bold border border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -144,7 +252,8 @@ export default function Subscription() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         {boosts.map((b) => {
-          const on = activeBoost === b.id
+          const on = activeBoostId === b.id
+          const busy = payingId === b.id
           return (
             <article
               key={b.id}
@@ -173,8 +282,8 @@ export default function Subscription() {
               </ul>
               <button
                 type="button"
-                disabled={on}
-                onClick={() => buyBoost(b.id)}
+                disabled={on || busy}
+                onClick={() => void buyBoost(b.id)}
                 className={`mt-5 w-full py-3 rounded-xl font-bold ${
                   on
                     ? 'bg-slate-100 text-slate-500 cursor-default'
@@ -183,7 +292,7 @@ export default function Subscription() {
                       : 'border-2 border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                {on ? 'Active (demo)' : `Boost · ${naira(b.price)}`}
+                {on ? 'Active' : busy ? 'Opening Paystack…' : `Boost · ${naira(b.price)}`}
               </button>
             </article>
           )

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Accordion,
   AccordionDetails,
@@ -22,7 +23,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { ExpandMore, Language, Publish, Lock, Public, BarChart, LocalDining } from '@mui/icons-material'
+import { ExpandMore, Language, Publish, Lock, Public, BarChart, LocalDining, OpenInNew } from '@mui/icons-material'
 import CouplePageShell from '@/couple/components/CouplePageShell'
 import FloatingNoteButton from '@/couple/components/FloatingNoteButton'
 import SoftGate from '@/shared/components/SoftGate'
@@ -257,6 +258,7 @@ const readDraft = (): WebsiteDraft => {
 }
 
 export default function WeddingWebsite() {
+  const navigate = useNavigate()
   const [draft, setDraft] = useState<WebsiteDraft>(readDraft)
   const [tabIndex, setTabIndex] = useState(0)
   const [newFaqQuestion, setNewFaqQuestion] = useState('')
@@ -288,8 +290,12 @@ export default function WeddingWebsite() {
     update(next)
     const path = `/couple/wedding-website?published=${encodeURIComponent(slug)}`
     window.history.replaceState(null, '', path)
-    setPublishNote(`Live at https://itheewed.com/w/${slug}`)
+    setPublishNote(`Marked published. Preview freely at ${window.location.origin}/w/${slug} — itheewed.com goes live once the domain is connected.`)
   }
+
+  const localPreviewPath = `/w/${publicSlug || slugify(draft.title)}`
+  const localPreviewUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}${localPreviewPath}` : localPreviewPath
 
   const addFaqItem = () => {
     if (newFaqQuestion.trim() && newFaqAnswer.trim()) {
@@ -338,21 +344,28 @@ export default function WeddingWebsite() {
       subtitle="Publish a beautiful guest-facing page with strong privacy controls and clear content flow."
       badge={draft.isPublished ? 'Published' : 'Draft'}
       actions={
-        <Button
-          variant="contained"
-          startIcon={<Publish />}
-          onClick={handlePublish}
-          sx={{
-            bgcolor: '#0F766E',
-            textTransform: 'none',
-            fontWeight: 700,
-            borderRadius: 2,
-            width: { xs: '100%', sm: 'auto' },
-            '&:hover': { bgcolor: '#0D9488' },
-          }}
-        >
-          {draft.isPublished ? 'Update publish' : 'Publish'}
-        </Button>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <Button
+            variant="outlined"
+            startIcon={<OpenInNew />}
+            onClick={() => {
+              update(draft)
+              navigate(localPreviewPath)
+            }}
+            sx={{ width: { xs: '100%', sm: 'auto' }, borderColor: '#0F766E', color: '#0F766E' }}
+          >
+            Preview site
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<Publish />}
+            onClick={handlePublish}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
+            {draft.isPublished ? 'Update publish' : 'Publish'}
+          </Button>
+        </Stack>
       }
     >
       {publishNote ? (
@@ -845,19 +858,47 @@ export default function WeddingWebsite() {
                 fontWeight: draft.isPublished ? 700 : 500,
               }}
             >
-              <strong>URL:</strong> {previewUrl}
+              <strong>When live:</strong> {previewUrl}
             </Typography>
-            {draft.isPublished ? (
+            <Typography sx={{ fontSize: 13, color: '#0F172A', wordBreak: 'break-all', fontWeight: 600 }}>
+              <strong>Preview now (free):</strong> {localPreviewUrl}
+            </Typography>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 0.5 }}>
+              <Button
+                size="small"
+                variant="contained"
+                color="secondary"
+                startIcon={<OpenInNew />}
+                onClick={() => {
+                  update(draft)
+                  navigate(localPreviewPath)
+                }}
+              >
+                Open preview
+              </Button>
               <Button
                 size="small"
                 variant="outlined"
                 onClick={() => {
-                  void navigator.clipboard?.writeText(`https://itheewed.com/w/${publicSlug}`)
-                  setPublishNote('Link copied')
+                  void navigator.clipboard?.writeText(localPreviewUrl)
+                  setPublishNote('Preview link copied — share with your co-planner')
                 }}
-                sx={{ alignSelf: 'flex-start', textTransform: 'none', fontWeight: 700, borderColor: '#0F766E', color: '#0F766E' }}
+                sx={{ borderColor: '#0F766E', color: '#0F766E' }}
               >
-                Copy link
+                Copy preview link
+              </Button>
+            </Stack>
+            {draft.isPublished ? (
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(`https://itheewed.com/w/${publicSlug}`)
+                  setPublishNote('Live URL copied (for after domain launch)')
+                }}
+                sx={{ alignSelf: 'flex-start', fontWeight: 700, color: '#64748B' }}
+              >
+                Copy future live URL
               </Button>
             ) : null}
 

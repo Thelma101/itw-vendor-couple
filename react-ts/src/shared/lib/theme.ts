@@ -46,6 +46,7 @@ export const appTheme = createTheme({
     ...palette,
   },
   shape: {
+    /** Cards/chips base — buttons use full pill radius below */
     borderRadius: 8,
   },
   typography: {
@@ -88,23 +89,41 @@ export const appTheme = createTheme({
       },
     },
     MuiButton: {
+      defaultProps: {
+        disableElevation: true,
+      },
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: 3,
-          fontWeight: 600,
-          padding: '10px 18px',
+          /** Exact same pill radius on every Button */
+          borderRadius: '9999px !important',
+          fontWeight: 700,
+          padding: '10px 20px',
+          letterSpacing: 0.1,
+          boxShadow: 'none',
+          minHeight: 42,
+        },
+        sizeSmall: {
+          padding: '6px 14px',
+          minHeight: 34,
+          fontSize: '0.8125rem',
+        },
+        sizeLarge: {
+          padding: '12px 28px',
+          minHeight: 48,
         },
         containedPrimary: {
           backgroundImage: 'linear-gradient(90deg, #EB1948 0%, #B52344 100%)',
           '&:hover': {
             filter: 'brightness(0.95)',
+            boxShadow: 'none',
           },
         },
         containedSecondary: {
           backgroundImage: 'linear-gradient(90deg, #00838F 0%, #00626b 100%)',
           '&:hover': {
             filter: 'brightness(0.95)',
+            boxShadow: 'none',
           },
         },
       },

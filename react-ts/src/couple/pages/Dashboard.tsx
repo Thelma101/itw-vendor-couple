@@ -709,7 +709,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <FloatingNoteButton variant="speed-dial-dual" />
+      <FloatingNoteButton />
     </CouplePageShell>
   )
 }
