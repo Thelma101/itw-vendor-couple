@@ -68,7 +68,6 @@ const ROUTE_LABELS: Record<string, string> = {
   '/couple/wedding-website': 'Wedding Website',
   '/couple/timeline': 'Timeline',
   '/couple/compare': 'Compare',
-  '/couple/booking': 'Booking',
 };
 
 function labelForPath(pathname: string): string {

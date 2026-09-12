@@ -69,14 +69,14 @@ export default function AccountInformation() {
   const [deleteDialog, setDeleteDialog] = useState(false)
 
   const [profile, setProfile] = useState({
-    firstName: VENDOR_PROFILE.ownerFirstName,
+    firstName: VENDOR_PROFILE.ownerFirstName as string,
     lastName: 'Okonkwo',
-    businessName: VENDOR_PROFILE.businessName,
-    category: VENDOR_PROFILE.category,
+    businessName: VENDOR_PROFILE.businessName as string,
+    category: VENDOR_PROFILE.category as string,
     email: 'hello@bloomandco.ng',
     phone: '+234 801 234 5678',
     website: 'https://bloomandco.ng',
-    location: VENDOR_PROFILE.location,
+    location: VENDOR_PROFILE.location as string,
     bio: 'Full-service wedding planning and styling for couples across Lagos.',
     avatar: VENDOR_PROFILE.avatar,
   })

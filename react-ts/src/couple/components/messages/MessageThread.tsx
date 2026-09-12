@@ -5,7 +5,7 @@ import ImageIcon from '@mui/icons-material/Image'
 import { useRef, useEffect, useState } from 'react'
 
 interface Message {
-  id: number
+  id: number | string
   sender: 'user' | 'vendor'
   text: string
   time: string
@@ -13,7 +13,7 @@ interface Message {
 }
 
 interface Conversation {
-  id: number
+  id: number | string
   vendorName: string
   vendorType: string
   avatar: string
