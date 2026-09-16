@@ -87,10 +87,12 @@ const NotificationPanel: React.FC = () => {
     <>
       <IconButton
         onClick={handleClick}
+        aria-label="Notifications"
         sx={{
-          color: '#00838F',
+          color: '#0F766E',
+          cursor: 'pointer',
           '&:hover': {
-            bgcolor: 'rgba(0, 131, 143, 0.04)',
+            bgcolor: 'rgba(15, 118, 110, 0.08)',
           },
         }}
       >

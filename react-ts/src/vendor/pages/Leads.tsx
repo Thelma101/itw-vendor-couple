@@ -107,6 +107,8 @@ export default function Leads() {
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [detail, setDetail] = useState<Lead | null>(null)
+  const [messageLead, setMessageLead] = useState<Lead | null>(null)
+  const [quickMessage, setQuickMessage] = useState('')
   const [form, setForm] = useState({ name: '', email: '', phone: '', date: '', location: '', budget: '' })
 
   const counts = useMemo(() => {
@@ -282,7 +284,10 @@ export default function Leads() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => navigate('/vendor/messages')}
+                  onClick={() => {
+                    setMessageLead(lead)
+                    setQuickMessage(`Hi ${lead.name.split('&')[0]?.trim() || 'there'} — thanks for your enquiry. How can I help?`)
+                  }}
                   className="px-3 py-2 rounded-xl text-sm font-bold text-[#0F766E] border border-teal-200 hover:bg-teal-50"
                 >
                   Message
@@ -357,6 +362,61 @@ export default function Leads() {
                 Unlock contact
               </button>
             ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {messageLead ? (
+        <div className="fixed inset-0 z-[1300] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-900/40"
+            aria-label="Close"
+            onClick={() => setMessageLead(null)}
+          />
+          <div className="relative w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-5 border border-slate-200 shadow-2xl font-[family-name:var(--font-ui)]">
+            <div className="flex justify-between gap-2 items-start">
+              <div>
+                <h3 className="font-[family-name:var(--font-display)] text-2xl font-semibold">Message {messageLead.name}</h3>
+                <p className="text-sm text-slate-500 mt-1">Send a quick reply without leaving Leads</p>
+              </div>
+              <button type="button" onClick={() => setMessageLead(null)} className="p-1.5 rounded-lg hover:bg-slate-100" aria-label="Close">
+                <Close fontSize="small" />
+              </button>
+            </div>
+            <textarea
+              rows={4}
+              value={quickMessage}
+              onChange={(e) => setQuickMessage(e.target.value)}
+              className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-500 resize-none"
+            />
+            <div className="mt-4 flex flex-wrap gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setMessageLead(null)
+                  navigate('/vendor/messages')
+                }}
+                className="px-3 py-2 rounded-xl text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-50"
+              >
+                Open Messages
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!quickMessage.trim()) {
+                    showToast('Write a message first', 'error')
+                    return
+                  }
+                  showToast(`Message queued to ${messageLead.name}`, 'success')
+                  setMessageLead(null)
+                  setQuickMessage('')
+                }}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#0F766E] hover:bg-[#0D9488]"
+              >
+                Send
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

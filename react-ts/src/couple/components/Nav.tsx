@@ -79,9 +79,7 @@ export default function Nav() {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flexShrink: 0 }}>
-          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-            <NotificationPanel />
-          </Box>
+          <NotificationPanel />
 
           <IconButton
             component={Link}
@@ -89,6 +87,7 @@ export default function Nav() {
             sx={{
               color: '#0F766E',
               bgcolor: 'rgba(15, 118, 110, 0.06)',
+              cursor: 'pointer',
               '&:hover': { bgcolor: 'rgba(15, 118, 110, 0.12)' },
             }}
           >

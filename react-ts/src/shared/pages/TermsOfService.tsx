@@ -37,6 +37,10 @@ export default function TermsOfService() {
             <Typography>
               No fraud, spam, scraping, harassment, or posting illegal content. We may suspend accounts that harm the marketplace or users.
             </Typography>
+            <Typography fontWeight={700}>Contact</Typography>
+            <Typography>
+              Soft-launch support: WhatsApp or call 0703 562 6626, or email hello@itheewed.com. Counsel-reviewed terms will replace this draft before national public launch.
+            </Typography>
             <Typography fontWeight={700}>Limitation</Typography>
             <Typography>
               To the fullest extent permitted by law, ItheeWed is not liable for indirect damages arising from vendor–couple disputes or third-party services.

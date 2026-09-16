@@ -1,9 +1,10 @@
 ﻿import { useMemo, useRef, useState } from 'react'
 import { VendorCard } from '@/vendor/components/ui/VendorCard'
-import { Add, PhotoLibrary, PlayCircleOutline, Close, ChevronLeft, ChevronRight, EditOutlined } from '@mui/icons-material'
+import { Add, PhotoLibrary, PlayCircleOutline, Close, ChevronLeft, ChevronRight, EditOutlined, VisibilityOutlined } from '@mui/icons-material'
 import VendorPageShell from '@/vendor/components/VendorPageShell'
 import { compressImageToDataUrl } from '@/shared/lib/imageCompress'
 import { showToast } from '@/shared/components/SimpleToast'
+import { VENDOR_PROFILE } from '@/vendor/lib/vendorProfile'
 
 type AlbumType = 'Photo' | 'Video'
 
@@ -90,6 +91,8 @@ export default function Portfolio() {
   const [saving, setSaving] = useState(false)
   const [viewAlbum, setViewAlbum] = useState<Album | null>(null)
   const [viewIndex, setViewIndex] = useState(0)
+  const [pendingGallery, setPendingGallery] = useState<string[]>([])
+  const [clientPreview, setClientPreview] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const persist = (next: Album[]) => {
@@ -101,6 +104,7 @@ export default function Portfolio() {
     setTitle('')
     setType('Photo')
     setCover('')
+    setPendingGallery([])
     setEditingId(null)
   }
 
@@ -132,23 +136,37 @@ export default function Portfolio() {
 
   const gallery = viewAlbum?.gallery?.length ? viewAlbum.gallery : viewAlbum ? [viewAlbum.cover] : []
 
-  const onFile = async (file: File | undefined) => {
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      showToast('Please choose an image', 'error')
-      return
-    }
+  const onFiles = async (fileList: FileList | null) => {
+    if (!fileList?.length) return
+    const files = Array.from(fileList)
     setSaving(true)
     try {
-      const dataUrl = await compressImageToDataUrl(file)
-      setCover(dataUrl)
-      if (!title.trim()) setTitle(file.name.replace(/\.[^.]+$/, '').slice(0, 48))
+      const urls: string[] = []
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) {
+          showToast(`${file.name} skipped — images only`, 'error')
+          continue
+        }
+        urls.push(await compressImageToDataUrl(file))
+      }
+      if (!urls.length) return
+      setCover((prev) => prev || urls[0]!)
+      setPendingGallery((prev) => [...prev, ...urls])
+      if (!title.trim() && files[0]) setTitle(files[0].name.replace(/\.[^.]+$/, '').slice(0, 48))
+      showToast(`${urls.length} image(s) ready`, 'success')
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Upload failed', 'error')
     } finally {
       setSaving(false)
       if (fileRef.current) fileRef.current.value = ''
     }
+  }
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return
+    const dt = new DataTransfer()
+    dt.items.add(file)
+    await onFiles(dt.files)
   }
 
   const save = () => {
@@ -170,7 +188,7 @@ export default function Portfolio() {
                 title: title.trim(),
                 type,
                 cover,
-                gallery: [cover, ...(a.gallery || []).filter((g) => g !== a.cover)],
+                gallery: [cover, ...pendingGallery.filter((g) => g !== cover), ...(a.gallery || []).filter((g) => g !== a.cover)],
               }
             : a,
         ),
@@ -180,18 +198,19 @@ export default function Portfolio() {
       return
     }
 
+    const gallery = [cover, ...pendingGallery.filter((g) => g !== cover)]
     const album: Album = {
       id: `album-${Date.now()}`,
       title: title.trim(),
-      items: mode === 'upload' ? 1 : 0,
+      items: gallery.length,
       type,
       cover,
       published: true,
-      gallery: [cover],
+      gallery,
     }
     persist([album, ...albums])
     setModalOpen(false)
-    showToast(mode === 'upload' ? 'Media uploaded' : 'Album created', 'success')
+    showToast(mode === 'upload' ? `${gallery.length} media uploaded` : 'Album created', 'success')
   }
 
   const badge = useMemo(() => `${albums.length} albums`, [albums.length])
@@ -199,17 +218,27 @@ export default function Portfolio() {
   return (
     <VendorPageShell
       title="Portfolio"
-      subtitle="Showcase albums that help couples shortlist you faster."
+      subtitle="Albums couples see when they open your profile."
       badge={badge}
       actions={
-        <button
-          type="button"
-          onClick={openUpload}
-          className="flex items-center justify-center gap-2 bg-[#0F766E] hover:bg-[#0D9488] text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all active:scale-95 w-full sm:w-auto font-[family-name:var(--font-ui)]"
-        >
-          <Add fontSize="small" />
-          Upload Media
-        </button>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setClientPreview(true)}
+            className="inline-flex items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-bold font-[family-name:var(--font-ui)] cursor-pointer"
+          >
+            <VisibilityOutlined fontSize="small" />
+            Preview as couple
+          </button>
+          <button
+            type="button"
+            onClick={openUpload}
+            className="flex items-center justify-center gap-2 bg-[#0F766E] hover:bg-[#0D9488] text-white px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 w-full sm:w-auto font-[family-name:var(--font-ui)] cursor-pointer"
+          >
+            <Add fontSize="small" />
+            Upload Media
+          </button>
+        </div>
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -314,16 +343,32 @@ export default function Portfolio() {
                   </button>
                 ))}
               </div>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => void onFile(e.target.files?.[0])} />
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => void onFiles(e.target.files)}
+              />
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => fileRef.current?.click()}
                 className="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 py-8 text-sm font-bold text-slate-600 disabled:opacity-60"
               >
-                {saving ? 'Processing…' : cover ? 'Change cover photo' : 'Choose cover photo'}
+                {saving
+                  ? 'Processing…'
+                  : pendingGallery.length
+                    ? `${pendingGallery.length} selected — add more`
+                    : cover
+                      ? 'Change / add photos'
+                      : 'Choose photos (multi-select)'}
               </button>
               {cover ? <img src={cover} alt="Cover preview" className="w-full h-36 object-cover rounded-xl border border-slate-200" /> : null}
+              {pendingGallery.length > 1 ? (
+                <p className="text-xs text-slate-500">{pendingGallery.length} images selected for this album</p>
+              ) : null}
             </div>
             <div className="px-5 py-4 border-t border-slate-100 flex justify-end gap-2 bg-slate-50">
               <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200">
@@ -380,6 +425,46 @@ export default function Portfolio() {
             >
               <ChevronRight fontSize="large" />
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {clientPreview ? (
+        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4">
+          <button type="button" className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm cursor-pointer" aria-label="Close" onClick={() => setClientPreview(false)} />
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-[#F4F7F8] rounded-2xl border border-slate-200 shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-3 bg-white border-b border-slate-100">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#0F766E]">Couple view</p>
+                <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-900">
+                  {VENDOR_PROFILE.businessName} · Portfolio
+                </h3>
+              </div>
+              <button type="button" onClick={() => setClientPreview(false)} className="p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" aria-label="Close">
+                <Close fontSize="small" />
+              </button>
+            </div>
+            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {albums.filter((a) => a.published).map((album) => (
+                <button
+                  key={album.id}
+                  type="button"
+                  onClick={() => {
+                    setClientPreview(false)
+                    openView(album)
+                  }}
+                  className="text-left rounded-2xl border border-slate-200 bg-white overflow-hidden hover:border-teal-200 cursor-pointer"
+                >
+                  <div className="h-40 overflow-hidden">
+                    <img src={album.cover} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-3">
+                    <p className="font-semibold text-slate-800 text-sm">{album.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{album.type} · {album.items} items</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       ) : null}

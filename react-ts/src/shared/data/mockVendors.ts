@@ -1,4 +1,6 @@
 // src/data/mockVendors.ts
+import { DIRECTORY_SEED_VENDORS } from '@/shared/data/directorySeedVendors'
+
 export interface Vendor {
   id: string
   name: string
@@ -11,8 +13,21 @@ export interface Vendor {
   reviewCount: number
 }
 
+const directoryAsVendors: Vendor[] = DIRECTORY_SEED_VENDORS.map((v) => ({
+  id: v.id,
+  name: v.name,
+  price: `N${v.startingFromNaira.toLocaleString('en-NG')}`,
+  image: v.image,
+  category: v.category,
+  location: v.location,
+  fullAddress: `${v.location}, Nigeria${v.website ? ` · ${v.website}` : ''}`,
+  rating: v.rating,
+  reviewCount: v.reviewCount,
+}))
+
 export const mockVendors: Vendor[] = [
-  // VENUES
+  ...directoryAsVendors,
+  // Legacy demo venues kept for volume in search
   {
     id: 'rosevet-event-center',
     name: 'Rosevet Event Center',

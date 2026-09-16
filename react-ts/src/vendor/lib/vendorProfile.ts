@@ -5,7 +5,7 @@ export const VENDOR_PROFILE = {
   ownerFullName: 'Ada Okonkwo',
   category: 'Wedding Planning & Styling',
   location: 'Ikoyi, Lagos',
-  tagline: 'Master Artisan',
+  tagline: 'Full-service wedding planning for Lagos & destination couples',
   verified: true,
   avatar:
     'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',

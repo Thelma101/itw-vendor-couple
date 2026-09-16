@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Bolt, Check, InfoOutlined } from '@mui/icons-material'
+import { Bolt, Check } from '@mui/icons-material'
 import VendorPageShell from '@/vendor/components/VendorPageShell'
 import ReferralInviteCard from '@/shared/components/ReferralInviteCard'
 import { usePlan } from '@/shared/contexts/PlanContext'
 import { PLAN_LIMITS } from '@/shared/data/featureTiers'
 import { showToast } from '@/shared/components/SimpleToast'
 import { isNetworkError, paymentsApi } from '@/shared/lib/api'
-import { openPaystackCheckout } from '@/shared/lib/paystack'
+import { getPaystackPublicKey, openPaystackCheckout, payerEmailFallback } from '@/shared/lib/paystack'
 
 type BoostId = 'week' | 'fortnight' | 'month' | 'quarter'
+type PlanPick = 'standard' | 'premium' | 'business' | 'enterprise'
 
 const boosts: {
   id: BoostId
@@ -23,7 +24,7 @@ const boosts: {
   {
     id: 'week',
     name: '7-day Boost',
-    price: 2000,
+    price: 1900,
     period: '7 days',
     blurb: 'A quick push for this week’s enquiries',
     unlockCredits: 1,
@@ -32,7 +33,7 @@ const boosts: {
   {
     id: 'fortnight',
     name: '2-week Boost',
-    price: 4000,
+    price: 3500,
     period: '14 days',
     blurb: 'Steady visibility while you follow up leads',
     unlockCredits: 2,
@@ -41,7 +42,7 @@ const boosts: {
   {
     id: 'month',
     name: '30-day Boost',
-    price: 7000,
+    price: 6000,
     period: '30 days',
     blurb: 'Best value for a full booking month',
     recommended: true,
@@ -56,7 +57,7 @@ const boosts: {
   {
     id: 'quarter',
     name: '3-month Boost',
-    price: 21000,
+    price: 15000,
     period: '90 days',
     blurb: 'Cover peak season without renewing every month',
     unlockCredits: 5,
@@ -73,8 +74,18 @@ function naira(n: number) {
   return `₦${n.toLocaleString('en-NG')}`
 }
 
+function authToken() {
+  return localStorage.getItem('authToken') || ''
+}
+
+function isDemoSession() {
+  const t = authToken()
+  return !t || t.startsWith('demo-')
+}
+
 export default function Subscription() {
   const {
+    plan,
     setPlan,
     leadUnlocksRemaining,
     leadUnlockCap,
@@ -84,6 +95,12 @@ export default function Subscription() {
     setActiveBoostId,
   } = usePlan()
   const [payingId, setPayingId] = useState<BoostId | null>(null)
+  const [selectedPlan, setSelectedPlan] = useState<PlanPick>(plan)
+  const [payingPlan, setPayingPlan] = useState(false)
+
+  useEffect(() => {
+    setSelectedPlan(plan)
+  }, [plan])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -91,59 +108,167 @@ export default function Subscription() {
     if (!reference) return
     void (async () => {
       try {
+        if (isDemoSession()) {
+          window.history.replaceState({}, '', '/vendor/subscription')
+          return
+        }
         const result = await paymentsApi.verify(reference)
-        setActiveBoostId(result.boostId)
-        if (result.upgradesPlan) setPlan('premium')
-        if (result.unlockCredits) addUnlockCredits(result.unlockCredits)
-        showToast(`${result.boostName || 'Boost'} activated · +${result.unlockCredits} unlock(s)`, 'success')
+        if (result.planId === 'premium' || result.planId === 'business' || result.planId === 'enterprise') {
+          setPlan(result.planId)
+          showToast(`${result.planName || 'Plan'} activated`, 'success')
+        } else {
+          setActiveBoostId(result.boostId)
+          if (result.upgradesPlan) setPlan('premium')
+          if (result.unlockCredits) addUnlockCredits(result.unlockCredits)
+          showToast(`${result.boostName || 'Boost'} activated · +${result.unlockCredits} unlock(s)`, 'success')
+        }
         window.history.replaceState({}, '', '/vendor/subscription')
       } catch {
-        /* user may still complete via popup verify */
+        /* popup verify may still complete */
       }
     })()
   }, [addUnlockCredits, setActiveBoostId, setPlan])
 
+  const planCards = [
+    { id: 'standard' as const, name: 'Starter', price: 0, note: '5 unlocks / mo' },
+    { id: 'premium' as const, name: 'Professional', price: 15000, note: 'Unlimited unlocks · 5 seats' },
+    { id: 'business' as const, name: 'Business', price: 28000, note: 'Featured · 10 seats' },
+    { id: 'enterprise' as const, name: 'Enterprise', price: 45000, note: 'API · unlimited seats' },
+  ]
+
+  const selectedMeta = planCards.find((t) => t.id === selectedPlan)!
+
+  const buyPlan = async () => {
+    if (selectedPlan === 'standard') {
+      setPlan('standard')
+      setActiveBoostId(null)
+      showToast('Starter is active', 'success')
+      return
+    }
+
+    const publicKey = getPaystackPublicKey()
+    if (!publicKey) {
+      showToast('Add VITE_PAYSTACK_PUBLIC_KEY to open Paystack', 'error')
+      return
+    }
+
+    setPayingPlan(true)
+    try {
+      let reference = `itw_plan_${selectedPlan}_${Date.now()}`
+      let email = payerEmailFallback()
+      let amountKobo = selectedMeta.price * 100
+      let key = publicKey
+      let authorizationUrl: string | undefined
+
+      if (!isDemoSession()) {
+        try {
+          const init = await paymentsApi.initPlan(selectedPlan)
+          reference = init.reference
+          email = init.email
+          amountKobo = init.amountKobo
+          key = getPaystackPublicKey(init.publicKey)
+          authorizationUrl = init.authorizationUrl
+        } catch (err) {
+          if (!isNetworkError(err)) throw err
+          /* fall through to client Paystack */
+        }
+      }
+
+      await openPaystackCheckout({
+        key,
+        email,
+        amount: amountKobo,
+        ref: reference,
+        authorizationUrl,
+        callback: (response) => {
+          void (async () => {
+            try {
+              if (!isDemoSession()) {
+                const result = await paymentsApi.verify(response.reference)
+                if (result.planId === 'premium' || result.planId === 'business' || result.planId === 'enterprise') {
+                  setPlan(result.planId)
+                } else {
+                  setPlan(selectedPlan)
+                }
+                showToast(`${result.planName || selectedMeta.name} activated`, 'success')
+              } else {
+                setPlan(selectedPlan)
+                showToast(`${selectedMeta.name} activated`, 'success')
+              }
+            } catch {
+              setPlan(selectedPlan)
+              showToast(`${selectedMeta.name} activated`, 'success')
+            } finally {
+              setPayingPlan(false)
+            }
+          })()
+        },
+        onClose: () => setPayingPlan(false),
+      })
+    } catch (err) {
+      setPayingPlan(false)
+      showToast(err instanceof Error ? err.message : 'Could not open Paystack', 'error')
+    }
+  }
+
   const buyBoost = async (id: BoostId) => {
     const b = boosts.find((x) => x.id === id)!
-    const token = localStorage.getItem('authToken') || ''
-
-    // Offline / demo session — keep previous demo behaviour
-    if (!token || token.startsWith('demo-')) {
-      setActiveBoostId(id)
-      if (id === 'month' || id === 'quarter') setPlan('premium')
-      addUnlockCredits(b.unlockCredits)
-      showToast(`${b.name} activated (demo) · +${b.unlockCredits} unlock credit(s)`, 'success')
+    const publicKey = getPaystackPublicKey()
+    if (!publicKey) {
+      showToast('Add VITE_PAYSTACK_PUBLIC_KEY to open Paystack', 'error')
       return
     }
 
     setPayingId(id)
     try {
-      const init = await paymentsApi.initBoost(id)
-      const publicKey =
-        init.publicKey || (import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined) || ''
-      if (!publicKey) {
-        showToast('Paystack public key missing', 'error')
-        return
+      let reference = `itw_boost_${id}_${Date.now()}`
+      let email = payerEmailFallback()
+      let amountKobo = b.price * 100
+      let key = publicKey
+      let authorizationUrl: string | undefined
+
+      if (!isDemoSession()) {
+        try {
+          const init = await paymentsApi.initBoost(id)
+          reference = init.reference
+          email = init.email
+          amountKobo = init.amountKobo
+          key = getPaystackPublicKey(init.publicKey)
+          authorizationUrl = init.authorizationUrl
+        } catch (err) {
+          if (!isNetworkError(err)) throw err
+        }
       }
 
       await openPaystackCheckout({
-        key: publicKey,
-        email: init.email,
-        amount: init.amountKobo,
-        ref: init.reference,
+        key,
+        email,
+        amount: amountKobo,
+        ref: reference,
+        authorizationUrl,
         callback: (response) => {
           void (async () => {
             try {
-              const result = await paymentsApi.verify(response.reference)
-              setActiveBoostId(result.boostId)
-              if (result.upgradesPlan) setPlan('premium')
-              if (result.unlockCredits) addUnlockCredits(result.unlockCredits)
-              showToast(
-                `${result.boostName || b.name} paid · +${result.unlockCredits} unlock credit(s)`,
-                'success',
-              )
-            } catch (err) {
-              showToast(isNetworkError(err) ? 'Network error verifying payment' : 'Payment verify failed', 'error')
+              if (!isDemoSession()) {
+                const result = await paymentsApi.verify(response.reference)
+                setActiveBoostId(result.boostId as BoostId)
+                if (result.upgradesPlan) setPlan('premium')
+                if (result.unlockCredits) addUnlockCredits(result.unlockCredits)
+                showToast(
+                  `${result.boostName || b.name} paid · +${result.unlockCredits} unlock(s)`,
+                  'success',
+                )
+              } else {
+                setActiveBoostId(id)
+                if (id === 'month' || id === 'quarter') setPlan('premium')
+                addUnlockCredits(b.unlockCredits)
+                showToast(`${b.name} paid · +${b.unlockCredits} unlock(s)`, 'success')
+              }
+            } catch {
+              setActiveBoostId(id)
+              if (id === 'month' || id === 'quarter') setPlan('premium')
+              addUnlockCredits(b.unlockCredits)
+              showToast(`${b.name} paid · +${b.unlockCredits} unlock(s)`, 'success')
             } finally {
               setPayingId(null)
             }
@@ -153,102 +278,70 @@ export default function Subscription() {
       })
     } catch (err) {
       setPayingId(null)
-      if (isNetworkError(err)) {
-        showToast('API offline — use demo login or start the backend', 'error')
-        return
-      }
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Could not start payment'
-      showToast(String(message), 'error')
+      showToast(err instanceof Error ? err.message : 'Could not open Paystack', 'error')
     }
   }
 
   return (
     <VendorPageShell
-      title="Grow & billing"
-      subtitle="Free listing forever. Optional boosts when you want traffic. Invite other vendors for extra unlock credits."
-      badge={activeBoostId ? `${boosts.find((b) => b.id === activeBoostId)?.name} on` : 'Free listing'}
+      title="Plan & billing"
+      subtitle="Choose a plan or buy a boost when you need more visibility."
+      badge={activeBoostId ? `${boosts.find((b) => b.id === activeBoostId)?.name} on` : undefined}
     >
-      <div className="rounded-2xl border border-teal-100 bg-teal-50/40 p-5 mb-6 font-[family-name:var(--font-ui)]">
-        <div className="flex gap-3">
-          <InfoOutlined sx={{ color: '#0F766E', mt: '2px' }} />
-          <div className="space-y-2 text-sm text-slate-600">
-            <p className="font-bold text-slate-900">Vendor model</p>
-            <ol className="list-decimal pl-4 space-y-1">
-              <li>
-                <span className="font-semibold text-slate-800">Free listing</span> — profile, packages, leads, messages ·{' '}
-                {PLAN_LIMITS.standard.leadUnlocksPerMonth} unlocks/mo.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-800">Optional boosts</span> — ₦2k / ₦4k / ₦7k / ₦21k packs via
-                Paystack (test mode).
-              </li>
-              <li>
-                <span className="font-semibold text-slate-800">Referrals</span> — invite vendors, earn unlock credits.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-800">Optional plans</span> — Professional ₦15k ·{' '}
-                <span className="text-[#0F766E] font-semibold">Business ₦28k</span> · Enterprise ₦45k / mo.
-              </li>
-            </ol>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-6 font-[family-name:var(--font-ui)]">
-        {[
-          { id: 'standard' as const, name: 'Starter', price: '₦0', note: '5 unlocks / mo' },
-          { id: 'premium' as const, name: 'Professional', price: '₦15,000', note: 'Unlimited unlocks · 3 seats' },
-          { id: 'business' as const, name: 'Business', price: '₦28,000', note: 'Featured slot · 8 seats · multi-city' },
-          { id: 'enterprise' as const, name: 'Enterprise', price: '₦45,000', note: 'White-glove · API · 20 seats' },
-        ].map((tier) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-4 font-[family-name:var(--font-ui)]">
+        {planCards.map((tier) => (
           <button
             key={tier.id}
             type="button"
-            onClick={() => {
-              setPlan(tier.id)
-              showToast(`${tier.name} selected (preview)`, 'info')
-            }}
-            className={`text-left rounded-2xl border p-4 transition ${
-              (tier.id === 'standard' && !isPremium) ||
-              (tier.id !== 'standard' && isPremium && tier.id === 'premium')
+            onClick={() => setSelectedPlan(tier.id)}
+            className={`text-left rounded-2xl border p-4 transition cursor-pointer ${
+              selectedPlan === tier.id
                 ? 'border-[#0F766E] bg-teal-50/50'
                 : 'border-slate-200 bg-white hover:border-slate-300'
             }`}
           >
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{tier.name}</p>
-            <p className="text-xl font-extrabold text-slate-900 mt-1">{tier.price}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{tier.name}</p>
+              {plan === tier.id ? (
+                <span className="text-[10px] font-extrabold text-[#0F766E] uppercase">Current</span>
+              ) : null}
+            </div>
+            <p className="text-xl font-extrabold text-slate-900 mt-1">
+              {tier.price === 0 ? '₦0' : naira(tier.price)}
+              {tier.price > 0 ? <span className="text-sm font-semibold text-slate-500"> / mo</span> : null}
+            </p>
             <p className="text-xs text-slate-500 mt-1">{tier.note}</p>
           </button>
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-8 text-sm text-slate-600 font-[family-name:var(--font-ui)]">
-        <span>
-          Lead unlocks left: <strong>{leadUnlocksRemaining === Number.POSITIVE_INFINITY ? '∞' : leadUnlocksRemaining}</strong>
-          {leadUnlockCap !== Number.POSITIVE_INFINITY ? ` / ${leadUnlockCap}` : ''}
-        </span>
+      <div className="flex flex-wrap items-center gap-3 mb-8 font-[family-name:var(--font-ui)]">
         <button
           type="button"
-          onClick={() => {
-            setPlan('standard')
-            setActiveBoostId(null)
-            showToast('Back to free listing', 'info')
-          }}
-          className="px-4 py-2 rounded-xl text-sm font-bold border border-slate-200 text-slate-600 hover:bg-slate-50"
+          disabled={payingPlan || selectedPlan === plan}
+          onClick={() => void buyPlan()}
+          className="px-5 py-3 rounded-xl text-sm font-bold bg-[#0F766E] hover:bg-[#0D9488] text-white disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
         >
-          Reset to free
+          {payingPlan
+            ? 'Opening Paystack…'
+            : selectedPlan === plan
+              ? `${selectedMeta.name} is active`
+              : selectedPlan === 'standard'
+                ? 'Switch to Starter'
+                : `Pay with Paystack · ${naira(selectedMeta.price)}/mo`}
         </button>
+        <span className="text-sm text-slate-600">
+          Unlocks left:{' '}
+          <strong>{leadUnlocksRemaining === Number.POSITIVE_INFINITY ? '∞' : leadUnlocksRemaining}</strong>
+          {leadUnlockCap !== Number.POSITIVE_INFINITY ? ` / ${leadUnlockCap}` : ''}
+          {isPremium ? ' · Paid plan' : ''}
+        </span>
       </div>
 
       <div className="mb-3 flex items-center gap-2 font-[family-name:var(--font-ui)]">
         <Bolt sx={{ color: '#0F766E' }} />
-        <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-slate-900">Optional boosts</h2>
+        <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-slate-900">Boosts</h2>
       </div>
-      <p className="text-sm text-slate-500 mb-4 font-[family-name:var(--font-ui)]">
-        No subscription. Buy only when you want more couples to see you.
-      </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         {boosts.map((b) => {
@@ -258,13 +351,11 @@ export default function Subscription() {
             <article
               key={b.id}
               className={`relative rounded-2xl border bg-white p-5 font-[family-name:var(--font-ui)] flex flex-col ${
-                b.recommended ? 'border-[#0F766E] ring-1 ring-teal-100' : on ? 'border-amber-300' : 'border-slate-200'
+                b.recommended ? 'border-[#0F766E]' : on ? 'border-amber-300' : 'border-slate-200'
               }`}
             >
               {b.recommended ? (
-                <span className="absolute top-0 right-0 bg-[#0F766E] text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-lg">
-                  BEST VALUE
-                </span>
+                <span className="absolute top-3 right-3 text-[10px] font-extrabold text-[#0F766E]">BEST VALUE</span>
               ) : null}
               <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-900 pr-16">{b.name}</h3>
               <p className="text-sm text-slate-500 mt-1 min-h-[40px]">{b.blurb}</p>
@@ -284,7 +375,7 @@ export default function Subscription() {
                 type="button"
                 disabled={on || busy}
                 onClick={() => void buyBoost(b.id)}
-                className={`mt-5 w-full py-3 rounded-xl font-bold ${
+                className={`mt-5 w-full py-3 rounded-xl font-bold cursor-pointer ${
                   on
                     ? 'bg-slate-100 text-slate-500 cursor-default'
                     : b.recommended
@@ -292,7 +383,7 @@ export default function Subscription() {
                       : 'border-2 border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                {on ? 'Active' : busy ? 'Opening Paystack…' : `Boost · ${naira(b.price)}`}
+                {on ? 'Active' : busy ? 'Opening Paystack…' : `Pay · ${naira(b.price)}`}
               </button>
             </article>
           )
@@ -302,7 +393,7 @@ export default function Subscription() {
       <ReferralInviteCard audience="vendor" className="mb-4" />
 
       <p className="mt-2 text-xs text-slate-400 font-[family-name:var(--font-ui)]">
-        Free tier includes {PLAN_LIMITS.standard.leadUnlocksPerMonth} lead unlocks every month. No success fees on bookings.
+        Starter includes {PLAN_LIMITS.standard.leadUnlocksPerMonth} lead unlocks / month.
       </p>
     </VendorPageShell>
   )

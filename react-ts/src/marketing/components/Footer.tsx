@@ -40,8 +40,16 @@ export default function Footer() {
               <Logo variant="white" height={40} linkToHome />
             </Box>
             <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              Your trusted partner in creating unforgettable wedding experiences.
+              Plan with confidence. Support: WhatsApp 0703 562 6626.
             </Typography>
+            <Link
+              href="https://wa.me/2347035626626"
+              target="_blank"
+              rel="noreferrer"
+              sx={{ display: 'inline-block', mt: 1, color: 'white', fontWeight: 700, textDecoration: 'underline' }}
+            >
+              Message us on WhatsApp
+            </Link>
           </Grid>
 
           {/* Column 1 Links */}

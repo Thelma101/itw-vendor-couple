@@ -1,63 +1,32 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Tabs,
-  Tab,
-  Card,
-  Chip,
-  Button,
-  Avatar,
-  Rating,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Snackbar,
-  Alert,
-  IconButton
-} from '@mui/material';
-import {
-  CheckCircle,
-  HourglassEmpty,
-  Cancel,
-  MessageOutlined,
-  StarOutline,
-  CalendarMonth,
-  LocationOn,
-  Close
-} from '@mui/icons-material';
-import Nav from '@/couple/components/Nav';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import CouplePageShell from '@/couple/components/CouplePageShell'
+import { showToast } from '@/shared/components/SimpleToast'
 
-interface BookedVendor {
-  id: string;
-  name: string;
-  category: string;
-  image: string;
-  price: number;
-  location: string;
-  bookingDate: string;
-  eventDate: string;
-  status: 'confirmed' | 'pending' | 'completed';
-  depositPaid: number;
-  hasRated: boolean;
-  userRating?: number;
+type BookedVendor = {
+  id: string
+  name: string
+  category: string
+  image: string
+  price: number
+  location: string
+  eventDate: string
+  status: 'confirmed' | 'pending' | 'completed'
+  depositPaid: number
+  hasRated: boolean
 }
 
-interface Inquiry {
-  id: string;
-  vendorName: string;
-  vendorCategory: string;
-  vendorImage: string;
-  submittedDate: string;
-  status: 'pending' | 'responded' | 'declined';
-  message: string;
-  response?: string;
+type Inquiry = {
+  id: string
+  vendorName: string
+  vendorCategory: string
+  vendorImage: string
+  submittedDate: string
+  status: 'pending' | 'responded' | 'declined'
+  message: string
+  response?: string
 }
 
-// Mock booked vendors
 const mockBookedVendors: BookedVendor[] = [
   {
     id: '1',
@@ -66,11 +35,10 @@ const mockBookedVendors: BookedVendor[] = [
     image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
     price: 350000,
     location: 'Ikeja, Lagos',
-    bookingDate: '2025-01-10',
     eventDate: '2025-06-15',
     status: 'confirmed',
     depositPaid: 105000,
-    hasRated: false
+    hasRated: false,
   },
   {
     id: '2',
@@ -79,11 +47,10 @@ const mockBookedVendors: BookedVendor[] = [
     image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=200',
     price: 500000,
     location: 'Lekki, Lagos',
-    bookingDate: '2025-01-08',
     eventDate: '2025-06-15',
     status: 'confirmed',
     depositPaid: 150000,
-    hasRated: false
+    hasRated: false,
   },
   {
     id: '3',
@@ -92,15 +59,13 @@ const mockBookedVendors: BookedVendor[] = [
     image: 'https://images.unsplash.com/photo-1555244162-803834f70033?w=200',
     price: 300000,
     location: 'Victoria Island, Lagos',
-    bookingDate: '2025-01-05',
     eventDate: '2025-06-15',
     status: 'pending',
     depositPaid: 90000,
-    hasRated: false
-  }
-];
+    hasRated: false,
+  },
+]
 
-// Mock inquiries
 const mockInquiries: Inquiry[] = [
   {
     id: '1',
@@ -109,7 +74,7 @@ const mockInquiries: Inquiry[] = [
     vendorImage: 'https://images.unsplash.com/photo-1522653216850-4699c7e43a3a?w=200',
     submittedDate: '2025-01-12',
     status: 'pending',
-    message: 'Looking for bridal bouquet and reception centerpieces for 20 tables.'
+    message: 'Looking for bridal bouquet and reception centerpieces for 20 tables.',
   },
   {
     id: '2',
@@ -119,540 +84,193 @@ const mockInquiries: Inquiry[] = [
     submittedDate: '2025-01-11',
     status: 'responded',
     message: 'Need a 5-tier wedding cake for 200 guests.',
-    response: 'Thank you for reaching out! We would love to create your dream cake. Available for a tasting on Jan 25th.'
-  }
-];
+    response: 'Happy to design this — tasting available Jan 25.',
+  },
+]
+
+function naira(n: number) {
+  return `₦${n.toLocaleString('en-NG')}`
+}
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })
+}
 
 export default function MyVendors() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(0);
-  const [bookedVendors, setBookedVendors] = useState<BookedVendor[]>(mockBookedVendors);
-  const [inquiries] = useState<Inquiry[]>(mockInquiries);
-  
-  // Rating dialog state
-  const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
-  const [selectedVendor, setSelectedVendor] = useState<BookedVendor | null>(null);
-  const [ratingValue, setRatingValue] = useState<number>(5);
-  const [ratingReview, setRatingReview] = useState('');
-  
-  // Snackbar
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const navigate = useNavigate()
+  const [tab, setTab] = useState<'booked' | 'inquiries'>('booked')
+  const [vendors, setVendors] = useState(mockBookedVendors)
+  const [rateId, setRateId] = useState<string | null>(null)
+  const [rating, setRating] = useState(5)
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-
-  const formatPrice = (price: number) => {
-    return `₦${price.toLocaleString()}`;
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-      case 'responded':
-        return '#22c55e';
-      case 'pending':
-        return '#f59e0b';
-      case 'declined':
-      case 'completed':
-        return '#8a8a8a';
-      default:
-        return '#8a8a8a';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-      case 'responded':
-        return <CheckCircle sx={{ fontSize: 16 }} />;
-      case 'pending':
-        return <HourglassEmpty sx={{ fontSize: 16 }} />;
-      case 'declined':
-        return <Cancel sx={{ fontSize: 16 }} />;
-      default:
-        return <CheckCircle sx={{ fontSize: 16 }} />;
-    }
-  };
-
-  const handleOpenRating = (vendor: BookedVendor) => {
-    setSelectedVendor(vendor);
-    setRatingValue(5);
-    setRatingReview('');
-    setRatingDialogOpen(true);
-  };
-
-  const handleSubmitRating = () => {
-    if (selectedVendor) {
-      setBookedVendors(prev =>
-        prev.map(v =>
-          v.id === selectedVendor.id
-            ? { ...v, hasRated: true, userRating: ratingValue }
-            : v
-        )
-      );
-      setSnackbarMessage(`Thank you for rating ${selectedVendor.name}!`);
-      setSnackbarOpen(true);
-      setRatingDialogOpen(false);
-    }
-  };
-
-  const totalBooked = bookedVendors.length;
-  const totalSpent = bookedVendors.reduce((sum, v) => sum + v.depositPaid, 0);
+  const totalSpent = vendors.reduce((sum, v) => sum + v.depositPaid, 0)
+  const pendingInquiries = mockInquiries.filter((i) => i.status === 'pending').length
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#FFF6F9' }}>
-      <Nav />
-      
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 4, py: 4 }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography sx={{
-            fontFamily: "'Open Sans', sans-serif",
-            fontSize: 28,
-            fontWeight: 700,
-            color: '#002528',
-            mb: 1
-          }}>
-            My Vendors
-          </Typography>
-          <Typography sx={{
-            fontFamily: "'Open Sans', sans-serif",
-            fontSize: 14,
-            color: '#666'
-          }}>
-            Manage your bookings and track vendor communications
-          </Typography>
-        </Box>
+    <CouplePageShell
+      title="My Vendors"
+      subtitle="Bookings and inquiries with vendors you’ve hired or contacted."
+      badge={`${vendors.length} booked`}
+    >
+      <div className="grid grid-cols-3 gap-3 mb-6 font-[family-name:var(--font-ui)]">
+        {[
+          { label: 'Booked', value: String(vendors.length) },
+          { label: 'Deposits paid', value: naira(totalSpent) },
+          { label: 'Open inquiries', value: String(pendingInquiries) },
+        ].map((s) => (
+          <div key={s.label} className="rounded-2xl border border-slate-200 bg-white p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{s.label}</p>
+            <p className="font-[family-name:var(--font-display)] text-2xl font-semibold text-slate-900 mt-1">{s.value}</p>
+          </div>
+        ))}
+      </div>
 
-        {/* Stats Cards */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3, mb: 4 }}>
-          <Card sx={{ p: 3, border: '0.25px solid #00838F' }}>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-              Booked Vendors
-            </Typography>
-            <Typography sx={{
-              fontFamily: "'Open Sans', sans-serif",
-              fontSize: 32,
-              fontWeight: 700,
-              color: '#002528'
-            }}>
-              {totalBooked}
-            </Typography>
-          </Card>
-          <Card sx={{ p: 3, border: '0.25px solid #00838F' }}>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-              Deposit Paid
-            </Typography>
-            <Typography sx={{
-              fontFamily: "'Open Sans', sans-serif",
-              fontSize: 32,
-              fontWeight: 700,
-              color: '#00838F'
-            }}>
-              {formatPrice(totalSpent)}
-            </Typography>
-          </Card>
-          <Card sx={{ p: 3, border: '0.25px solid #00838F' }}>
-            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-              Pending Inquiries
-            </Typography>
-            <Typography sx={{
-              fontFamily: "'Open Sans', sans-serif",
-              fontSize: 32,
-              fontWeight: 700,
-              color: '#f59e0b'
-            }}>
-              {inquiries.filter(i => i.status === 'pending').length}
-            </Typography>
-          </Card>
-        </Box>
-
-        {/* Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: '#e0e0e0', mb: 4 }}>
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            sx={{
-              '& .MuiTab-root': {
-                fontFamily: "'Open Sans', sans-serif",
-                fontSize: 14,
-                fontWeight: 600,
-                textTransform: 'none',
-                color: '#8a8a8a',
-                '&.Mui-selected': { color: '#00838F' }
-              },
-              '& .MuiTabs-indicator': { backgroundColor: '#00838F' }
-            }}
+      <div className="flex gap-4 border-b border-slate-200 mb-5 font-[family-name:var(--font-ui)]">
+        {(
+          [
+            { id: 'booked' as const, label: `Booked (${vendors.length})` },
+            { id: 'inquiries' as const, label: `Inquiries (${mockInquiries.length})` },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`pb-2.5 text-sm font-bold cursor-pointer ${
+              tab === t.id ? 'text-[#0F766E] border-b-2 border-[#0F766E]' : 'text-slate-500'
+            }`}
           >
-            <Tab label={`Booked (${bookedVendors.length})`} />
-            <Tab label={`Inquiries (${inquiries.length})`} />
-          </Tabs>
-        </Box>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Booked Vendors Tab */}
-        {activeTab === 0 && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {bookedVendors.length === 0 ? (
-              <Card sx={{ p: 6, textAlign: 'center', border: '0.25px solid #00838F' }}>
-                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 16, color: '#666', mb: 2 }}>
-                  No vendors booked yet
-                </Typography>
-                <Button
-                  onClick={() => navigate('/couple/search-results')}
-                  sx={{
-                    backgroundColor: '#00838F',
-                    color: 'white',
-                    fontFamily: "'Open Sans', sans-serif",
-                    textTransform: 'none',
-                    '&:hover': { backgroundColor: '#006d75' }
-                  }}
+      {tab === 'booked' ? (
+        <ul className="space-y-3 font-[family-name:var(--font-ui)]">
+          {vendors.map((vendor) => (
+            <li key={vendor.id} className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
+              <div className="flex flex-col md:flex-row gap-4">
+                <img src={vendor.image} alt="" className="w-20 h-20 rounded-xl object-cover shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-semibold text-slate-900 text-lg">{vendor.name}</h3>
+                      <p className="text-sm text-slate-500">{vendor.category}</p>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full ${
+                        vendor.status === 'confirmed'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-amber-50 text-amber-800'
+                      }`}
+                    >
+                      {vendor.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    {vendor.location} · Event {formatDate(vendor.eventDate)}
+                  </p>
+                  <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400 font-bold">Total</p>
+                      <p className="font-semibold text-slate-800">{naira(vendor.price)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400 font-bold">Deposit</p>
+                      <p className="font-semibold text-emerald-700">{naira(vendor.depositPaid)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400 font-bold">Balance</p>
+                      <p className="font-semibold text-amber-700">{naira(vendor.price - vendor.depositPaid)}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/couple/messages')}
+                      className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm font-bold text-[#0F766E] hover:bg-teal-50 cursor-pointer"
+                    >
+                      Message
+                    </button>
+                    {!vendor.hasRated ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRateId(vendor.id)
+                          setRating(5)
+                        }}
+                        className="px-3.5 py-2 rounded-xl bg-[#0F766E] text-white text-sm font-bold hover:bg-[#0D9488] cursor-pointer"
+                      >
+                        Rate vendor
+                      </button>
+                    ) : (
+                      <span className="text-xs font-semibold text-slate-500 self-center">Rated</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="space-y-3 font-[family-name:var(--font-ui)]">
+          {mockInquiries.map((inq) => (
+            <li key={inq.id} className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
+              <div className="flex gap-3">
+                <img src={inq.vendorImage} alt="" className="w-12 h-12 rounded-full object-cover" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-slate-900">{inq.vendorName}</p>
+                      <p className="text-xs text-slate-500">{inq.vendorCategory}</p>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase text-slate-500">{inq.status}</span>
+                  </div>
+                  <p className="text-sm text-slate-600 mt-2">{inq.message}</p>
+                  {inq.response ? <p className="text-sm text-[#0F766E] mt-2 bg-teal-50/60 rounded-xl px-3 py-2">{inq.response}</p> : null}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {rateId ? (
+        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4">
+          <button type="button" className="absolute inset-0 bg-slate-900/40 cursor-pointer" aria-label="Close" onClick={() => setRateId(null)} />
+          <div className="relative w-full max-w-sm bg-white rounded-2xl border border-slate-200 p-5 font-[family-name:var(--font-ui)]">
+            <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold">Rate this vendor</h3>
+            <div className="flex gap-2 mt-4">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setRating(n)}
+                  className={`w-10 h-10 rounded-xl font-bold cursor-pointer ${rating >= n ? 'bg-[#0F766E] text-white' : 'bg-slate-100 text-slate-500'}`}
                 >
-                  Find Vendors
-                </Button>
-              </Card>
-            ) : (
-              bookedVendors.map((vendor) => (
-                <Card key={vendor.id} sx={{ p: 3, border: '0.25px solid #00838F' }}>
-                  <Box sx={{ display: 'flex', gap: 3 }}>
-                    <Avatar
-                      src={vendor.image}
-                      variant="rounded"
-                      sx={{ width: 100, height: 100 }}
-                    />
-                    <Box sx={{ flex: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                        <Box>
-                          <Typography sx={{
-                            fontFamily: "'Open Sans', sans-serif",
-                            fontWeight: 700,
-                            fontSize: 18,
-                            color: '#002528'
-                          }}>
-                            {vendor.name}
-                          </Typography>
-                          <Typography sx={{
-                            fontFamily: "'Open Sans', sans-serif",
-                            fontSize: 13,
-                            color: '#666'
-                          }}>
-                            {vendor.category}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          icon={getStatusIcon(vendor.status)}
-                          label={vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1)}
-                          size="small"
-                          sx={{
-                            backgroundColor: `${getStatusColor(vendor.status)}20`,
-                            color: getStatusColor(vendor.status),
-                            fontFamily: "'Open Sans', sans-serif",
-                            fontWeight: 600
-                          }}
-                        />
-                      </Box>
-                      
-                      <Box sx={{ display: 'flex', gap: 3, mb: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <LocationOn sx={{ fontSize: 16, color: '#00838F' }} />
-                          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-                            {vendor.location}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <CalendarMonth sx={{ fontSize: 16, color: '#00838F' }} />
-                          <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-                            Event: {formatDate(vendor.eventDate)}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Box sx={{ display: 'flex', gap: 4 }}>
-                          <Box>
-                            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>
-                              Total Price
-                            </Typography>
-                            <Typography sx={{
-                              fontFamily: "'Open Sans', sans-serif",
-                              fontWeight: 700,
-                              fontSize: 16,
-                              color: '#002528'
-                            }}>
-                              {formatPrice(vendor.price)}
-                            </Typography>
-                          </Box>
-                          <Box>
-                            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>
-                              Deposit Paid
-                            </Typography>
-                            <Typography sx={{
-                              fontFamily: "'Open Sans', sans-serif",
-                              fontWeight: 700,
-                              fontSize: 16,
-                              color: '#22c55e'
-                            }}>
-                              {formatPrice(vendor.depositPaid)}
-                            </Typography>
-                          </Box>
-                          <Box>
-                            <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>
-                              Balance Due
-                            </Typography>
-                            <Typography sx={{
-                              fontFamily: "'Open Sans', sans-serif",
-                              fontWeight: 700,
-                              fontSize: 16,
-                              color: '#f59e0b'
-                            }}>
-                              {formatPrice(vendor.price - vendor.depositPaid)}
-                            </Typography>
-                          </Box>
-                        </Box>
-
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          <Button
-                            startIcon={<MessageOutlined />}
-                            onClick={() => navigate('/couple/messages')}
-                            sx={{
-                              fontFamily: "'Open Sans', sans-serif",
-                              textTransform: 'none',
-                              color: '#00838F',
-                              borderColor: '#00838F',
-                              border: '1px solid',
-                              '&:hover': { backgroundColor: '#f0fdfa' }
-                            }}
-                          >
-                            Message
-                          </Button>
-                          {!vendor.hasRated ? (
-                            <Button
-                              startIcon={<StarOutline />}
-                              onClick={() => handleOpenRating(vendor)}
-                              sx={{
-                                fontFamily: "'Open Sans', sans-serif",
-                                textTransform: 'none',
-                                backgroundColor: '#00838F',
-                                color: 'white',
-                                '&:hover': { backgroundColor: '#006d75' }
-                              }}
-                            >
-                              Rate Vendor
-                            </Button>
-                          ) : (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <Rating value={vendor.userRating} readOnly size="small" />
-                              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
-                                Rated
-                              </Typography>
-                            </Box>
-                          )}
-                        </Box>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Card>
-              ))
-            )}
-          </Box>
-        )}
-
-        {/* Inquiries Tab */}
-        {activeTab === 1 && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {inquiries.length === 0 ? (
-              <Card sx={{ p: 6, textAlign: 'center', border: '0.25px solid #00838F' }}>
-                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 16, color: '#666', mb: 2 }}>
-                  No inquiries sent yet
-                </Typography>
-                <Button
-                  onClick={() => navigate('/couple/search-results')}
-                  sx={{
-                    backgroundColor: '#00838F',
-                    color: 'white',
-                    fontFamily: "'Open Sans', sans-serif",
-                    textTransform: 'none'
-                  }}
-                >
-                  Browse Vendors
-                </Button>
-              </Card>
-            ) : (
-              inquiries.map((inquiry) => (
-                <Card key={inquiry.id} sx={{ p: 3, border: '0.25px solid #00838F' }}>
-                  <Box sx={{ display: 'flex', gap: 3 }}>
-                    <Avatar
-                      src={inquiry.vendorImage}
-                      variant="rounded"
-                      sx={{ width: 80, height: 80 }}
-                    />
-                    <Box sx={{ flex: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                        <Box>
-                          <Typography sx={{
-                            fontFamily: "'Open Sans', sans-serif",
-                            fontWeight: 600,
-                            fontSize: 16,
-                            color: '#002528'
-                          }}>
-                            {inquiry.vendorName}
-                          </Typography>
-                          <Typography sx={{
-                            fontFamily: "'Open Sans', sans-serif",
-                            fontSize: 12,
-                            color: '#666'
-                          }}>
-                            {inquiry.vendorCategory} • Sent {formatDate(inquiry.submittedDate)}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          icon={getStatusIcon(inquiry.status)}
-                          label={inquiry.status.charAt(0).toUpperCase() + inquiry.status.slice(1)}
-                          size="small"
-                          sx={{
-                            backgroundColor: `${getStatusColor(inquiry.status)}20`,
-                            color: getStatusColor(inquiry.status),
-                            fontFamily: "'Open Sans', sans-serif",
-                            fontWeight: 600
-                          }}
-                        />
-                      </Box>
-                      
-                      <Box sx={{
-                        p: 2,
-                        backgroundColor: '#f9fafb',
-                        borderRadius: 1,
-                        mb: inquiry.response ? 2 : 0
-                      }}>
-                        <Typography sx={{
-                          fontFamily: "'Open Sans', sans-serif",
-                          fontSize: 13,
-                          color: '#444'
-                        }}>
-                          <strong>Your message:</strong> {inquiry.message}
-                        </Typography>
-                      </Box>
-                      
-                      {inquiry.response && (
-                        <Box sx={{
-                          p: 2,
-                          backgroundColor: '#f0fdfa',
-                          borderRadius: 1,
-                          borderLeft: '3px solid #00838F'
-                        }}>
-                          <Typography sx={{
-                            fontFamily: "'Open Sans', sans-serif",
-                            fontSize: 13,
-                            color: '#00838F'
-                          }}>
-                            <strong>Vendor response:</strong> {inquiry.response}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
-                </Card>
-              ))
-            )}
-          </Box>
-        )}
-      </Box>
-
-      {/* Rating Dialog */}
-      <Dialog
-        open={ratingDialogOpen}
-        onClose={() => setRatingDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{
-          fontFamily: "'Open Sans', sans-serif",
-          fontWeight: 700,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          Rate {selectedVendor?.name}
-          <IconButton onClick={() => setRatingDialogOpen(false)} size="small">
-            <Close />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ textAlign: 'center', py: 2 }}>
-            <Typography sx={{
-              fontFamily: "'Open Sans', sans-serif",
-              fontSize: 14,
-              color: '#666',
-              mb: 2
-            }}>
-              How was your experience with this vendor?
-            </Typography>
-            <Rating
-              value={ratingValue}
-              onChange={(_, newValue) => setRatingValue(newValue || 5)}
-              size="large"
-              sx={{ mb: 3 }}
-            />
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Write a review (optional)"
-              placeholder="Share your experience to help other couples..."
-              value={ratingReview}
-              onChange={(e) => setRatingReview(e.target.value)}
-              sx={{ '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button
-            onClick={() => setRatingDialogOpen(false)}
-            sx={{
-              fontFamily: "'Open Sans', sans-serif",
-              textTransform: 'none',
-              color: '#666'
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmitRating}
-            sx={{
-              background: 'linear-gradient(229.87deg, #EB1948 65.18%, #B52344 232.03%)',
-              color: 'white',
-              fontFamily: "'Open Sans', sans-serif",
-              fontWeight: 600,
-              textTransform: 'none',
-              px: 3,
-              '&:hover': { opacity: 0.9 }
-            }}
-          >
-            Submit Rating
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ fontFamily: "'Open Sans', sans-serif" }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-</Box>
-  );
+                  {n}
+                </button>
+              ))}
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setRateId(null)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 cursor-pointer">
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setVendors((prev) => prev.map((v) => (v.id === rateId ? { ...v, hasRated: true } : v)))
+                  setRateId(null)
+                  showToast('Thanks for the rating', 'success')
+                }}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#0F766E] cursor-pointer"
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </CouplePageShell>
+  )
 }

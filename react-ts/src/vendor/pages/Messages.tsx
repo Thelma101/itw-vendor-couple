@@ -21,10 +21,13 @@ import ImageIcon from '@mui/icons-material/Image';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EventIcon from '@mui/icons-material/Event';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/shared/contexts/NotificationContext';
+import { showToast } from '@/shared/components/SimpleToast';
+import { compressImageToDataUrl } from '@/shared/lib/imageCompress';
 
 interface Message {
-  id: number;
+  id: number | string;
   sender: 'vendor' | 'couple';
   text: string;
   time: string;
@@ -118,7 +121,29 @@ export default function VendorMessages() {
   const [searchQuery, setSearchQuery] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const attachRef = useRef<HTMLInputElement>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
   const { addNotification } = useNotifications();
+  const navigate = useNavigate();
+
+  const attachFile = async (file: File | undefined, kind: 'file' | 'photo') => {
+    if (!file) return
+    try {
+      if (kind === 'photo' || file.type.startsWith('image/')) {
+        const dataUrl = await compressImageToDataUrl(file)
+        setNewMessage((prev) => (prev ? `${prev}\n[Photo attached: ${file.name}]` : `[Photo attached: ${file.name}]`))
+        void dataUrl
+        showToast('Photo ready to send with your message', 'success')
+      } else {
+        setNewMessage((prev) =>
+          prev ? `${prev}\n[File attached: ${file.name}]` : `[File attached: ${file.name}]`,
+        )
+        showToast('File noted on this message (demo)', 'success')
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not attach', 'error')
+    }
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,59 +154,58 @@ export default function VendorMessages() {
   }, [selectedConversation.messages]);
 
   const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      const newMsg: Message = {
-        id: selectedConversation.messages.length + 1,
-        sender: 'vendor',
-        text: newMessage,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
+    if (!newMessage.trim()) return
 
-      const updatedConversation = {
-        ...selectedConversation,
-        messages: [...selectedConversation.messages, newMsg],
-        lastMessage: newMessage,
-        timestamp: 'Just now',
-      };
+    const text = newMessage.trim()
+    const newMsg: Message = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      sender: 'vendor',
+      text,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }
 
-      setConversations(prev =>
-        prev.map(c => (c.id === selectedConversation.id ? updatedConversation : c))
-      );
-      setSelectedConversation(updatedConversation);
-      setNewMessage('');
+    const updatedConversation = {
+      ...selectedConversation,
+      messages: [...selectedConversation.messages, newMsg],
+      lastMessage: text,
+      timestamp: 'Just now',
+    }
 
-      // Simulate a reply after 2 seconds
-      setTimeout(() => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === selectedConversation.id ? updatedConversation : c)),
+    )
+    setSelectedConversation(updatedConversation)
+    setNewMessage('')
+
+    // Simulate a reply after 2 seconds (do not re-append vendor message)
+    setTimeout(() => {
+      setConversations((prev) => {
+        const current = prev.find((c) => c.id === selectedConversation.id)
+        if (!current) return prev
         const replyMsg: Message = {
-          id: updatedConversation.messages.length + 2,
+          id: `${Date.now()}-reply`,
           sender: 'couple',
           text: 'Thank you for your quick response! That sounds great.',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-
+        }
         const withReply = {
-          ...updatedConversation,
-          messages: [...updatedConversation.messages, newMsg, replyMsg],
+          ...current,
+          messages: [...current.messages, replyMsg],
           lastMessage: replyMsg.text,
           timestamp: 'Just now',
-        };
-
-        setConversations(prev =>
-          prev.map(c => (c.id === selectedConversation.id ? withReply : c))
-        );
-        setSelectedConversation(withReply);
-
-        // Add notification
+        }
+        setSelectedConversation(withReply)
         addNotification({
           type: 'message',
           title: 'New Message',
           message: `${selectedConversation.coupleName}: "${replyMsg.text}"`,
           avatar: selectedConversation.avatar,
           link: '/vendor/messages',
-        });
-      }, 2000);
-    }
-  };
+        })
+        return prev.map((c) => (c.id === selectedConversation.id ? withReply : c))
+      })
+    }, 2000)
+  }
 
   const [mobileShowThread, setMobileShowThread] = useState(false);
 
@@ -463,6 +487,10 @@ export default function VendorMessages() {
             <Button
               variant="outlined"
               size="small"
+              onClick={() => {
+                showToast('Quote composer opens from Services packages (demo)', 'info')
+                navigate('/vendor/services')
+              }}
               sx={{
                 mr: 1,
                 borderColor: '#00838F',
@@ -480,10 +508,31 @@ export default function VendorMessages() {
               open={Boolean(anchorEl)}
               onClose={() => setAnchorEl(null)}
             >
-              <MenuItem onClick={() => setAnchorEl(null)}>View Profile</MenuItem>
-              <MenuItem onClick={() => setAnchorEl(null)}>Create Booking</MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setAnchorEl(null)
+                  showToast(`Opening couple notes for ${selectedConversation.coupleName}`, 'info')
+                }}
+              >
+                View Profile
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setAnchorEl(null)
+                  navigate('/vendor/bookings')
+                  showToast('Create a booking from Bookings', 'info')
+                }}
+              >
+                Create Booking
+              </MenuItem>
               <Divider />
-              <MenuItem onClick={() => setAnchorEl(null)} sx={{ color: '#f44336' }}>
+              <MenuItem
+                onClick={() => {
+                  setAnchorEl(null)
+                  showToast('User blocked for this demo session', 'success')
+                }}
+                sx={{ color: '#f44336' }}
+              >
                 Block User
               </MenuItem>
             </Menu>
@@ -569,10 +618,25 @@ export default function VendorMessages() {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
-            <IconButton sx={{ color: '#666' }}>
+            <input
+              ref={attachRef}
+              type="file"
+              className="hidden"
+              hidden
+              onChange={(e) => void attachFile(e.target.files?.[0], 'file')}
+            />
+            <input
+              ref={photoRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              hidden
+              onChange={(e) => void attachFile(e.target.files?.[0], 'photo')}
+            />
+            <IconButton sx={{ color: '#666' }} onClick={() => attachRef.current?.click()} aria-label="Attach file">
               <AttachFileIcon />
             </IconButton>
-            <IconButton sx={{ color: '#666' }}>
+            <IconButton sx={{ color: '#666' }} onClick={() => photoRef.current?.click()} aria-label="Attach photo">
               <ImageIcon />
             </IconButton>
             <TextField

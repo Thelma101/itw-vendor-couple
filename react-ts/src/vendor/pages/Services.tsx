@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState } from 'react'
-import { Add, CheckCircle, Close, DeleteOutline, EditOutlined, InfoOutlined, ToggleOff, ToggleOn } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
+import { Add, CheckCircle, Close, DeleteOutline, EditOutlined, InfoOutlined, ToggleOff, ToggleOn, VisibilityOutlined } from '@mui/icons-material'
 import VendorPageShell from '@/vendor/components/VendorPageShell'
 import { showToast } from '@/shared/components/SimpleToast'
 import {
@@ -8,6 +9,7 @@ import {
   loadVendorServices,
   saveVendorServices,
 } from '@/shared/lib/vendorServices'
+import { VENDOR_PROFILE } from '@/vendor/lib/vendorProfile'
 
 const emptyForm = {
   name: '',
@@ -23,9 +25,11 @@ function naira(n: number) {
 }
 
 export default function Services() {
+  const navigate = useNavigate()
   const [services, setServices] = useState<VendorService[]>(() => loadVendorServices())
   const [filter, setFilter] = useState<'All' | ServiceType | 'Inactive'>('All')
   const [modalOpen, setModalOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [editing, setEditing] = useState<VendorService | null>(null)
   const [form, setForm] = useState(emptyForm)
 
@@ -92,14 +96,22 @@ export default function Services() {
   return (
     <VendorPageShell
       title="Services & Pricing"
-      subtitle="Packages appear as the three pricing cards couples see on your profile. Add-ons are optional extras they can stack on a package."
+      subtitle="Packages and add-ons on your public profile."
       badge={`${services.filter((s) => s.active && s.type === 'Package').length} packages live`}
       actions={
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <button
             type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="inline-flex items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-bold font-[family-name:var(--font-ui)] cursor-pointer"
+          >
+            <VisibilityOutlined fontSize="small" />
+            Preview as couple
+          </button>
+          <button
+            type="button"
             onClick={() => openCreate('Package')}
-            className="inline-flex items-center justify-center gap-2 bg-[#0F766E] hover:bg-[#0D9488] text-white px-5 py-2.5 rounded-xl font-bold font-[family-name:var(--font-ui)]"
+            className="inline-flex items-center justify-center gap-2 bg-[#0F766E] hover:bg-[#0D9488] text-white px-5 py-2.5 rounded-xl font-bold font-[family-name:var(--font-ui)] cursor-pointer"
           >
             <Add fontSize="small" />
             New package
@@ -107,7 +119,7 @@ export default function Services() {
           <button
             type="button"
             onClick={() => openCreate('Add-on')}
-            className="inline-flex items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 px-5 py-2.5 rounded-xl font-bold font-[family-name:var(--font-ui)]"
+            className="inline-flex items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 px-5 py-2.5 rounded-xl font-bold font-[family-name:var(--font-ui)] cursor-pointer"
           >
             <Add fontSize="small" />
             New add-on
@@ -115,26 +127,13 @@ export default function Services() {
         </div>
       }
     >
-      <div className="mb-5 rounded-2xl border border-teal-100 bg-teal-50/40 px-4 py-3 flex gap-3 font-[family-name:var(--font-ui)]">
-        <InfoOutlined sx={{ color: '#0F766E', fontSize: 20, mt: '2px' }} />
-        <div className="text-sm text-slate-600">
-          <p className="font-bold text-slate-800">What couples see</p>
-          <p className="mt-0.5">
-            <span className="font-semibold text-[#0F766E]">Package</span> = main offer (Essential / Premium / Luxury style) with
-            feature checklist + “Select Package”.{' '}
-            <span className="font-semibold text-amber-800">Add-on</span> = optional upgrade (engagement shoot, album, film)
-            shown under packages — not a standalone booking path.
-          </p>
-        </div>
-      </div>
-
       <div className="flex gap-2 overflow-x-auto pb-1 mb-5 font-[family-name:var(--font-ui)]">
         {(['All', 'Package', 'Add-on', 'Inactive'] as const).map((key) => (
           <button
             key={key}
             type="button"
             onClick={() => setFilter(key)}
-            className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors ${
+            className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
               filter === key ? 'bg-[#0F766E] text-white' : 'bg-white border border-slate-200 text-slate-600'
             }`}
           >
@@ -149,8 +148,8 @@ export default function Services() {
           return (
             <article
               key={service.id}
-              className={`relative flex flex-col rounded-2xl border bg-white overflow-hidden transition-shadow hover:shadow-md ${
-                service.popular && service.active ? 'border-[#0F766E] ring-1 ring-teal-100' : 'border-slate-200'
+              className={`relative flex flex-col rounded-2xl border bg-white overflow-hidden transition-shadow hover:shadow-sm ${
+                service.popular && service.active ? 'border-[#0F766E]' : 'border-slate-200'
               } ${!service.active ? 'opacity-70' : ''}`}
             >
               {service.popular && isPackage ? (
@@ -158,12 +157,11 @@ export default function Services() {
                   Most popular
                 </div>
               ) : null}
-              <div className={`h-1.5 ${isPackage ? 'bg-[#0F766E]' : 'bg-amber-400'}`} style={{ opacity: service.active ? 1 : 0.35 }} />
               <div className="p-5 flex flex-col flex-1 font-[family-name:var(--font-ui)]">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span
                     className={`text-[10px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full ${
-                      isPackage ? 'bg-teal-50 text-teal-800' : 'bg-amber-50 text-amber-800'
+                      isPackage ? 'bg-teal-50 text-teal-800' : 'bg-slate-100 text-slate-600'
                     }`}
                   >
                     {service.type}
@@ -173,7 +171,7 @@ export default function Services() {
                       service.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
                     }`}
                   >
-                    {service.active ? 'Live on profile' : 'Hidden'}
+                    {service.active ? 'Live' : 'Hidden'}
                   </span>
                 </div>
 
@@ -187,7 +185,7 @@ export default function Services() {
                   <ul className="mt-4 space-y-1.5">
                     {service.features.map((f) => (
                       <li key={f} className="flex items-start gap-2 text-sm text-slate-600">
-                        <CheckCircle sx={{ fontSize: 16, color: '#22c55e', mt: '2px' }} />
+                        <CheckCircle sx={{ fontSize: 16, color: '#0F766E', mt: '2px' }} />
                         {f}
                       </li>
                     ))}
@@ -198,7 +196,7 @@ export default function Services() {
                   <button
                     type="button"
                     onClick={() => openEdit(service)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-[#0F766E] border border-teal-200 hover:bg-teal-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-[#0F766E] border border-teal-200 hover:bg-teal-50 cursor-pointer"
                   >
                     <EditOutlined sx={{ fontSize: 16 }} />
                     Edit
@@ -207,9 +205,9 @@ export default function Services() {
                     type="button"
                     onClick={() => {
                       persist(services.map((s) => (s.id === service.id ? { ...s, active: !s.active } : s)))
-                      showToast(service.active ? 'Hidden from couples' : 'Now live on your profile', 'success')
+                      showToast(service.active ? 'Hidden from couples' : 'Live on your profile', 'success')
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 cursor-pointer"
                   >
                     {service.active ? <ToggleOn sx={{ fontSize: 18, color: '#0F766E' }} /> : <ToggleOff sx={{ fontSize: 18 }} />}
                     {service.active ? 'Hide' : 'Publish'}
@@ -220,7 +218,7 @@ export default function Services() {
                       persist(services.filter((s) => s.id !== service.id))
                       showToast('Removed', 'info')
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-rose-600 border border-rose-100 hover:bg-rose-50 ml-auto"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-rose-600 border border-rose-100 hover:bg-rose-50 ml-auto cursor-pointer"
                   >
                     <DeleteOutline sx={{ fontSize: 16 }} />
                     Delete
@@ -235,9 +233,73 @@ export default function Services() {
       {visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-14 text-center font-[family-name:var(--font-ui)]">
           <p className="font-bold text-slate-700">Nothing in this view</p>
-          <button type="button" onClick={() => openCreate('Package')} className="mt-3 text-sm font-bold text-[#0F766E]">
-            Add a package couples can select
+          <button type="button" onClick={() => openCreate('Package')} className="mt-3 text-sm font-bold text-[#0F766E] cursor-pointer">
+            Add a package
           </button>
+        </div>
+      ) : null}
+
+      {previewOpen ? (
+        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4">
+          <button type="button" className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm cursor-pointer" aria-label="Close" onClick={() => setPreviewOpen(false)} />
+          <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-[#F4F7F8] rounded-2xl border border-slate-200 shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-3 bg-white border-b border-slate-100">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#0F766E]">Couple view</p>
+                <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-900">{VENDOR_PROFILE.businessName} · Pricing</h3>
+              </div>
+              <button type="button" onClick={() => setPreviewOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" aria-label="Close">
+                <Close fontSize="small" />
+              </button>
+            </div>
+            <div className="p-5 space-y-6 font-[family-name:var(--font-ui)]">
+              <section>
+                <h4 className="text-sm font-bold text-slate-800 mb-3">Packages</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {services.filter((s) => s.active && s.type === 'Package').map((s) => (
+                    <div key={s.id} className={`rounded-2xl border bg-white p-4 ${s.popular ? 'border-[#0F766E]' : 'border-slate-200'}`}>
+                      {s.popular ? <p className="text-[10px] font-extrabold text-[#0F766E] mb-1">MOST POPULAR</p> : null}
+                      <p className="font-[family-name:var(--font-display)] text-xl font-semibold">{s.name}</p>
+                      <p className="text-[#0F766E] font-extrabold mt-1">{naira(s.price)}</p>
+                      <p className="text-xs text-slate-500 mt-2">{s.description}</p>
+                      <ul className="mt-3 space-y-1">
+                        {s.features.map((f) => (
+                          <li key={f} className="flex gap-1.5 text-xs text-slate-600">
+                            <CheckCircle sx={{ fontSize: 14, color: '#0F766E' }} /> {f}
+                          </li>
+                        ))}
+                      </ul>
+                      <button type="button" className="mt-4 w-full py-2 rounded-xl bg-[#0F766E] text-white text-xs font-bold cursor-pointer">
+                        Select package
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              <section>
+                <h4 className="text-sm font-bold text-slate-800 mb-3">Add-ons</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {services.filter((s) => s.active && s.type === 'Add-on').map((s) => (
+                    <div key={s.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <p className="font-semibold text-slate-800">{s.name}</p>
+                      <p className="text-[#0F766E] font-bold text-sm mt-0.5">{naira(s.price)}</p>
+                      <p className="text-xs text-slate-500 mt-1">{s.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewOpen(false)
+                  navigate('/couple/vendor/bloom-co')
+                }}
+                className="text-sm font-bold text-[#0F766E] hover:underline cursor-pointer"
+              >
+                Open full public profile →
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
 
@@ -247,8 +309,19 @@ export default function Services() {
           <div className="relative w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden font-[family-name:var(--font-ui)] max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
               <div>
-                <h3 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-slate-900">
+                <h3 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-slate-900 flex items-center gap-2">
                   {editing ? 'Edit' : 'New'} {form.type === 'Package' ? 'package' : 'add-on'}
+                  <span
+                    title={
+                      form.type === 'Package'
+                        ? 'Main offer couples select on your profile (Essential / Premium / Luxury style cards).'
+                        : 'Optional extra couples can stack on a package — e.g. engagement session, album, or film. Not a standalone booking.'
+                    }
+                    className="inline-flex text-slate-400 hover:text-[#0F766E] cursor-help"
+                    aria-label="What is this?"
+                  >
+                    <InfoOutlined sx={{ fontSize: 18 }} />
+                  </span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {form.type === 'Package'

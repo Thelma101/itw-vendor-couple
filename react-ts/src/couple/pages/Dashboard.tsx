@@ -343,7 +343,7 @@ export default function Dashboard() {
           <h1 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-semibold text-slate-900">
             {greetingForNow()}, {FIRST_NAME}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Let&apos;s refine the final orchestrations for your beautiful day.</p>
+          <p className="text-sm text-slate-500 mt-1">Here&apos;s where Adaeze &amp; Chidi stand — pick up whatever needs a decision today.</p>
         </div>
         <PlanBadge />
       </header>
@@ -502,7 +502,7 @@ export default function Dashboard() {
         <section className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-800">Budget Overview</h2>
-            <button type="button" onClick={() => navigate('/couple/budget')} className="text-xs font-bold text-teal-700 tracking-wide">
+            <button type="button" onClick={() => navigate('/couple/budget')} className="text-xs font-bold text-teal-700 tracking-wide cursor-pointer hover:underline">
               VIEW TRACKER
             </button>
           </div>
@@ -534,7 +534,7 @@ export default function Dashboard() {
         <section className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-800">Guest Tracker</h2>
-            <button type="button" onClick={() => navigate('/couple/guests')} className="text-xs font-bold text-teal-700 tracking-wide">
+            <button type="button" onClick={() => navigate('/couple/guests')} className="text-xs font-bold text-teal-700 tracking-wide cursor-pointer hover:underline">
               VIEW RSVP STATUS
             </button>
           </div>
@@ -591,7 +591,7 @@ export default function Dashboard() {
         <section className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-800">Planning Timeline</h2>
-            <button type="button" onClick={() => navigate('/couple/checklist')} className="text-xs font-bold text-teal-700 tracking-wide">
+            <button type="button" onClick={() => navigate('/couple/checklist')} className="text-xs font-bold text-teal-700 tracking-wide cursor-pointer hover:underline">
               FULL ROADMAP
             </button>
           </div>
@@ -620,12 +620,19 @@ export default function Dashboard() {
         <section className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-800">
-              Your Vendors ({hub.bookedCount} of {hub.vendorTotal})
+              Your Vendors ({DEMO_VENDORS.length} of {hub.vendorTotal})
             </h2>
-            <button type="button" onClick={() => navigate('/couple/my-vendors')} className="text-xs font-bold text-teal-700 tracking-wide">
+            <button
+              type="button"
+              onClick={() => navigate('/couple/my-vendors')}
+              className="text-xs font-bold text-teal-700 tracking-wide cursor-pointer hover:underline"
+            >
               VIEW ALL
             </button>
           </div>
+          <p className="text-xs text-slate-500 mb-3">
+            {hub.bookedCount} booked · {DEMO_VENDORS.length - hub.bookedCount} shortlisted
+          </p>
           <ul className="space-y-3">
             {DEMO_VENDORS.map((vendor) => (
               <li key={vendor.name} className="flex items-center gap-3">
@@ -648,10 +655,17 @@ export default function Dashboard() {
           </ul>
           <button
             type="button"
-            onClick={() => navigate('/couple/search-results')}
-            className="mt-4 text-xs font-bold text-teal-700 hover:underline"
+            onClick={() => navigate('/couple/my-vendors')}
+            className="mt-4 text-xs font-bold text-teal-700 hover:underline cursor-pointer"
           >
-            Find more vendors on the Guild →
+            Open My Vendors →
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/couple/search-results')}
+            className="mt-2 block text-xs font-semibold text-slate-500 hover:text-teal-700 hover:underline cursor-pointer"
+          >
+            Or find more vendors on the Guild →
           </button>
         </section>
       </div>

@@ -318,15 +318,38 @@ export const paymentsApi = {
         days: number
       }
     },
+  initPlan: async (planId: string, callbackUrl?: string) =>
+    (
+      await apiClient.post('/api/v1/payments/plan/init', {
+        planId,
+        callbackUrl: callbackUrl || `${window.location.origin}/vendor/subscription`,
+      })
+    ).data as {
+      reference: string
+      amountNaira: number
+      amountKobo: number
+      email: string
+      publicKey: string
+      authorizationUrl: string
+      accessCode: string
+      plan: {
+        id: string
+        name: string
+        amountNaira: number
+        seats: number
+      }
+    },
   verify: async (reference: string) =>
     (await apiClient.get(`/api/v1/payments/verify/${encodeURIComponent(reference)}`)).data as {
       status: 'success'
       reference: string
       boostId: string
+      planId?: string
       amountNaira: number
       unlockCredits: number
       upgradesPlan: boolean
       boostName?: string
+      planName?: string
       days?: number
     },
 }

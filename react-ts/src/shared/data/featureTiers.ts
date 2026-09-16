@@ -35,7 +35,7 @@ export const PLAN_LIMITS = {
     vendorMessagesPerMonth: Number.POSITIVE_INFINITY,
     leadUnlocksPerMonth: Number.POSITIVE_INFINITY,
     portfolioAlbums: Number.POSITIVE_INFINITY,
-    teamSeats: 3,
+    teamSeats: 5,
   },
   /** Between Professional and Enterprise — growing multi-person studios */
   business: {
@@ -43,7 +43,7 @@ export const PLAN_LIMITS = {
     vendorMessagesPerMonth: Number.POSITIVE_INFINITY,
     leadUnlocksPerMonth: Number.POSITIVE_INFINITY,
     portfolioAlbums: Number.POSITIVE_INFINITY,
-    teamSeats: 8,
+    teamSeats: 10,
   },
   enterprise: {
     guestCap: Number.POSITIVE_INFINITY,
@@ -92,8 +92,8 @@ export const FEATURE_MAP: FeatureDefinition[] = [
   { id: 'vendor-services', name: 'Service Packages', tier: 'standard', description: 'List and price services in ₦', category: 'Vendor Business', audience: 'vendor' },
   { id: 'vendor-analytics', name: 'Advanced Analytics', tier: 'premium', description: 'Demand insights and competitor pricing', category: 'Vendor Business', audience: 'vendor' },
   { id: 'vendor-portfolio-u', name: 'Unlimited Portfolio', tier: 'premium', description: 'Unlimited gallery slots + priority placement', category: 'Vendor Business', audience: 'vendor' },
-  { id: 'vendor-team', name: 'Team Seats (up to 3)', tier: 'premium', description: 'Invite staff to manage leads and bookings', category: 'Vendor Business', audience: 'vendor' },
-  { id: 'vendor-team-business', name: 'Team Seats (up to 8)', tier: 'business', description: 'Larger studio seats + shared lead ownership', category: 'Vendor Business', audience: 'vendor' },
+  { id: 'vendor-team', name: 'Team Seats (up to 5)', tier: 'premium', description: 'Invite staff to manage leads and bookings', category: 'Vendor Business', audience: 'vendor' },
+  { id: 'vendor-team-business', name: 'Team Seats (up to 10)', tier: 'business', description: 'Larger studio seats + shared lead ownership', category: 'Vendor Business', audience: 'vendor' },
   { id: 'vendor-featured', name: 'Featured Category Placement', tier: 'business', description: 'Pinned featured slot in couple search by category', category: 'Vendor Business', audience: 'vendor' },
   { id: 'vendor-multi-city', name: 'Multi-city Profiles', tier: 'business', description: 'List in multiple Lagos corridors / cities', category: 'Vendor Business', audience: 'vendor' },
   { id: 'vendor-csm', name: 'Priority Support + CSM', tier: 'enterprise', description: 'Chat SLA and dedicated success contact', category: 'Vendor Business', audience: 'vendor' },

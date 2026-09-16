@@ -180,7 +180,7 @@ export default function Bookings() {
   return (
     <VendorPageShell
       title="Bookings"
-      subtitle="Upcoming weddings, deposits, and status — card layout that works on phone and desktop."
+      subtitle="Track upcoming weddings, deposits, and booking status."
       badge={`${counts.Pending} pending`}
       actions={
         <button

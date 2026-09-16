@@ -1,10 +1,11 @@
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
-import { AppBar, Toolbar, Button, Box, IconButton, Avatar, Badge } from '@mui/material'
-import { Logout, NotificationsNone } from '@mui/icons-material'
+import { AppBar, Toolbar, Button, Box, IconButton, Avatar } from '@mui/material'
+import { Logout } from '@mui/icons-material'
 import { authApi } from '@/shared/lib/api'
 import VendorBottomNav from '@/vendor/components/VendorBottomNav'
 import Logo from '@/marketing/components/Logo'
 import { VENDOR_PROFILE } from '@/vendor/lib/vendorProfile'
+import NotificationPanel from '@/couple/components/NotificationPanel'
 
 const mainNavItems = [
   { label: 'Overview', path: '/vendor', end: true },
@@ -138,11 +139,7 @@ export default function VendorDashboardLayout() {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-            <IconButton aria-label="Notifications" sx={{ color: '#64748B' }}>
-              <Badge variant="dot" color="primary" overlap="circular" sx={{ '& .MuiBadge-badge': { bgcolor: '#0F766E' } }}>
-                <NotificationsNone />
-              </Badge>
-            </IconButton>
+            <NotificationPanel />
             <IconButton onClick={() => navigate('/vendor/account')} aria-label="Account" sx={{ p: 0.5 }}>
               <Avatar src={VENDOR_PROFILE.avatar} sx={{ width: 36, height: 36, border: '2px solid #CCFBF1' }} />
             </IconButton>

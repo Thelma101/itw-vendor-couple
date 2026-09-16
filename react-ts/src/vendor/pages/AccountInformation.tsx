@@ -103,6 +103,19 @@ export default function AccountInformation() {
     navigate('/signin')
   }
 
+  const handleArchiveAccount = () => {
+    setDeleteDialog(false)
+    try {
+      localStorage.setItem('itw_vendor_archived', '1')
+    } catch {
+      /* ignore */
+    }
+    setSnackbarMessage('Profile archived — hidden from couples. Chats and connections are kept.')
+    setSnackbarOpen(true)
+    authApi.logout()
+    navigate('/')
+  }
+
   const handleDeleteAccount = () => {
     setDeleteDialog(false)
     authApi.logout()
@@ -587,19 +600,26 @@ export default function AccountInformation() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={deleteDialog} onClose={() => setDeleteDialog(false)}>
-        <DialogTitle sx={{ fontFamily: 'var(--font-ui)' }}>Delete account?</DialogTitle>
+      <Dialog open={deleteDialog} onClose={() => setDeleteDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontFamily: 'var(--font-ui)' }}>Close or archive your profile?</DialogTitle>
         <DialogContent>
-          <Typography sx={{ fontFamily: 'var(--font-ui)', fontSize: 14 }}>
-            This removes your vendor profile from discovery. This demo action only signs you out.
+          <Typography sx={{ fontFamily: 'var(--font-ui)', fontSize: 14, mb: 2 }}>
+            Prefer to pause instead of deleting? <strong>Archive</strong> puts your profile on sleep mode — couples
+            can no longer find you in search, while your chats, leads, and bookings stay intact for when you return.
+          </Typography>
+          <Typography sx={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: '#64748b' }}>
+            Permanent delete removes your public listing. This demo only signs you out.
           </Typography>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ flexWrap: 'wrap', gap: 1, px: 3, pb: 2 }}>
           <Button onClick={() => setDeleteDialog(false)} sx={{ textTransform: 'none' }}>
             Cancel
           </Button>
+          <Button onClick={handleArchiveAccount} variant="outlined" sx={{ textTransform: 'none', borderColor: '#0F766E', color: '#0F766E' }}>
+            Archive instead
+          </Button>
           <Button onClick={handleDeleteAccount} color="error" sx={{ textTransform: 'none' }}>
-            Delete
+            Delete permanently
           </Button>
         </DialogActions>
       </Dialog>
