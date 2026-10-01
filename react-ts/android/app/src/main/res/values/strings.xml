@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">iTheeWed</string>
+    <string name="title_activity_main">iTheeWed</string>
+    <string name="package_name">co.itheewed.app</string>
+    <string name="custom_url_scheme">co.itheewed.app</string>
+</resources>
