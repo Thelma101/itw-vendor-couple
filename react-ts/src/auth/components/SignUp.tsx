@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { FaGoogle, FaFacebookF, FaApple, FaXTwitter } from 'react-icons/fa6';
 import { HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
 import toast from 'react-hot-toast';
-import { authApi } from '@/shared/lib/api';
+import { apiErrorMessage, authApi } from '@/shared/lib/api';
 
 interface SignUpProps {
     onToggleSignIn?: () => void;
@@ -61,29 +61,23 @@ const SignUp: React.FC<SignUpProps> = ({ onToggleSignIn }) => {
         mutationFn: async () => {
             const payload: {
                 username: string;
-                phone_number: string;
+                phone_number?: string;
                 password: string;
                 email?: string;
                 business_name?: string;
             } = {
-                username: name,
-                phone_number: '',
+                username: name.trim(),
                 password,
             };
 
             if (contactType === 'phone') {
                 payload.phone_number = contactValue.replace(/[^0-9]/g, '');
             } else if (contactType === 'email') {
-                payload.phone_number = '';
-                payload.email = contactValue;
-            }
-
-            if (contactType === 'email' && email) {
-                payload.email = email;
+                payload.email = (email || contactValue).trim();
             }
 
             if (role === 'Vendor') {
-                payload.business_name = name;
+                payload.business_name = name.trim();
             }
 
             if (role === 'Couple') {
@@ -100,11 +94,20 @@ const SignUp: React.FC<SignUpProps> = ({ onToggleSignIn }) => {
                 navigate('/vendor');
             }
         },
-        onError: (error: any) => {
-            const message = error?.response?.data?.message || 'Signup failed. Please try again.';
-            toast.error(message);
+        onError: (error: unknown) => {
+            toast.error(apiErrorMessage(error, 'Signup failed. Please try again.'));
         }
     });
+
+    const [slowServer, setSlowServer] = useState(false);
+    useEffect(() => {
+        if (!registerMutation.isPending) {
+            setSlowServer(false);
+            return;
+        }
+        const timer = setTimeout(() => setSlowServer(true), 6000);
+        return () => clearTimeout(timer);
+    }, [registerMutation.isPending]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -245,8 +248,13 @@ const SignUp: React.FC<SignUpProps> = ({ onToggleSignIn }) => {
                     <button type="submit" disabled={registerMutation.isPending}
                         className="w-full md:h-12 h-12 rounded-3xl bg-[#00838F] hover:bg-[#006d75] disabled:bg-gray-300 disabled:cursor-not-allowed transition text-white font-semibold text-center text-base sm:text-md shadow mt-3"
                     >
-                        {registerMutation.isPending ? 'Signing Up...' : 'Sign Up'}
+                        {registerMutation.isPending ? (slowServer ? 'Still working…' : 'Signing Up...') : 'Sign Up'}
                     </button>
+                    {slowServer && (
+                        <p className="text-center text-xs text-gray-500 mt-2">
+                            Connecting to our server can take up to a minute the first time. Please keep this page open.
+                        </p>
+                    )}
                 </form>
                 <div className="flex items-center my-4">
                     <div className="flex-grow h-px bg-gray-200" />

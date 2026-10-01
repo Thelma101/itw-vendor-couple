@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { FaGoogle, FaFacebookF, FaApple, FaXTwitter } from 'react-icons/fa6';
 import { HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
 import toast from 'react-hot-toast';
-import { authApi } from '@/shared/lib/api';
+import { apiErrorMessage, authApi } from '@/shared/lib/api';
 
 interface SignInProps {
     onToggleSignUp?: () => void;
@@ -39,43 +39,29 @@ const SignIn: React.FC<SignInProps> = ({ onToggleSignUp }) => {
 
     const loginMutation = useMutation({
         mutationFn: async () => {
-            const payload: { password: string; username?: string; phone_number?: string } = {
-                password,
-            };
-
+            const payload: { password: string; email?: string; phone?: string } = { password };
             if (contactType === 'phone') {
-                payload.phone_number = contact;
+                payload.phone = contact.trim();
             } else {
-                payload.username = contact;
+                payload.email = contact.trim();
             }
-
-            if (role === 'Couple') {
-                return authApi.coupleLogin(payload);
-            } else {
-                return authApi.vendorLogin(payload);
-            }
+            return authApi.unifiedLogin(payload);
         },
-        onSuccess: () => {
+        onSuccess: (data: { message?: { role?: string } }) => {
             toast.success('Welcome back!');
-            if (role === 'Couple') {
-                navigate('/couple/dashboard');
-            } else {
+            if (data?.message?.role === 'vendor') {
                 navigate('/vendor');
+            } else {
+                navigate('/couple/dashboard');
             }
         },
-        onError: (error: any) => {
-            const message = error?.response?.data?.message || 'Login failed. Please check your credentials.';
-            toast.error(message);
+        onError: (error: unknown) => {
+            toast.error(apiErrorMessage(error, 'Login failed. Please check your credentials.'));
         }
     });
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        
-        if (!role) {
-            toast.error('Please select your role to continue');
-            return;
-        }
 
         if (!contact || !password) {
             toast.error('Please fill in all fields');

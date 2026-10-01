@@ -13,11 +13,35 @@ function resolveApiBaseUrl() {
 
 const apiClient = axios.create({
   baseURL: resolveApiBaseUrl(),
-  timeout: 10000,
+  // The API host sleeps when idle and can take up to a minute to wake
+  timeout: 70000,
   headers: {
     'Content-Type': 'application/json',
   },
 })
+
+/** Fire-and-forget request so the API is awake by the time someone submits a form. */
+export function warmUpApi() {
+  fetch(`${resolveApiBaseUrl()}/api/v1/health`, { mode: 'cors' }).catch(() => undefined)
+}
+
+/** Turns Nest validation arrays, network failures and timeouts into one readable sentence. */
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    if (error.code === 'ECONNABORTED') {
+      return 'Our server is taking longer than usual to respond. Please try again in a moment.'
+    }
+    if (!error.response) {
+      return 'We could not reach iTheeWed. Check your internet connection and try again.'
+    }
+    const message = (error.response.data as { message?: unknown } | undefined)?.message
+    if (Array.isArray(message) && message.length) return String(message[0])
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  const own = (error as { response?: { data?: { message?: unknown } } })?.response?.data?.message
+  if (typeof own === 'string' && own.trim()) return own
+  return fallback
+}
 
 // Friends & family demo accounts (no backend required)
 export const DEMO_ACCOUNTS = {
@@ -130,22 +154,15 @@ export const authApi = {
   vendorRegister: async (data: {
     business_name?: string
     username: string
-    phone_number: string
+    phone_number?: string
+    email?: string
     password: string
   }) => {
-    try {
-      const response = await apiClient.post('/api/v1/vendors/signup', data)
-      if (response.data?.message?.token) {
-        persistSession('vendor', response.data.message.vendor, response.data.message.token)
-      }
-      return response.data
-    } catch (error) {
-      if (isNetworkError(error)) {
-        // Local demo signup when API is offline
-        return demoSession('vendor')
-      }
-      throw error
+    const response = await apiClient.post('/api/v1/vendors/signup', data)
+    if (response.data?.message?.token) {
+      persistSession('vendor', response.data.message.vendor, response.data.message.token)
     }
+    return response.data
   },
 
   vendorLogin: async (data: { username?: string; phone_number?: string; password: string }) => {
@@ -173,22 +190,15 @@ export const authApi = {
   // Couple Auth
   coupleRegister: async (data: {
     username: string
-    phone_number: string
+    phone_number?: string
     password: string
     email?: string
   }) => {
-    try {
-      const response = await apiClient.post('/api/v1/couples/signup', data)
-      if (response.data?.message?.token) {
-        persistSession('couple', response.data.message.couple, response.data.message.token)
-      }
-      return response.data
-    } catch (error) {
-      if (isNetworkError(error)) {
-        return demoSession('couple')
-      }
-      throw error
+    const response = await apiClient.post('/api/v1/couples/signup', data)
+    if (response.data?.message?.token) {
+      persistSession('couple', response.data.message.couple, response.data.message.token)
     }
+    return response.data
   },
 
   coupleLogin: async (data: { username?: string; phone_number?: string; password: string }) => {

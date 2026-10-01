@@ -18,6 +18,19 @@ export function useAuthFromUrl() {
     if (token && token !== 'null') {
       localStorage.setItem('authToken', token)
       if (role) localStorage.setItem('userRole', role)
+      // Replace any profile left by a previous account on this browser
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as {
+          sub?: string
+          email?: string
+        }
+        const previous = JSON.parse(localStorage.getItem('user') || '{}') as { id?: string }
+        if (payload.sub && previous.id !== payload.sub) {
+          localStorage.setItem('user', JSON.stringify({ id: payload.sub, email: payload.email }))
+        }
+      } catch {
+        localStorage.removeItem('user')
+      }
       searchParams.delete('token')
       searchParams.delete('role')
       dirty = true
