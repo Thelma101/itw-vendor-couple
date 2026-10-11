@@ -19,9 +19,8 @@ const Navbar: React.FC = () => {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    authApi.logout();
     setIsLoggedIn(false);
-    navigate('/signin');
+    if (!authApi.logout()) navigate('/signin');
   };
 
   const closeMobileMenu = () => setShowMenu(false);

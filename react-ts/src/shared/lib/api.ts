@@ -127,6 +127,26 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
+const RETURN_TO_KEY = 'itw_return_to'
+const LIVE_SITE_ORIGINS = ['https://itheewed.co', 'https://www.itheewed.co']
+
+/** Remember the live site a user signed in from so logout can send them back there. */
+export function rememberReturnOrigin(origin: string | null) {
+  if (!origin) return
+  const clean = origin.replace(/\/$/, '')
+  const allowed = LIVE_SITE_ORIGINS.includes(clean) || (import.meta.env.DEV && /^http:\/\/localhost:\d+$/.test(clean))
+  if (allowed) localStorage.setItem(RETURN_TO_KEY, clean)
+}
+
+function clearSession(): string | null {
+  const returnTo = localStorage.getItem(RETURN_TO_KEY)
+  localStorage.removeItem('authToken')
+  localStorage.removeItem('user')
+  localStorage.removeItem('userRole')
+  localStorage.removeItem(RETURN_TO_KEY)
+  return returnTo
+}
+
 // 401 interceptor — auto-logout on expired/invalid token (skip demo tokens)
 apiClient.interceptors.response.use(
   (response) => response,
@@ -137,10 +157,10 @@ apiClient.interceptors.response.use(
         return Promise.reject(error)
       }
       const wasLoggedIn = !!localStorage.getItem('authToken')
-      localStorage.removeItem('authToken')
-      localStorage.removeItem('user')
-      localStorage.removeItem('userRole')
-      if (wasLoggedIn && !window.location.pathname.startsWith('/sign')) {
+      const returnTo = clearSession()
+      if (wasLoggedIn && returnTo) {
+        window.location.replace(`${returnTo}/signin?expired=1&signedout=1`)
+      } else if (wasLoggedIn && !window.location.pathname.startsWith('/sign')) {
         window.location.href = '/signin?expired=1'
       }
     }
@@ -258,10 +278,14 @@ export const authApi = {
     }
   },
 
-  logout: () => {
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('user')
-    localStorage.removeItem('userRole')
+  /** Returns true when the user is being sent back to the live site, so callers skip in-app navigation. */
+  logout: (): boolean => {
+    const returnTo = clearSession()
+    if (returnTo) {
+      window.location.replace(`${returnTo}/?signedout=1`)
+      return true
+    }
+    return false
   },
 }
 

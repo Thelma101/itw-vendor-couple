@@ -98,7 +98,7 @@ export default function BudgetTracker() {
           setTotalBudget(budget.totalBudget)
           syncTotalBudget(budget.totalBudget)
         }
-        if (Array.isArray(budget?.expenses) && budget.expenses.length) {
+        if (Array.isArray(budget?.expenses)) {
           syncExpenses(budget.expenses.map(mapApiExpense))
         }
         setApiReady(true)

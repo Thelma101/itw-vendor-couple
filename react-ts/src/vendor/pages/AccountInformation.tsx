@@ -99,8 +99,7 @@ export default function AccountInformation() {
 
   const handleLogout = () => {
     setLogoutDialog(false)
-    authApi.logout()
-    navigate('/signin')
+    if (!authApi.logout()) navigate('/signin')
   }
 
   const handleArchiveAccount = () => {
@@ -112,14 +111,12 @@ export default function AccountInformation() {
     }
     setSnackbarMessage('Profile archived — hidden from couples. Chats and connections are kept.')
     setSnackbarOpen(true)
-    authApi.logout()
-    navigate('/')
+    if (!authApi.logout()) navigate('/')
   }
 
   const handleDeleteAccount = () => {
     setDeleteDialog(false)
-    authApi.logout()
-    navigate('/')
+    if (!authApi.logout()) navigate('/')
   }
 
   return (

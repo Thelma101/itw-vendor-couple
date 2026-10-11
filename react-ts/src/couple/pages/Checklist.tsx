@@ -87,7 +87,7 @@ export default function Checklist() {
     void (async () => {
       try {
         const rows = await planningApi.listChecklist()
-        if (Array.isArray(rows) && rows.length) {
+        if (Array.isArray(rows)) {
           save(rows.map(mapApiTask))
           setApiReady(true)
         }

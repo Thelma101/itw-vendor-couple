@@ -28,8 +28,7 @@ export default function VendorDashboardLayout() {
   }
 
   const handleLogout = () => {
-    authApi.logout()
-    navigate('/signin')
+    if (!authApi.logout()) navigate('/signin')
   }
 
   return (

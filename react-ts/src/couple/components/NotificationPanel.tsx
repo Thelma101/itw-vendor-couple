@@ -304,32 +304,6 @@ const NotificationPanel: React.FC = () => {
             ))
           )}
         </List>
-
-        {/* Footer */}
-        {notifications.length > 0 && (
-          <Box
-            sx={{
-              p: 1.5,
-              borderTop: '1px solid #eee',
-              textAlign: 'center',
-            }}
-          >
-            <Button
-              onClick={() => {
-                navigate('/notifications');
-                handleClose();
-              }}
-              sx={{
-                color: '#00838F',
-                fontFamily: "'Open Sans', sans-serif",
-                fontWeight: 600,
-                textTransform: 'none',
-              }}
-            >
-              View All Notifications
-            </Button>
-          </Box>
-        )}
       </Popover>
     </>
   );

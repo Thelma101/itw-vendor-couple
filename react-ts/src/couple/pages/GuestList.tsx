@@ -123,7 +123,7 @@ export default function GuestList() {
     void (async () => {
       try {
         const rows = await planningApi.listGuests()
-        if (Array.isArray(rows) && rows.length) {
+        if (Array.isArray(rows)) {
           sync(rows.map(mapApiGuest))
           setApiReady(true)
         }

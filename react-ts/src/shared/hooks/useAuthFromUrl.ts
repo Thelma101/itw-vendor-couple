@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { normalizePlan } from '@/shared/data/featureTiers'
+import { rememberReturnOrigin } from '@/shared/lib/api'
 
 /**
  * Reads auth token & role from URL query params (set by signup-flow redirect)
@@ -31,8 +32,10 @@ export function useAuthFromUrl() {
       } catch {
         localStorage.removeItem('user')
       }
+      rememberReturnOrigin(searchParams.get('from'))
       searchParams.delete('token')
       searchParams.delete('role')
+      searchParams.delete('from')
       dirty = true
     }
 

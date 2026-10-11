@@ -33,6 +33,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Nav from '@/couple/components/Nav';
 import ReferralInviteCard from '@/shared/components/ReferralInviteCard';
+import { authApi } from '@/shared/lib/api';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -105,8 +106,7 @@ const Profile: React.FC = () => {
 
   const handleLogout = () => {
     setLogoutDialog(false);
-    // In a real app, clear auth tokens here
-    navigate('/');
+    if (!authApi.logout()) navigate('/signin');
   };
 
   const handleDeleteAccount = () => {
