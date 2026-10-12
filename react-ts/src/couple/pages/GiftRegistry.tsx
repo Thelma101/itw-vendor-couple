@@ -23,8 +23,10 @@ import {
   PhotoCamera,
 } from '@mui/icons-material'
 import CouplePageShell from '@/couple/components/CouplePageShell'
-import apiClient, { isNetworkError } from '@/shared/lib/api'
+import apiClient, { isNetworkError, apiErrorMessage as liveErrorMessage } from '@/shared/lib/api'
 import PlanBadge from '@/shared/components/PlanBadge'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import { uploadImage } from '@/shared/lib/imageCompress'
 
 type GiftStatus = 'wanted' | 'purchased' | 'reserved'
 
@@ -171,8 +173,11 @@ function axiosIsError(error: unknown): error is import('axios').AxiosError {
 }
 
 export default function GiftRegistry() {
+  const { isDemo } = useAccount()
+  const live = !isDemo
   const [data, setData] = useState<RegistryPayload | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -197,22 +202,27 @@ export default function GiftRegistry() {
 
   const persist = (payload: RegistryPayload) => {
     const next = { ...payload, stats: computeStats(payload.items) }
-    writeLocal(coupleId, next)
+    if (!live) writeLocal(coupleId, next)
     setData(next)
   }
 
   const load = async () => {
     setLoading(true)
     setError('')
+    setLoadError('')
     try {
       const res = await apiClient.get('/api/v1/registry', {
         headers: { 'x-couple-id': coupleId },
       })
       const payload = res.data as RegistryPayload
-      writeLocal(coupleId, payload)
+      if (!live) writeLocal(coupleId, payload)
       setData(payload)
       setInfo('')
     } catch (err) {
+      if (live) {
+        setLoadError(liveErrorMessage(err, 'Could not load your gift registry. Please try again.'))
+        return
+      }
       const local = readLocal(coupleId) || defaultLocalPayload(coupleId)
       writeLocal(coupleId, local)
       setData(local)
@@ -229,7 +239,7 @@ export default function GiftRegistry() {
   useEffect(() => {
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [coupleId])
+  }, [coupleId, live])
 
   const items = (data?.items || []).filter((i) => filter === 'all' || i.status === filter)
 
@@ -253,10 +263,14 @@ export default function GiftRegistry() {
     setUploading(true)
     setError('')
     try {
-      const dataUrl = await fileToDataUrl(file)
-      setForm((f) => ({ ...f, imageUrl: dataUrl }))
-    } catch {
-      setError('Could not process photo. Try a smaller image or use an image URL.')
+      const imageUrl = live ? await uploadImage(file) : await fileToDataUrl(file)
+      setForm((f) => ({ ...f, imageUrl }))
+    } catch (err) {
+      setError(
+        live
+          ? liveErrorMessage(err, err instanceof Error ? err.message : 'Could not upload photo. Try a smaller image or use an image URL.')
+          : 'Could not process photo. Try a smaller image or use an image URL.',
+      )
     } finally {
       setUploading(false)
     }
@@ -281,6 +295,12 @@ export default function GiftRegistry() {
         headers: { 'x-couple-id': coupleId },
       })
       const created = res.data as GiftItem
+      if (live) {
+        setOpen(false)
+        setForm(emptyForm)
+        await load()
+        return
+      }
       const base = data || defaultLocalPayload(coupleId)
       persist({ ...base, items: [...base.items, created] })
       setOpen(false)
@@ -288,6 +308,10 @@ export default function GiftRegistry() {
       setInfo('')
       await load()
     } catch (err) {
+      if (live) {
+        setError(liveErrorMessage(err, 'Could not save this gift. Please try again.'))
+        return
+      }
       // Always succeed locally so Save is never a dead end
       const created: GiftItem = {
         id: `local-${Date.now()}`,
@@ -312,6 +336,20 @@ export default function GiftRegistry() {
   const setStatus = async (id: string, status: GiftStatus) => {
     const base = data
     if (!base) return
+    if (live) {
+      setError('')
+      try {
+        await apiClient.patch(`/api/v1/registry/items/${id}`, { status }, { headers: { 'x-couple-id': coupleId } })
+        setData((prev) => {
+          if (!prev) return prev
+          const nextItems = prev.items.map((i) => (i.id === id ? { ...i, status } : i))
+          return { ...prev, items: nextItems, stats: computeStats(nextItems) }
+        })
+      } catch (err) {
+        setError(liveErrorMessage(err, 'Could not update this gift. Please try again.'))
+      }
+      return
+    }
     persist({
       ...base,
       items: base.items.map((i) => (i.id === id ? { ...i, status } : i)),
@@ -328,6 +366,7 @@ export default function GiftRegistry() {
   }
 
   const openEdit = (item: GiftItem) => {
+    if (live) setError('')
     setEditing(item)
     setForm({
       title: item.title,
@@ -352,6 +391,27 @@ export default function GiftRegistry() {
       quantity: Math.max(1, Number(form.quantity) || 1),
       status: form.status,
     }
+    if (live) {
+      setError('')
+      try {
+        await apiClient.patch(`/api/v1/registry/items/${editing.id}`, patch, {
+          headers: { 'x-couple-id': coupleId },
+        })
+        const id = editing.id
+        setData((prev) => {
+          if (!prev) return prev
+          const nextItems = prev.items.map((i) => (i.id === id ? { ...i, ...patch } : i))
+          return { ...prev, items: nextItems, stats: computeStats(nextItems) }
+        })
+        setEditing(null)
+        setForm(emptyForm)
+      } catch (err) {
+        setError(liveErrorMessage(err, 'Could not save your changes. Please try again.'))
+      } finally {
+        setSaving(false)
+      }
+      return
+    }
     if (data) {
       persist({
         ...data,
@@ -375,6 +435,22 @@ export default function GiftRegistry() {
     if (!deleteId || !data) return
     const id = deleteId
     setDeleteId(null)
+    if (live) {
+      setError('')
+      try {
+        await apiClient.delete(`/api/v1/registry/items/${id}`, {
+          headers: { 'x-couple-id': coupleId },
+        })
+        setData((prev) => {
+          if (!prev) return prev
+          const nextItems = prev.items.filter((i) => i.id !== id)
+          return { ...prev, items: nextItems, stats: computeStats(nextItems) }
+        })
+      } catch (err) {
+        setError(liveErrorMessage(err, 'Could not delete this gift. Please try again.'))
+      }
+      return
+    }
     persist({ ...data, items: data.items.filter((i) => i.id !== id) })
     try {
       await apiClient.delete(`/api/v1/registry/items/${id}`, {
@@ -391,10 +467,18 @@ export default function GiftRegistry() {
     <CouplePageShell
       title="Gift Registry"
       subtitle="Share wishlist items with guests — cash gifts, home essentials, and more."
-      badge="Standard"
+      badge={live ? undefined : 'Standard'}
       actions={<PlanBadge />}
     >
       <Stack spacing={2.5}>
+        {loadError ? (
+          <Box className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 flex flex-wrap items-center justify-between gap-2">
+            <span>{loadError}</span>
+            <Button size="small" onClick={() => void load()} sx={{ textTransform: 'none', fontWeight: 700, color: '#B91C1C' }}>
+              Retry
+            </Button>
+          </Box>
+        ) : null}
         {error ? (
           <Box className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {error}
@@ -419,6 +503,7 @@ export default function GiftRegistry() {
               <Button
                 variant="outlined"
                 startIcon={<ContentCopy />}
+                disabled={!shareUrl}
                 onClick={() => void copyLink()}
                 sx={{ textTransform: 'none', borderRadius: 2, borderColor: '#0F766E', color: '#0F766E' }}
               >
@@ -427,6 +512,7 @@ export default function GiftRegistry() {
               <Button
                 variant="contained"
                 startIcon={<Add />}
+                disabled={live && !data}
                 onClick={() => {
                   setError('')
                   setOpen(true)
@@ -480,8 +566,23 @@ export default function GiftRegistry() {
         ) : items.length === 0 ? (
           <Box className="rounded-2xl border border-dashed border-slate-300 bg-white py-12 text-center px-4">
             <CardGiftcard sx={{ fontSize: 36, color: '#94A3B8', mb: 1 }} />
-            <p className="font-semibold text-slate-700">No gifts in this view</p>
+            <p className="font-semibold text-slate-700">
+              {live && filter === 'all' ? 'Your registry is empty' : 'No gifts in this view'}
+            </p>
             <p className="text-sm text-slate-500 mt-1">Add your first wishlist item for guests.</p>
+            {live && filter === 'all' && data ? (
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => {
+                  setError('')
+                  setOpen(true)
+                }}
+                sx={{ mt: 2, textTransform: 'none', borderRadius: 2, bgcolor: '#0F766E', '&:hover': { bgcolor: '#0D9488' } }}
+              >
+                Add your first gift
+              </Button>
+            ) : null}
           </Box>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
@@ -541,6 +642,7 @@ export default function GiftRegistry() {
         <DialogTitle sx={{ fontWeight: 700 }}>Add gift</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
+            {live && error ? <Box className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</Box> : null}
             <TextField
               label="Title"
               required
@@ -667,6 +769,7 @@ export default function GiftRegistry() {
         <DialogTitle sx={{ fontWeight: 700 }}>Edit gift</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
+            {live && error ? <Box className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</Box> : null}
             <TextField
               label="Title"
               required

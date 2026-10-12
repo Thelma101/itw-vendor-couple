@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CouplePageShell from '@/couple/components/CouplePageShell'
 import { showToast } from '@/shared/components/SimpleToast'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import LiveMyVendors from '@/couple/live/LiveMyVendors'
 
 type BookedVendor = {
   id: string
@@ -97,6 +99,11 @@ function formatDate(dateStr: string) {
 }
 
 export default function MyVendors() {
+  const { isDemo } = useAccount()
+  return isDemo ? <DemoMyVendors /> : <LiveMyVendors />
+}
+
+function DemoMyVendors() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<'booked' | 'inquiries'>('booked')
   const [vendors, setVendors] = useState(mockBookedVendors)

@@ -38,6 +38,8 @@ import { VENDOR_PROFILE } from '@/vendor/lib/vendorProfile'
 import { authApi } from '@/shared/lib/api'
 import { usePlan } from '@/shared/contexts/PlanContext'
 import ReferralInviteCard from '@/shared/components/ReferralInviteCard'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import LiveAccount from '@/vendor/pages/live/LiveAccount'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -59,6 +61,11 @@ const fieldSx = {
 }
 
 export default function AccountInformation() {
+  const { isDemo } = useAccount()
+  return isDemo ? <DemoAccountInformation /> : <LiveAccount />
+}
+
+function DemoAccountInformation() {
   const navigate = useNavigate()
   const { isPremium } = usePlan()
   const [tabValue, setTabValue] = useState(0)

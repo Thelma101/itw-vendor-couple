@@ -15,6 +15,8 @@ import VendorPageShell from '@/vendor/components/VendorPageShell'
 import PlanBadge from '@/shared/components/PlanBadge'
 import { usePlan } from '@/shared/contexts/PlanContext'
 import { showToast } from '@/shared/components/SimpleToast'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import LiveLeads from '@/vendor/pages/live/LiveLeads'
 
 type LeadStatus = 'New' | 'Contacted' | 'Quoted' | 'Negotiating'
 
@@ -100,6 +102,11 @@ const statusStyle: Record<LeadStatus, string> = {
 }
 
 export default function Leads() {
+  const { isDemo } = useAccount()
+  return isDemo ? <DemoLeads /> : <LiveLeads />
+}
+
+function DemoLeads() {
   const navigate = useNavigate()
   const { isPremium, leadUnlocksRemaining, leadUnlockCap, consumeLeadUnlock } = usePlan()
   const [leads, setLeads] = useState<Lead[]>(initialLeads)

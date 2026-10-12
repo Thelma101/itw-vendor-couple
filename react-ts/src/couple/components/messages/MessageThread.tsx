@@ -2,7 +2,7 @@ import { Box, Typography, TextField, IconButton, Avatar, Card, Tooltip, Snackbar
 import SendIcon from '@mui/icons-material/Send'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
 import ImageIcon from '@mui/icons-material/Image'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, type ReactNode } from 'react'
 
 interface Message {
   id: number | string
@@ -28,6 +28,10 @@ interface MessageThreadProps {
   onMessageChange: (text: string) => void
   onSendMessage: () => void
   onKeyPress?: (event: any) => void
+  /** Attachments only insert placeholder text, so live accounts turn them off. */
+  allowAttachments?: boolean
+  headerAction?: ReactNode
+  sending?: boolean
 }
 
 export default function MessageThread({
@@ -36,6 +40,9 @@ export default function MessageThread({
   onMessageChange,
   onSendMessage,
   onKeyPress,
+  allowAttachments = true,
+  headerAction,
+  sending = false,
 }: MessageThreadProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -78,12 +85,13 @@ export default function MessageThread({
       <Box sx={{ p: 2, borderBottom: '1px solid #E2E8F0', backgroundColor: '#F8FAFC', flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
           <Avatar src={conversation.avatar} sx={{ width: 40, height: 40, flexShrink: 0 }} />
-          <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ minWidth: 0, flex: headerAction ? 1 : undefined }}>
             <Typography sx={{ fontWeight: 700, fontSize: 16, color: '#002528', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {conversation.vendorName}
             </Typography>
             <Typography sx={{ fontSize: 12, color: '#999' }}>{conversation.vendorType}</Typography>
           </Box>
+          {headerAction ? <Box sx={{ flexShrink: 0 }}>{headerAction}</Box> : null}
         </Box>
       </Box>
 
@@ -131,6 +139,8 @@ export default function MessageThread({
             py: 0.75,
           }}
         >
+          {allowAttachments ? (
+          <>
           <Tooltip title="Attach file">
             <IconButton
               size="small"
@@ -167,6 +177,8 @@ export default function MessageThread({
               <ImageIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Tooltip>
+          </>
+          ) : null}
           <TextField
             fullWidth
             placeholder="Type your message..."
@@ -188,7 +200,7 @@ export default function MessageThread({
           <IconButton
             onClick={onSendMessage}
             aria-label="Send message"
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || sending}
             sx={{
               color: '#fff',
               bgcolor: '#0F766E',

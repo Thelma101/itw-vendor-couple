@@ -2,86 +2,18 @@
 import { VendorCard } from '@/vendor/components/ui/VendorCard'
 import { Add, PhotoLibrary, PlayCircleOutline, Close, ChevronLeft, ChevronRight, EditOutlined, VisibilityOutlined } from '@mui/icons-material'
 import VendorPageShell from '@/vendor/components/VendorPageShell'
-import { compressImageToDataUrl } from '@/shared/lib/imageCompress'
+import { uploadImage } from '@/shared/lib/imageCompress'
 import { showToast } from '@/shared/components/SimpleToast'
+import { apiErrorMessage } from '@/shared/lib/api'
 import { VENDOR_PROFILE } from '@/vendor/lib/vendorProfile'
-
-type AlbumType = 'Photo' | 'Video'
-
-type Album = {
-  id: string
-  title: string
-  items: number
-  type: AlbumType
-  cover: string
-  published: boolean
-  gallery?: string[]
-}
-
-const STORAGE_KEY = 'itw_vendor_portfolio'
-
-const DEFAULT_ALBUMS: Album[] = [
-  {
-    id: 'a1',
-    title: 'Royal Wedding - Lagos',
-    items: 124,
-    type: 'Photo',
-    cover: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=500&h=400&fit=crop',
-    published: true,
-    gallery: [
-      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200',
-      'https://images.unsplash.com/photo-1519741497674-611481863552?w=1200',
-      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=1200',
-    ],
-  },
-  {
-    id: 'a2',
-    title: 'Intimate Beach Ceremony',
-    items: 45,
-    type: 'Photo',
-    cover: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=500&h=400&fit=crop',
-    published: true,
-    gallery: [
-      'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200',
-      'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=1200',
-    ],
-  },
-  {
-    id: 'a3',
-    title: 'Pre-wedding Highlights',
-    items: 1,
-    type: 'Video',
-    cover: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=500&h=400&fit=crop',
-    published: true,
-    gallery: ['https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=1200'],
-  },
-  {
-    id: 'a4',
-    title: 'Traditional Colour Story',
-    items: 86,
-    type: 'Photo',
-    cover: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=500&h=400&fit=crop',
-    published: true,
-    gallery: [
-      'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=1200',
-      'https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200',
-    ],
-  },
-]
-
-function loadAlbums(): Album[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return DEFAULT_ALBUMS
-    const parsed = JSON.parse(raw) as Album[]
-    return Array.isArray(parsed) && parsed.length ? parsed : DEFAULT_ALBUMS
-  } catch {
-    return DEFAULT_ALBUMS
-  }
-}
+import { useAccount } from '@/shared/contexts/AccountContext'
+import { ErrorBanner, LoadingBlock } from '@/vendor/components/LiveState'
+import { type Album, type AlbumType, useVendorPortfolio } from '@/vendor/lib/portfolio'
 
 export default function Portfolio() {
-  const [albums, setAlbums] = useState<Album[]>(() => loadAlbums())
+  const { isDemo, user } = useAccount()
+  const { data: albums, save: saveAlbums, loading, error } = useVendorPortfolio()
+  const businessName = isDemo ? VENDOR_PROFILE.businessName : user?.business_name || user?.username || 'Your business'
   const [modalOpen, setModalOpen] = useState(false)
   const [mode, setMode] = useState<'album' | 'upload' | 'edit'>('album')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -95,9 +27,10 @@ export default function Portfolio() {
   const [clientPreview, setClientPreview] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const persist = (next: Album[]) => {
-    setAlbums(next)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  const persist = async (next: Album[]) => {
+    const ok = await saveAlbums(next)
+    if (!ok) showToast('Could not save to your account. Check your connection and try again.', 'error')
+    return ok
   }
 
   const resetForm = () => {
@@ -147,7 +80,7 @@ export default function Portfolio() {
           showToast(`${file.name} skipped — images only`, 'error')
           continue
         }
-        urls.push(await compressImageToDataUrl(file))
+        urls.push(await uploadImage(file))
       }
       if (!urls.length) return
       setCover((prev) => prev || urls[0]!)
@@ -155,7 +88,7 @@ export default function Portfolio() {
       if (!title.trim() && files[0]) setTitle(files[0].name.replace(/\.[^.]+$/, '').slice(0, 48))
       showToast(`${urls.length} image(s) ready`, 'success')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Upload failed', 'error')
+      showToast(apiErrorMessage(err, err instanceof Error ? err.message : 'Upload failed'), 'error')
     } finally {
       setSaving(false)
       if (fileRef.current) fileRef.current.value = ''
@@ -169,7 +102,7 @@ export default function Portfolio() {
     await onFiles(dt.files)
   }
 
-  const save = () => {
+  const save = async () => {
     if (!title.trim()) {
       showToast('Give this album a title', 'error')
       return
@@ -180,21 +113,15 @@ export default function Portfolio() {
     }
 
     if (mode === 'edit' && editingId) {
-      persist(
-        albums.map((a) =>
-          a.id === editingId
-            ? {
-                ...a,
-                title: title.trim(),
-                type,
-                cover,
-                gallery: [cover, ...pendingGallery.filter((g) => g !== cover), ...(a.gallery || []).filter((g) => g !== a.cover)],
-              }
-            : a,
-        ),
-      )
       setModalOpen(false)
-      showToast('Album updated', 'success')
+      const ok = await persist(
+        albums.map((a) => {
+          if (a.id !== editingId) return a
+          const nextGallery = [cover, ...pendingGallery.filter((g) => g !== cover), ...(a.gallery || []).filter((g) => g !== a.cover && g !== cover)]
+          return { ...a, title: title.trim(), type, cover, gallery: nextGallery, items: isDemo ? a.items : nextGallery.length }
+        }),
+      )
+      if (ok) showToast('Album updated', 'success')
       return
     }
 
@@ -208,9 +135,21 @@ export default function Portfolio() {
       published: true,
       gallery,
     }
-    persist([album, ...albums])
     setModalOpen(false)
-    showToast(mode === 'upload' ? `${gallery.length} media uploaded` : 'Album created', 'success')
+    if (await persist([album, ...albums])) {
+      showToast(mode === 'upload' ? `${gallery.length} media uploaded` : 'Album created', 'success')
+    }
+  }
+
+  const togglePublished = async (album: Album) => {
+    const ok = await persist(albums.map((a) => (a.id === album.id ? { ...a, published: !a.published } : a)))
+    if (ok) showToast(album.published ? 'Hidden from couples' : 'Published to your profile', 'success')
+  }
+
+  const deleteAlbum = async (id: string) => {
+    if (!window.confirm('Delete this album? Couples will no longer see it.')) return
+    setModalOpen(false)
+    if (await persist(albums.filter((a) => a.id !== id))) showToast('Album deleted', 'info')
   }
 
   const badge = useMemo(() => `${albums.length} albums`, [albums.length])
@@ -241,6 +180,19 @@ export default function Portfolio() {
         </div>
       }
     >
+      {!isDemo && error ? <ErrorBanner message={error} /> : null}
+      {!isDemo && loading && albums.length === 0 ? (
+        <LoadingBlock label="Loading your portfolio…" />
+      ) : (
+      <>
+      {!isDemo && albums.length === 0 ? (
+        <div className="mb-4 rounded-2xl border border-teal-100 bg-teal-50/60 px-4 py-3 text-sm text-teal-900 font-[family-name:var(--font-ui)]">
+          <p className="font-bold">Your portfolio is empty</p>
+          <p className="mt-0.5 text-teal-800/80">
+            Create your first album — couples decide faster when they can see your past work.
+          </p>
+        </div>
+      ) : null}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <button type="button" onClick={openCreate} className="text-left">
           <VendorCard
@@ -252,7 +204,7 @@ export default function Portfolio() {
             </div>
             <p className="font-bold text-slate-700 font-[family-name:var(--font-ui)]">Create New Album</p>
             <p className="text-sm text-slate-500 text-center px-4 mt-1 font-[family-name:var(--font-ui)]">
-              Upload photos or video links
+              {isDemo ? 'Upload photos or video links' : 'Upload photos from your device'}
             </p>
           </VendorCard>
         </button>
@@ -286,7 +238,18 @@ export default function Portfolio() {
                 {album.title}
               </h3>
               <div className="mt-2 flex items-center justify-between gap-2 font-[family-name:var(--font-ui)]">
-                <span className="text-xs text-slate-500">{album.published ? 'Published' : 'Draft'}</span>
+                {isDemo ? (
+                  <span className="text-xs text-slate-500">{album.published ? 'Published' : 'Draft'}</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void togglePublished(album)}
+                    className={`text-xs font-bold cursor-pointer ${album.published ? 'text-emerald-700' : 'text-slate-500'} hover:underline`}
+                    title={album.published ? 'Hide from couples' : 'Publish to your profile'}
+                  >
+                    {album.published ? 'Published' : 'Hidden · Publish'}
+                  </button>
+                )}
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -309,6 +272,8 @@ export default function Portfolio() {
           </VendorCard>
         ))}
       </div>
+      </>
+      )}
 
       {modalOpen ? (
         <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4">
@@ -371,10 +336,24 @@ export default function Portfolio() {
               ) : null}
             </div>
             <div className="px-5 py-4 border-t border-slate-100 flex justify-end gap-2 bg-slate-50">
+              {!isDemo && mode === 'edit' && editingId ? (
+                <button
+                  type="button"
+                  onClick={() => void deleteAlbum(editingId)}
+                  className="mr-auto px-3 py-2 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 cursor-pointer"
+                >
+                  Delete
+                </button>
+              ) : null}
               <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200">
                 Cancel
               </button>
-              <button type="button" onClick={save} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#0F766E] hover:bg-[#0D9488]">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => void save()}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#0F766E] hover:bg-[#0D9488] disabled:opacity-60"
+              >
                 {mode === 'edit' ? 'Save changes' : mode === 'upload' ? 'Upload' : 'Create album'}
               </button>
             </div>
@@ -437,7 +416,7 @@ export default function Portfolio() {
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#0F766E]">Couple view</p>
                 <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-900">
-                  {VENDOR_PROFILE.businessName} · Portfolio
+                  {businessName} · Portfolio
                 </h3>
               </div>
               <button type="button" onClick={() => setClientPreview(false)} className="p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" aria-label="Close">
@@ -464,6 +443,11 @@ export default function Portfolio() {
                   </div>
                 </button>
               ))}
+              {!albums.some((a) => a.published) ? (
+                <p className="col-span-full py-10 text-center text-sm text-slate-500 font-[family-name:var(--font-ui)]">
+                  No published albums yet — couples will see your albums here once you add them.
+                </p>
+              ) : null}
             </div>
           </div>
         </div>

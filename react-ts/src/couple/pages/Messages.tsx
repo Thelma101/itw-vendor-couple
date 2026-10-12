@@ -8,6 +8,8 @@ import { useNotifications } from '@/shared/contexts/NotificationContext'
 import ConversationList from '@/couple/components/messages/ConversationList'
 import MessageThread from '@/couple/components/messages/MessageThread'
 import { planningApi, isNetworkError } from '@/shared/lib/api'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import LiveMessages from '@/couple/live/LiveMessages'
 
 interface Message {
   id: number | string
@@ -87,6 +89,11 @@ function mapApiConversation(raw: any, full?: any): Conversation {
 }
 
 const Messages: React.FC = () => {
+  const { isDemo } = useAccount()
+  return isDemo ? <DemoMessages /> : <LiveMessages />
+}
+
+const DemoMessages: React.FC = () => {
   const [params] = useSearchParams()
   const [conversations, setConversations] = useState<Conversation[]>(fallbackConversations)
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(fallbackConversations[0])

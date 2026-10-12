@@ -16,6 +16,7 @@ src/.env
 node_modules
 dist
 dist-ssr
+dist-live
 *.local
 
 # Editor directories and files

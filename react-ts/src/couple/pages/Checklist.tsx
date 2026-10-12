@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Alert,
   Box,
   Button,
   Checkbox,
@@ -14,6 +15,7 @@ import {
   IconButton,
   LinearProgress,
   Paper,
+  Snackbar,
   Stack,
   TextField,
   Typography,
@@ -24,8 +26,12 @@ import { useLocalStorage } from '@/shared/hooks/useLocalStorage'
 import { useFormDialog } from '@/shared/hooks/useFormDialog'
 import { formatDate } from '@/shared/lib/formatters'
 import { STORAGE_KEYS } from '@/shared/lib/constants'
-import { planningApi, isNetworkError } from '@/shared/lib/api'
+import { planningApi, isNetworkError, apiErrorMessage } from '@/shared/lib/api'
+import { scopedKey } from '@/shared/lib/session'
+import { useAccount } from '@/shared/contexts/AccountContext'
 import { useState } from 'react'
+
+type Toast = { message: string; severity: 'success' | 'error' }
 
 interface Task {
   id: string
@@ -52,11 +58,36 @@ function mapApiTask(item: any): Task {
 }
 
 export default function Checklist() {
-  const { data: tasks, save } = useLocalStorage<Task[]>(STORAGE_KEYS.CHECKLIST, defaultTasks)
+  const { isDemo } = useAccount()
+  const live = !isDemo
+  const { data: tasks, save } = useLocalStorage<Task[]>(
+    live ? scopedKey(STORAGE_KEYS.CHECKLIST) : STORAGE_KEYS.CHECKLIST,
+    live ? [] : defaultTasks,
+  )
+  const tasksRef = useRef(tasks)
+  tasksRef.current = tasks
   const [apiReady, setApiReady] = useState(false)
+  const [loading, setLoading] = useState(live)
+  const [loadError, setLoadError] = useState('')
+  const [toast, setToast] = useState<Toast | null>(null)
   const { form, updateForm, dialogOpen, closeDialog, openDialog, handleSave: saveForm } = useFormDialog(
     { title: '', notes: '', dueDate: '' },
     async (formData) => {
+      if (live) {
+        try {
+          const created = await planningApi.createChecklistItem({
+            title: formData.title.trim(),
+            notes: formData.notes.trim() || undefined,
+            dueDate: formData.dueDate || undefined,
+            completed: false,
+          })
+          save([...tasksRef.current, mapApiTask(created)])
+          setToast({ message: 'Task added', severity: 'success' })
+        } catch (error) {
+          setToast({ message: apiErrorMessage(error, 'Could not save this task. Please try again.'), severity: 'error' })
+        }
+        return
+      }
       if (apiReady) {
         try {
           const created = await planningApi.createChecklistItem({
@@ -83,7 +114,25 @@ export default function Checklist() {
     (formData) => formData.title.trim().length > 0
   )
 
+  const loadLive = useCallback(async () => {
+    setLoading(true)
+    setLoadError('')
+    try {
+      const rows = await planningApi.listChecklist()
+      save(Array.isArray(rows) ? rows.map(mapApiTask) : [])
+      setApiReady(true)
+    } catch (error) {
+      setLoadError(apiErrorMessage(error, 'Could not load your checklist. Please try again.'))
+    } finally {
+      setLoading(false)
+    }
+  }, [save])
+
   useEffect(() => {
+    if (live) {
+      void loadLive()
+      return
+    }
     void (async () => {
       try {
         const rows = await planningApi.listChecklist()
@@ -96,7 +145,7 @@ export default function Checklist() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [live])
 
   const stats = useMemo(() => {
     const completed = tasks.filter((task) => task.completed).length
@@ -129,6 +178,15 @@ export default function Checklist() {
     const current = tasks.find((t) => t.id === id)
     if (!current) return
     const completed = !current.completed
+    if (live) {
+      try {
+        await planningApi.updateChecklistItem(id, { completed })
+        save(tasksRef.current.map((task) => (task.id === id ? { ...task, completed } : task)))
+      } catch (error) {
+        setToast({ message: apiErrorMessage(error, 'Could not update this task. Please try again.'), severity: 'error' })
+      }
+      return
+    }
     if (apiReady) {
       try {
         await planningApi.updateChecklistItem(id, { completed })
@@ -140,6 +198,15 @@ export default function Checklist() {
   }
 
   const removeTask = async (id: string) => {
+    if (live) {
+      try {
+        await planningApi.deleteChecklistItem(id)
+        save(tasksRef.current.filter((task) => task.id !== id))
+      } catch (error) {
+        setToast({ message: apiErrorMessage(error, 'Could not delete this task. Please try again.'), severity: 'error' })
+      }
+      return
+    }
     if (apiReady) {
       try {
         await planningApi.deleteChecklistItem(id)
@@ -236,7 +303,33 @@ export default function Checklist() {
           </Paper>
 
           <Stack spacing={1.2}>
-            {orderedTasks.length === 0 && <Typography sx={{ color: '#64748B' }}>No tasks yet. Add your first planning task.</Typography>}
+            {live && loadError ? (
+              <Alert
+                severity="error"
+                action={
+                  <Button color="inherit" size="small" onClick={() => void loadLive()} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                    Retry
+                  </Button>
+                }
+              >
+                {loadError}
+              </Alert>
+            ) : null}
+            {live && loading && orderedTasks.length === 0 ? (
+              <Typography sx={{ color: '#64748B' }}>Loading your checklist…</Typography>
+            ) : orderedTasks.length === 0 && live ? (
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: '1px dashed #CBD5E1', textAlign: 'center', bgcolor: '#fff' }}>
+                <Typography sx={{ fontWeight: 800, color: '#0F172A', mb: 0.5 }}>Your checklist is empty</Typography>
+                <Typography sx={{ color: '#64748B', fontSize: 14, mb: 2 }}>
+                  Add the first thing you need to get done — booking a venue, setting a budget, or drafting your guest list.
+                </Typography>
+                <Button variant="contained" startIcon={<Add />} onClick={openDialog} sx={{ bgcolor: '#00838F', textTransform: 'none', fontWeight: 700 }}>
+                  Add your first task
+                </Button>
+              </Paper>
+            ) : orderedTasks.length === 0 ? (
+              <Typography sx={{ color: '#64748B' }}>No tasks yet. Add your first planning task.</Typography>
+            ) : null}
 
             {orderedTasks.map((task) => {
               const tone = getTaskTone(task)
@@ -329,6 +422,12 @@ export default function Checklist() {
           <Button onClick={addTask} variant="contained" sx={{ textTransform: 'none', bgcolor: '#00838F' }}>Save Task</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar open={!!toast} autoHideDuration={toast?.severity === 'error' ? 5000 : 2500} onClose={() => setToast(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity={toast?.severity || 'success'} onClose={() => setToast(null)} sx={{ fontWeight: 600 }}>
+          {toast?.message}
+        </Alert>
+      </Snackbar>
     </CouplePageShell>
   )
 }

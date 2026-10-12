@@ -9,7 +9,9 @@ import App from './App.tsx'
 import { appTheme } from '@/shared/lib/theme'
 import { initNativeShell } from '@/shared/lib/native'
 import { warmUpApi } from '@/shared/lib/api'
+import { consumeAuthFromUrl } from '@/shared/hooks/useAuthFromUrl'
 
+consumeAuthFromUrl()
 void initNativeShell()
 warmUpApi()
 

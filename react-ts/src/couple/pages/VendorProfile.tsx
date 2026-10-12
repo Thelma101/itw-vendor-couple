@@ -34,6 +34,8 @@ import Nav from '@/couple/components/Nav';
 import { useShortlist } from '@/shared/contexts/ShortlistContext';
 import { mockVendors, resolveVendorId } from '@/shared/data/mockVendors';
 import { activeAddOns, activePackages } from '@/shared/lib/vendorServices';
+import { useAccount } from '@/shared/contexts/AccountContext';
+import LiveVendorProfile from '@/couple/live/LiveVendorProfile';
 
 const defaultVendorData = {
   id: '1',
@@ -106,6 +108,11 @@ const portfolioWorks = [
 ];
 
 const VendorProfile: React.FC = () => {
+  const { isDemo } = useAccount();
+  return isDemo ? <DemoVendorProfile /> : <LiveVendorProfile />;
+};
+
+const DemoVendorProfile: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id: routeId } = useParams<{ id: string }>();

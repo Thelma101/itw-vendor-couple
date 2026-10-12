@@ -3,7 +3,9 @@ import { useParams } from 'react-router-dom'
 import { Box, Chip, Stack, Typography } from '@mui/material'
 import { CardGiftcard } from '@mui/icons-material'
 import Logo from '@/marketing/components/Logo'
-import apiClient from '@/shared/lib/api'
+import apiClient, { apiErrorMessage } from '@/shared/lib/api'
+import { isDemoSession } from '@/shared/lib/session'
+import axios from 'axios'
 
 type GiftStatus = 'wanted' | 'purchased' | 'reserved'
 
@@ -49,7 +51,17 @@ export default function PublicGiftRegistry() {
       try {
         const res = await apiClient.get(`/api/v1/registry/public/${encodeURIComponent(slug)}`)
         if (!cancelled) setData(res.data)
-      } catch {
+      } catch (err) {
+        if (!isDemoSession()) {
+          if (!cancelled) {
+            setError(
+              axios.isAxiosError(err) && err.response?.status === 404
+                ? 'This gift registry could not be found.'
+                : apiErrorMessage(err, 'This gift registry could not be loaded. Please try again.'),
+            )
+          }
+          return
+        }
         // Fallback: local couple registry if API is down and slug matches
         try {
           const local = localStorage.getItem('itw_gift_registry_demo-couple')

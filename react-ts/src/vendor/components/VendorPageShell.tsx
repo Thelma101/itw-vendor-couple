@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Box, Chip, Stack, Typography } from '@mui/material'
 import { useLocation } from 'react-router-dom'
 import BackButton from '@/shared/components/BackButton'
+import { useAccount } from '@/shared/contexts/AccountContext'
 
 interface VendorPageShellProps {
   title?: string
@@ -24,6 +25,8 @@ export default function VendorPageShell({
 }: VendorPageShellProps) {
   const { pathname } = useLocation()
   const isVendorHome = VENDOR_HOME_PATHS.has(pathname)
+  const { isDemo, user } = useAccount()
+  const eyebrow = isDemo ? 'Bloom desk' : user?.business_name || user?.username || 'Vendor desk'
 
   return (
     <Box
@@ -65,7 +68,7 @@ export default function VendorPageShell({
                   fontFamily: 'var(--font-ui)',
                 }}
               >
-                Bloom desk
+                {eyebrow}
               </Typography>
               <Typography
                 sx={{

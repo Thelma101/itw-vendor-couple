@@ -3,11 +3,13 @@
  */
 import { useState } from 'react'
 import { usePlan } from '@/shared/contexts/PlanContext'
+import { useAccount } from '@/shared/contexts/AccountContext'
 import { PLAN_DISPLAY, type PlanId } from '@/shared/data/featureTiers'
 
 const STORAGE_KEY = 'itheewed-demo-banner-dismissed'
 
 export default function DemoBanner() {
+  const { isDemo } = useAccount()
   const { plan, setPlan } = usePlan()
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -17,7 +19,7 @@ export default function DemoBanner() {
     }
   })
 
-  if (dismissed) return null
+  if (dismissed || !isDemo) return null
 
   const dismiss = () => {
     try {

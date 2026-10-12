@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -18,12 +18,16 @@ import {
   TableHead,
   TableRow,
   Typography,
+  CircularProgress,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
 import { Close, ChevronRight } from '@mui/icons-material'
 import { useShortlist } from '@/shared/contexts/ShortlistContext'
 import { mockVendors } from '@/shared/data/mockVendors'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import { directoryApi } from '@/shared/lib/api'
+import { VendorImage } from '@/couple/live/liveVendor'
 
 export type CompareVendorInput = {
   id: string
@@ -75,7 +79,53 @@ export default function CompareVendorsModal({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const { items, isInShortlist, addToShortlist, removeFromShortlist } = useShortlist()
+  const { isDemo } = useAccount()
   const ids = vendorIds.slice(0, 3)
+  const [fetched, setFetched] = useState<Record<string, CompareRow>>({})
+  const [fetchError, setFetchError] = useState('')
+  const [fetching, setFetching] = useState(false)
+
+  const unresolvedIds = ids.filter(
+    (id) => !provided?.some((v) => v.id === id) && !items.some((i) => i.id === id) && !fetched[id],
+  )
+  const unresolvedKey = unresolvedIds.join(',')
+
+  useEffect(() => {
+    if (isDemo || !open || !unresolvedKey) return
+    let cancelled = false
+    setFetching(true)
+    Promise.allSettled(unresolvedKey.split(',').map((id) => directoryApi.get(id)))
+      .then((results) => {
+        if (cancelled) return
+        const next: Record<string, CompareRow> = {}
+        let failed = 0
+        for (const r of results) {
+          if (r.status !== 'fulfilled') {
+            failed += 1
+            continue
+          }
+          const c = r.value.card
+          next[c.id] = {
+            id: c.id,
+            name: c.name,
+            price: c.price || 0,
+            category: c.category,
+            image: c.image || c.avatar,
+            location: c.location,
+            rating: c.rating,
+            reviewCount: c.reviewCount,
+          }
+        }
+        setFetched((prev) => ({ ...prev, ...next }))
+        setFetchError(failed ? 'Some vendors could not be loaded — they may no longer be listed.' : '')
+      })
+      .finally(() => {
+        if (!cancelled) setFetching(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isDemo, open, unresolvedKey])
 
   const vendors = useMemo(() => {
     const pool: CompareRow[] = []
@@ -90,8 +140,8 @@ export default function CompareVendorsModal({
           category: fromProp.category,
           image: fromProp.image,
           location: fromProp.location || '',
-          rating: fromProp.rating ?? 4.8,
-          reviewCount: fromProp.reviewCount ?? 40,
+          rating: fromProp.rating ?? (isDemo ? 4.8 : 0),
+          reviewCount: fromProp.reviewCount ?? (isDemo ? 40 : 0),
         })
         continue
       }
@@ -103,10 +153,14 @@ export default function CompareVendorsModal({
           price: Number(fromShortlist.price) || 0,
           category: fromShortlist.category,
           image: fromShortlist.image,
-          location: '',
-          rating: 4.8,
-          reviewCount: 40,
+          location: isDemo ? '' : fromShortlist.location || '',
+          rating: isDemo ? 4.8 : fromShortlist.rating || 0,
+          reviewCount: isDemo ? 40 : 0,
         })
+        continue
+      }
+      if (!isDemo) {
+        if (fetched[id]) pool.push(fetched[id])
         continue
       }
       const fromMock = mockVendors.find((v) => v.id === id)
@@ -124,29 +178,35 @@ export default function CompareVendorsModal({
       }
     }
     return pool
-  }, [ids, items, provided])
+  }, [ids, items, provided, isDemo, fetched])
 
   const bestPriceId = useMemo(() => {
-    if (!vendors.length) return null
-    return vendors.reduce((best, v) => (v.price < best.price ? v : best)).id
-  }, [vendors])
+    const priced = isDemo ? vendors : vendors.filter((v) => v.price > 0)
+    if (!priced.length) return null
+    return priced.reduce((best, v) => (v.price < best.price ? v : best)).id
+  }, [vendors, isDemo])
 
   const bestRatingId = useMemo(() => {
-    if (!vendors.length) return null
-    return vendors.reduce((best, v) => (v.rating > best.rating ? v : best)).id
-  }, [vendors])
+    const rated = isDemo ? vendors : vendors.filter((v) => v.rating > 0)
+    if (!rated.length) return null
+    return rated.reduce((best, v) => (v.rating > best.rating ? v : best)).id
+  }, [vendors, isDemo])
+
+  const priceText = (v: CompareRow) => (isDemo || v.price > 0 ? naira(v.price) : 'On request')
+  const showRating = (v: CompareRow) => isDemo || v.rating > 0
+  const messageLink = (v: CompareRow) => `/couple/messages?vendor=${encodeURIComponent(isDemo ? v.name : v.id)}`
 
   const featureRows = [
     { label: 'Category', get: (v: CompareRow) => v.category },
     { label: 'Location', get: (v: CompareRow) => v.location || '—' },
     {
       label: 'Starting price',
-      get: (v: CompareRow) => naira(v.price),
+      get: priceText,
       highlight: (v: CompareRow) => v.id === bestPriceId,
     },
     {
       label: 'Rating',
-      get: (v: CompareRow) => `${v.rating} (${v.reviewCount})`,
+      get: (v: CompareRow) => (showRating(v) ? `${v.rating} (${v.reviewCount})` : 'No reviews yet'),
       highlight: (v: CompareRow) => v.id === bestRatingId,
     },
     { label: 'Shortlisted', get: (v: CompareRow) => (isInShortlist(v.id) ? 'Yes' : 'No') },
@@ -198,13 +258,17 @@ export default function CompareVendorsModal({
         </Stack>
       </DialogTitle>
       <DialogContent dividers sx={{ bgcolor: '#F8FAFC', px: { xs: 1.5, md: 3 }, py: { xs: 1.5, md: 2 } }}>
-        {vendors.length < 2 ? (
+        {fetching && vendors.length < 2 ? (
+          <Box sx={{ display: 'grid', placeItems: 'center', py: 6 }}>
+            <CircularProgress size={28} sx={{ color: '#0F766E' }} />
+          </Box>
+        ) : vendors.length < 2 ? (
           <Paper
             elevation={0}
             sx={{ p: 4, borderRadius: 3, border: '1px solid #E2E8F0', textAlign: 'center', bgcolor: '#fff' }}
           >
             <Typography sx={{ color: '#64748B' }}>
-              Toggle Compare on at least 2 vendors to see them side by side.
+              {fetchError || 'Toggle Compare on at least 2 vendors to see them side by side.'}
             </Typography>
           </Paper>
         ) : (
@@ -226,12 +290,16 @@ export default function CompareVendorsModal({
                     sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden', bgcolor: '#fff' }}
                   >
                     <Box sx={{ display: 'flex', gap: 1.5, p: 1.5 }}>
-                      <Box
-                        component="img"
-                        src={v.image}
-                        alt={v.name}
-                        sx={{ width: 72, height: 72, borderRadius: 1.5, objectFit: 'cover', flexShrink: 0 }}
-                      />
+                      {isDemo ? (
+                        <Box
+                          component="img"
+                          src={v.image}
+                          alt={v.name}
+                          sx={{ width: 72, height: 72, borderRadius: 1.5, objectFit: 'cover', flexShrink: 0 }}
+                        />
+                      ) : (
+                        <VendorImage src={v.image} name={v.name} rounded={1.5} sx={{ width: 72, height: 72, flexShrink: 0 }} />
+                      )}
                       <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Stack direction="row" spacing={0.5} sx={{ mb: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
                           {v.id === bestPriceId ? (
@@ -256,12 +324,14 @@ export default function CompareVendorsModal({
                           {v.category}
                           {v.location ? ` · ${v.location}` : ''}
                         </Typography>
-                        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
-                          <Rating value={v.rating} readOnly size="small" precision={0.1} sx={{ fontSize: 14 }} />
-                          <Typography sx={{ fontSize: 11, color: '#64748B' }}>({v.reviewCount})</Typography>
-                        </Stack>
+                        {showRating(v) ? (
+                          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
+                            <Rating value={v.rating} readOnly size="small" precision={0.1} sx={{ fontSize: 14 }} />
+                            <Typography sx={{ fontSize: 11, color: '#64748B' }}>({v.reviewCount})</Typography>
+                          </Stack>
+                        ) : null}
                         <Typography sx={{ mt: 0.5, fontWeight: 800, color: '#0F766E', fontSize: 16 }}>
-                          {naira(v.price)}
+                          {priceText(v)}
                         </Typography>
                       </Box>
                     </Box>
@@ -292,7 +362,7 @@ export default function CompareVendorsModal({
                         variant="outlined"
                         onClick={() => {
                           onClose()
-                          navigate(`/couple/messages?vendor=${encodeURIComponent(v.name)}`)
+                          navigate(messageLink(v))
                         }}
                         sx={{
                           textTransform: 'none',
@@ -399,7 +469,11 @@ export default function CompareVendorsModal({
                       elevation={0}
                       sx={{ borderRadius: 3, border: '1px solid #E2E8F0', overflow: 'hidden', bgcolor: '#fff' }}
                     >
-                      <Box component="img" src={v.image} alt={v.name} sx={{ width: '100%', height: 140, objectFit: 'cover' }} />
+                      {isDemo ? (
+                        <Box component="img" src={v.image} alt={v.name} sx={{ width: '100%', height: 140, objectFit: 'cover' }} />
+                      ) : (
+                        <VendorImage src={v.image} name={v.name} sx={{ width: '100%', height: 140 }} />
+                      )}
                       <Box sx={{ p: 2 }}>
                         <Stack direction="row" spacing={0.75} sx={{ mb: 1, flexWrap: 'wrap', gap: 0.5 }}>
                           {v.id === bestPriceId ? (
@@ -414,12 +488,14 @@ export default function CompareVendorsModal({
                           {v.category}
                           {v.location ? ` · ${v.location}` : ''}
                         </Typography>
-                        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 1 }}>
-                          <Rating value={v.rating} readOnly size="small" precision={0.1} />
-                          <Typography sx={{ fontSize: 12, color: '#64748B' }}>({v.reviewCount})</Typography>
-                        </Stack>
+                        {showRating(v) ? (
+                          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 1 }}>
+                            <Rating value={v.rating} readOnly size="small" precision={0.1} />
+                            <Typography sx={{ fontSize: 12, color: '#64748B' }}>({v.reviewCount})</Typography>
+                          </Stack>
+                        ) : null}
                         <Typography sx={{ mt: 1.5, fontWeight: 800, color: '#0F766E', fontSize: 18 }}>
-                          {naira(v.price)}
+                          {priceText(v)}
                         </Typography>
                         <Stack spacing={1} sx={{ mt: 2 }}>
                           <Button
@@ -439,7 +515,7 @@ export default function CompareVendorsModal({
                               variant="outlined"
                               onClick={() => {
                                 onClose()
-                                navigate(`/couple/messages?vendor=${encodeURIComponent(v.name)}`)
+                                navigate(messageLink(v))
                               }}
                               sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#0F766E', color: '#0F766E' }}
                             >

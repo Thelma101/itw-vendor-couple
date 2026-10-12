@@ -5,8 +5,9 @@ import ReferralInviteCard from '@/shared/components/ReferralInviteCard'
 import { usePlan } from '@/shared/contexts/PlanContext'
 import { PLAN_LIMITS } from '@/shared/data/featureTiers'
 import { showToast } from '@/shared/components/SimpleToast'
-import { isNetworkError, paymentsApi } from '@/shared/lib/api'
+import { apiErrorMessage, paymentsApi } from '@/shared/lib/api'
 import { getPaystackPublicKey, openPaystackCheckout, payerEmailFallback } from '@/shared/lib/paystack'
+import { useAccount } from '@/shared/contexts/AccountContext'
 
 type BoostId = 'week' | 'fortnight' | 'month' | 'quarter'
 type PlanPick = 'standard' | 'premium' | 'business' | 'enterprise'
@@ -74,16 +75,11 @@ function naira(n: number) {
   return `₦${n.toLocaleString('en-NG')}`
 }
 
-function authToken() {
-  return localStorage.getItem('authToken') || ''
-}
-
-function isDemoSession() {
-  const t = authToken()
-  return !t || t.startsWith('demo-')
-}
+const VERIFY_FAILED =
+  'We could not confirm this payment yet, so nothing has changed on your plan. If you were charged, refresh in a minute or contact support with your Paystack receipt.'
 
 export default function Subscription() {
+  const { isDemo } = useAccount()
   const {
     plan,
     setPlan,
@@ -108,7 +104,7 @@ export default function Subscription() {
     if (!reference) return
     void (async () => {
       try {
-        if (isDemoSession()) {
+        if (isDemo) {
           window.history.replaceState({}, '', '/vendor/subscription')
           return
         }
@@ -123,11 +119,14 @@ export default function Subscription() {
           showToast(`${result.boostName || 'Boost'} activated · +${result.unlockCredits} unlock(s)`, 'success')
         }
         window.history.replaceState({}, '', '/vendor/subscription')
-      } catch {
-        /* popup verify may still complete */
+      } catch (err) {
+        if (!isDemo) {
+          showToast(apiErrorMessage(err, VERIFY_FAILED), 'error')
+          window.history.replaceState({}, '', '/vendor/subscription')
+        }
       }
     })()
-  }, [addUnlockCredits, setActiveBoostId, setPlan])
+  }, [isDemo, addUnlockCredits, setActiveBoostId, setPlan])
 
   const planCards = [
     { id: 'standard' as const, name: 'Starter', price: 0, note: '5 unlocks / mo' },
@@ -140,6 +139,10 @@ export default function Subscription() {
 
   const buyPlan = async () => {
     if (selectedPlan === 'standard') {
+      if (!isDemo) {
+        showToast('Paid plans run month to month — Starter applies automatically when your current plan ends.', 'info')
+        return
+      }
       setPlan('standard')
       setActiveBoostId(null)
       showToast('Starter is active', 'success')
@@ -147,7 +150,7 @@ export default function Subscription() {
     }
 
     const publicKey = getPaystackPublicKey()
-    if (!publicKey) {
+    if (!publicKey && isDemo) {
       showToast('Add VITE_PAYSTACK_PUBLIC_KEY to open Paystack', 'error')
       return
     }
@@ -160,7 +163,7 @@ export default function Subscription() {
       let key = publicKey
       let authorizationUrl: string | undefined
 
-      if (!isDemoSession()) {
+      if (!isDemo) {
         try {
           const init = await paymentsApi.initPlan(selectedPlan)
           reference = init.reference
@@ -169,8 +172,18 @@ export default function Subscription() {
           key = getPaystackPublicKey(init.publicKey)
           authorizationUrl = init.authorizationUrl
         } catch (err) {
-          if (!isNetworkError(err)) throw err
-          /* fall through to client Paystack */
+          setPayingPlan(false)
+          showToast(apiErrorMessage(err, 'Could not start the payment. Please try again.'), 'error')
+          return
+        }
+        if (!key) {
+          if (authorizationUrl) {
+            window.location.assign(authorizationUrl)
+            return
+          }
+          setPayingPlan(false)
+          showToast('Payments are not available right now. Please try again later.', 'error')
+          return
         }
       }
 
@@ -182,20 +195,19 @@ export default function Subscription() {
         authorizationUrl,
         callback: (response) => {
           void (async () => {
-            try {
-              if (!isDemoSession()) {
+            if (!isDemo) {
+              try {
                 const result = await paymentsApi.verify(response.reference)
-                if (result.planId === 'premium' || result.planId === 'business' || result.planId === 'enterprise') {
-                  setPlan(result.planId)
-                } else {
-                  setPlan(selectedPlan)
-                }
-                showToast(`${result.planName || selectedMeta.name} activated`, 'success')
-              } else {
                 setPlan(selectedPlan)
-                showToast(`${selectedMeta.name} activated`, 'success')
+                showToast(`${result.planName || selectedMeta.name} activated`, 'success')
+              } catch (err) {
+                showToast(apiErrorMessage(err, VERIFY_FAILED), 'error')
+              } finally {
+                setPayingPlan(false)
               }
-            } catch {
+              return
+            }
+            try {
               setPlan(selectedPlan)
               showToast(`${selectedMeta.name} activated`, 'success')
             } finally {
@@ -214,7 +226,7 @@ export default function Subscription() {
   const buyBoost = async (id: BoostId) => {
     const b = boosts.find((x) => x.id === id)!
     const publicKey = getPaystackPublicKey()
-    if (!publicKey) {
+    if (!publicKey && isDemo) {
       showToast('Add VITE_PAYSTACK_PUBLIC_KEY to open Paystack', 'error')
       return
     }
@@ -227,7 +239,7 @@ export default function Subscription() {
       let key = publicKey
       let authorizationUrl: string | undefined
 
-      if (!isDemoSession()) {
+      if (!isDemo) {
         try {
           const init = await paymentsApi.initBoost(id)
           reference = init.reference
@@ -236,7 +248,18 @@ export default function Subscription() {
           key = getPaystackPublicKey(init.publicKey)
           authorizationUrl = init.authorizationUrl
         } catch (err) {
-          if (!isNetworkError(err)) throw err
+          setPayingId(null)
+          showToast(apiErrorMessage(err, 'Could not start the payment. Please try again.'), 'error')
+          return
+        }
+        if (!key) {
+          if (authorizationUrl) {
+            window.location.assign(authorizationUrl)
+            return
+          }
+          setPayingId(null)
+          showToast('Payments are not available right now. Please try again later.', 'error')
+          return
         }
       }
 
@@ -248,23 +271,21 @@ export default function Subscription() {
         authorizationUrl,
         callback: (response) => {
           void (async () => {
-            try {
-              if (!isDemoSession()) {
+            if (!isDemo) {
+              try {
                 const result = await paymentsApi.verify(response.reference)
                 setActiveBoostId(result.boostId as BoostId)
                 if (result.upgradesPlan) setPlan('premium')
                 if (result.unlockCredits) addUnlockCredits(result.unlockCredits)
-                showToast(
-                  `${result.boostName || b.name} paid · +${result.unlockCredits} unlock(s)`,
-                  'success',
-                )
-              } else {
-                setActiveBoostId(id)
-                if (id === 'month' || id === 'quarter') setPlan('premium')
-                addUnlockCredits(b.unlockCredits)
-                showToast(`${b.name} paid · +${b.unlockCredits} unlock(s)`, 'success')
+                showToast(`${result.boostName || b.name} paid · +${result.unlockCredits} unlock(s)`, 'success')
+              } catch (err) {
+                showToast(apiErrorMessage(err, VERIFY_FAILED), 'error')
+              } finally {
+                setPayingId(null)
               }
-            } catch {
+              return
+            }
+            try {
               setActiveBoostId(id)
               if (id === 'month' || id === 'quarter') setPlan('premium')
               addUnlockCredits(b.unlockCredits)
@@ -318,7 +339,7 @@ export default function Subscription() {
       <div className="flex flex-wrap items-center gap-3 mb-8 font-[family-name:var(--font-ui)]">
         <button
           type="button"
-          disabled={payingPlan || selectedPlan === plan}
+          disabled={payingPlan || selectedPlan === plan || (!isDemo && selectedPlan === 'standard')}
           onClick={() => void buyPlan()}
           className="px-5 py-3 rounded-xl text-sm font-bold bg-[#0F766E] hover:bg-[#0D9488] text-white disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
         >
@@ -327,7 +348,9 @@ export default function Subscription() {
             : selectedPlan === plan
               ? `${selectedMeta.name} is active`
               : selectedPlan === 'standard'
-                ? 'Switch to Starter'
+                ? isDemo
+                  ? 'Switch to Starter'
+                  : 'Starter resumes when your plan ends'
                 : `Pay with Paystack · ${naira(selectedMeta.price)}/mo`}
         </button>
         <span className="text-sm text-slate-600">

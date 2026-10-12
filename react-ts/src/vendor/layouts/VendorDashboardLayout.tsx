@@ -6,6 +6,8 @@ import VendorBottomNav from '@/vendor/components/VendorBottomNav'
 import Logo from '@/marketing/components/Logo'
 import { VENDOR_PROFILE } from '@/vendor/lib/vendorProfile'
 import NotificationPanel from '@/couple/components/NotificationPanel'
+import { profileString, useAccount } from '@/shared/contexts/AccountContext'
+import ProfileNudge from '@/vendor/components/ProfileNudge'
 
 const mainNavItems = [
   { label: 'Overview', path: '/vendor', end: true },
@@ -21,6 +23,14 @@ const mainNavItems = [
 export default function VendorDashboardLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { isDemo, user, profile } = useAccount()
+
+  const businessName = isDemo ? VENDOR_PROFILE.businessName : user?.business_name || user?.username || ''
+  const avatar = isDemo ? VENDOR_PROFILE.avatar : profileString(profile, 'avatar') || undefined
+  const verified = isDemo ? VENDOR_PROFILE.verified : false
+  const subline = isDemo
+    ? `${VENDOR_PROFILE.category} · ${VENDOR_PROFILE.location}`
+    : [profileString(profile, 'category'), profileString(profile, 'location')].filter(Boolean).join(' · ')
 
   const isActive = (path: string, end?: boolean) => {
     if (end) return location.pathname === path || location.pathname === `${path}/` || location.pathname === '/vendor/overview'
@@ -69,9 +79,9 @@ export default function VendorDashboardLayout() {
                     lineHeight: 1.2,
                   }}
                 >
-                  {VENDOR_PROFILE.businessName}
+                  {businessName}
                 </Box>
-                {VENDOR_PROFILE.verified ? (
+                {verified ? (
                   <Box
                     component="span"
                     sx={{
@@ -91,9 +101,9 @@ export default function VendorDashboardLayout() {
                   </Box>
                 ) : null}
               </Box>
-              <Box sx={{ fontSize: 12, color: '#64748B', mt: 0.25, fontFamily: 'var(--font-ui)' }}>
-                {VENDOR_PROFILE.category} · {VENDOR_PROFILE.location}
-              </Box>
+              {subline ? (
+                <Box sx={{ fontSize: 12, color: '#64748B', mt: 0.25, fontFamily: 'var(--font-ui)' }}>{subline}</Box>
+              ) : null}
             </Box>
           </Box>
 
@@ -140,7 +150,9 @@ export default function VendorDashboardLayout() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
             <NotificationPanel />
             <IconButton onClick={() => navigate('/vendor/account')} aria-label="Account" sx={{ p: 0.5 }}>
-              <Avatar src={VENDOR_PROFILE.avatar} sx={{ width: 36, height: 36, border: '2px solid #CCFBF1' }} />
+              <Avatar src={avatar} sx={{ width: 36, height: 36, border: '2px solid #CCFBF1', bgcolor: '#0F766E', fontSize: 15 }}>
+                {businessName.charAt(0).toUpperCase() || undefined}
+              </Avatar>
             </IconButton>
             <IconButton
               onClick={handleLogout}
@@ -154,6 +166,7 @@ export default function VendorDashboardLayout() {
       </AppBar>
 
       <Box component="main" sx={{ flex: 1, width: '100%', overflowX: 'hidden', pb: { xs: 10, md: 3 } }}>
+        {!isDemo ? <ProfileNudge /> : null}
         <Outlet />
       </Box>
 

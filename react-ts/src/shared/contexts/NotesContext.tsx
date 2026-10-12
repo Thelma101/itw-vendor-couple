@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
+import { useServerState } from '@/shared/hooks/useServerState'
+import { useAccount } from '@/shared/contexts/AccountContext'
 
 export interface Note {
   id: string
@@ -19,68 +21,30 @@ interface NotesContextType {
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined)
 
-const NOTES_STORAGE_KEY = 'itw_notes'
-
 export function NotesProvider({ children }: { children: React.ReactNode }) {
-  const [notes, setNotes] = useState<Note[]>([])
+  useAccount() // re-render when the signed-in account changes
+  const { data: notes, save } = useServerState<Note[]>('notes', { demoKey: 'itw_notes', demo: [], empty: [] })
   const [currentNote, setCurrentNote] = useState('')
 
-  // Load notes from localStorage on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(NOTES_STORAGE_KEY)
-      if (saved) {
-        setNotes(JSON.parse(saved))
-      }
-    } catch {
-      console.error('Failed to load notes')
-    }
-  }, [])
+  const addNote = useCallback(
+    (content: string, page: string) => {
+      if (!content.trim()) return
+      const newNote: Note = { id: Date.now().toString(), content: content.trim(), timestamp: Date.now(), page }
+      void save((prev) => [newNote, ...prev])
+      setCurrentNote('')
+    },
+    [save],
+  )
 
-  // Auto-save notes to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes))
-    } catch {
-      console.error('Failed to save notes')
-    }
-  }, [notes])
+  const deleteNote = useCallback((id: string) => void save((prev) => prev.filter((note) => note.id !== id)), [save])
 
-  const addNote = useCallback((content: string, page: string) => {
-    if (!content.trim()) return
+  const updateNote = useCallback(
+    (id: string, content: string) =>
+      void save((prev) => prev.map((note) => (note.id === id ? { ...note, content: content.trim(), timestamp: Date.now() } : note))),
+    [save],
+  )
 
-    const newNote: Note = {
-      id: Date.now().toString(),
-      content: content.trim(),
-      timestamp: Date.now(),
-      page,
-    }
-
-    setNotes((prev) => [newNote, ...prev])
-    setCurrentNote('')
-  }, [])
-
-  const deleteNote = useCallback((id: string) => {
-    setNotes((prev) => prev.filter((note) => note.id !== id))
-  }, [])
-
-  const updateNote = useCallback((id: string, content: string) => {
-    setNotes((prev) =>
-      prev.map((note) =>
-        note.id === id
-          ? {
-              ...note,
-              content: content.trim(),
-              timestamp: Date.now(),
-            }
-          : note
-      )
-    )
-  }, [])
-
-  const getAllNotes = useCallback(() => {
-    return notes.sort((a, b) => b.timestamp - a.timestamp)
-  }, [notes])
+  const getAllNotes = useCallback(() => [...notes].sort((a, b) => b.timestamp - a.timestamp), [notes])
 
   return (
     <NotesContext.Provider value={{ notes, currentNote, setCurrentNote, addNote, deleteNote, updateNote, getAllNotes }}>

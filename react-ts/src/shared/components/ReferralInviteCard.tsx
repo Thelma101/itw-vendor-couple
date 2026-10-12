@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { ContentCopy, PersonAddAlt } from '@mui/icons-material'
+import { ContentCopy, PersonAddAlt, Share } from '@mui/icons-material'
 import { showToast } from '@/shared/components/SimpleToast'
+import { useAccount } from '@/shared/contexts/AccountContext'
 import {
   type ReferralAudience,
   COUPLE_REFERRAL_REWARD,
@@ -18,16 +19,24 @@ type Props = {
 }
 
 export default function ReferralInviteCard({ audience, className = '' }: Props) {
+  const { isDemo, user } = useAccount()
   const [code, setCode] = useState('')
   const [count, setCount] = useState(0)
 
   useEffect(() => {
     setCode(getOrCreateReferralCode(audience))
-    setCount(getReferralCount(audience))
-  }, [audience])
+    setCount(isDemo ? getReferralCount(audience) : 0)
+  }, [audience, isDemo, user?.id])
 
   const link = code ? referralLink(audience, code) : ''
-  const reward = audience === 'couple' ? COUPLE_REFERRAL_REWARD : VENDOR_REFERRAL_REWARD
+  const reward = isDemo
+    ? audience === 'couple'
+      ? COUPLE_REFERRAL_REWARD
+      : VENDOR_REFERRAL_REWARD
+    : audience === 'couple'
+      ? 'Know a couple planning their wedding? Share your personal invite link so they can join iTheeWed.'
+      : 'Know another wedding vendor? Share your personal invite link so they can list on iTheeWed.'
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
   const copy = async (text: string, label: string) => {
     try {
@@ -35,6 +44,18 @@ export default function ReferralInviteCard({ audience, className = '' }: Props) 
       showToast(`${label} copied`, 'success')
     } catch {
       showToast('Could not copy — select and copy manually', 'error')
+    }
+  }
+
+  const share = async () => {
+    try {
+      await navigator.share({
+        title: 'Join me on iTheeWed',
+        text: `Use my invite code ${code} when you sign up for iTheeWed.`,
+        url: link,
+      })
+    } catch {
+      /* user dismissed the share sheet */
     }
   }
 
@@ -60,7 +81,9 @@ export default function ReferralInviteCard({ audience, className = '' }: Props) 
             {audience === 'couple' ? 'Invite couples' : 'Invite vendors'}
           </h3>
           <p className="text-sm text-slate-500 mt-1">{reward}</p>
-          <p className="text-xs font-bold text-[#0F766E] mt-2">{count} successful referral{count === 1 ? '' : 's'}</p>
+          {isDemo ? (
+            <p className="text-xs font-bold text-[#0F766E] mt-2">{count} successful referral{count === 1 ? '' : 's'}</p>
+          ) : null}
         </div>
       </div>
 
@@ -93,16 +116,28 @@ export default function ReferralInviteCard({ audience, className = '' }: Props) 
           >
             Copy link
           </button>
+          {!isDemo && canShare ? (
+            <button
+              type="button"
+              onClick={() => void share()}
+              aria-label="Share invite link"
+              className="shrink-0 inline-flex items-center px-3 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              <Share sx={{ fontSize: 18 }} />
+            </button>
+          ) : null}
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={simulateFriendJoined}
-        className="mt-3 text-xs font-bold text-slate-500 hover:text-[#0F766E] hover:underline"
-      >
-        Demo: simulate a successful referral
-      </button>
+      {isDemo ? (
+        <button
+          type="button"
+          onClick={simulateFriendJoined}
+          className="mt-3 text-xs font-bold text-slate-500 hover:text-[#0F766E] hover:underline"
+        >
+          Demo: simulate a successful referral
+        </button>
+      ) : null}
     </div>
   )
 }

@@ -1,6 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
+import { useServerState } from '@/shared/hooks/useServerState';
+import { useAccount } from '@/shared/contexts/AccountContext';
 
 export interface ShortlistItem {
   id: string;
@@ -8,6 +10,8 @@ export interface ShortlistItem {
   price: number;
   category: string;
   image: string;
+  location?: string;
+  rating?: number;
   capacity?: string;
   notes?: string; // For couple's notes about the vendor
 }
@@ -25,39 +29,35 @@ interface ShortlistContextType {
 const ShortlistContext = createContext<ShortlistContextType | undefined>(undefined);
 
 export function ShortlistProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<ShortlistItem[]>([]);
+  useAccount(); // re-render when the signed-in account changes
+  const { data: items, save } = useServerState<ShortlistItem[]>('shortlist', {
+    demoKey: 'itw_shortlist',
+    demo: [],
+    empty: [],
+  });
 
   const addToShortlist = (item: ShortlistItem) => {
-    setItems(prev => {
-      if (prev.find(i => i.id === item.id)) {
-        return prev; // Already in shortlist
-      }
-      return [...prev, item];
-    });
+    void save((prev) => (prev.some((i) => i.id === item.id) ? prev : [...prev, item]));
   };
 
   const removeFromShortlist = (id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id));
+    void save((prev) => prev.filter((item) => item.id !== id));
   };
 
   const clearShortlist = () => {
-    setItems([]);
+    void save([]);
   };
 
-  const isInShortlist = (id: string) => {
-    return items.some(item => item.id === id);
-  };
+  const isInShortlist = (id: string) => items.some((item) => item.id === id);
 
   const updateNotes = (id: string, notes: string) => {
-    setItems(prev =>
-      prev.map(item => (item.id === id ? { ...item, notes } : item))
-    );
+    void save((prev) => prev.map((item) => (item.id === id ? { ...item, notes } : item)));
   };
 
-  const totalItems = items.length;
-
   return (
-    <ShortlistContext.Provider value={{ items, addToShortlist, removeFromShortlist, clearShortlist, isInShortlist, updateNotes, totalItems }}>
+    <ShortlistContext.Provider
+      value={{ items, addToShortlist, removeFromShortlist, clearShortlist, isInShortlist, updateNotes, totalItems: items.length }}
+    >
       {children}
     </ShortlistContext.Provider>
   );

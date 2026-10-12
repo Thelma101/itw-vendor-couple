@@ -3,13 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { Add, CheckCircle, Close, DeleteOutline, EditOutlined, InfoOutlined, ToggleOff, ToggleOn, VisibilityOutlined } from '@mui/icons-material'
 import VendorPageShell from '@/vendor/components/VendorPageShell'
 import { showToast } from '@/shared/components/SimpleToast'
-import {
-  type ServiceType,
-  type VendorService,
-  loadVendorServices,
-  saveVendorServices,
-} from '@/shared/lib/vendorServices'
+import { type ServiceType, type VendorService, useVendorServices } from '@/shared/lib/vendorServices'
 import { VENDOR_PROFILE } from '@/vendor/lib/vendorProfile'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import { EmptyState, ErrorBanner, LoadingBlock } from '@/vendor/components/LiveState'
 
 const emptyForm = {
   name: '',
@@ -26,16 +23,22 @@ function naira(n: number) {
 
 export default function Services() {
   const navigate = useNavigate()
-  const [services, setServices] = useState<VendorService[]>(() => loadVendorServices())
+  const { isDemo, user } = useAccount()
+  const { data: services, save: saveServices, loading, error } = useVendorServices()
   const [filter, setFilter] = useState<'All' | ServiceType | 'Inactive'>('All')
   const [modalOpen, setModalOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [editing, setEditing] = useState<VendorService | null>(null)
   const [form, setForm] = useState(emptyForm)
 
-  const persist = (next: VendorService[]) => {
-    setServices(next)
-    saveVendorServices(next)
+  const businessName = isDemo ? VENDOR_PROFILE.businessName : user?.business_name || user?.username || 'Your business'
+  const publicProfilePath = isDemo ? '/couple/vendor/bloom-co' : user?.id ? `/couple/vendor/${encodeURIComponent(user.id)}` : ''
+
+  /** Saves the catalog; live accounts get an error toast (and no success toast) when the server rejects it. */
+  const persist = async (next: VendorService[]) => {
+    const ok = await saveServices(next)
+    if (!ok) showToast('Could not save to your account. Check your connection and try again.', 'error')
+    return ok
   }
 
   const visible = useMemo(() => {
@@ -63,7 +66,7 @@ export default function Services() {
     setModalOpen(true)
   }
 
-  const save = () => {
+  const save = async () => {
     if (!form.name.trim() || !form.price || Number(form.price) <= 0) {
       showToast('Add a name and valid price', 'error')
       return
@@ -88,9 +91,10 @@ export default function Services() {
     if (payload.popular && payload.type === 'Package') {
       next = next.map((s) => (s.id === payload.id ? s : { ...s, popular: s.type === 'Package' ? false : s.popular }))
     }
-    persist(next)
     setModalOpen(false)
-    showToast(editing ? 'Updated — couples will see this on your profile' : 'Added — visible to couples when Live', 'success')
+    if (await persist(next)) {
+      showToast(editing ? 'Updated — couples will see this on your profile' : 'Added — visible to couples when Live', 'success')
+    }
   }
 
   return (
@@ -127,6 +131,20 @@ export default function Services() {
         </div>
       }
     >
+      {!isDemo && error ? <ErrorBanner message={error} /> : null}
+      {!isDemo && loading && services.length === 0 ? (
+        <LoadingBlock label="Loading your packages…" />
+      ) : !isDemo && services.length === 0 ? (
+        <EmptyState
+          title="Add your first package"
+          body="Packages are the pricing cards couples see on your profile. Add at least one so couples can enquire and book you."
+          actions={[
+            { label: 'Add your first package', onClick: () => openCreate('Package') },
+            { label: 'Add an add-on', onClick: () => openCreate('Add-on') },
+          ]}
+        />
+      ) : (
+      <>
       <div className="flex gap-2 overflow-x-auto pb-1 mb-5 font-[family-name:var(--font-ui)]">
         {(['All', 'Package', 'Add-on', 'Inactive'] as const).map((key) => (
           <button
@@ -204,8 +222,9 @@ export default function Services() {
                   <button
                     type="button"
                     onClick={() => {
-                      persist(services.map((s) => (s.id === service.id ? { ...s, active: !s.active } : s)))
-                      showToast(service.active ? 'Hidden from couples' : 'Live on your profile', 'success')
+                      void persist(services.map((s) => (s.id === service.id ? { ...s, active: !s.active } : s))).then((ok) => {
+                        if (ok) showToast(service.active ? 'Hidden from couples' : 'Live on your profile', 'success')
+                      })
                     }}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 cursor-pointer"
                   >
@@ -215,8 +234,9 @@ export default function Services() {
                   <button
                     type="button"
                     onClick={() => {
-                      persist(services.filter((s) => s.id !== service.id))
-                      showToast('Removed', 'info')
+                      void persist(services.filter((s) => s.id !== service.id)).then((ok) => {
+                        if (ok) showToast('Removed', 'info')
+                      })
                     }}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-rose-600 border border-rose-100 hover:bg-rose-50 ml-auto cursor-pointer"
                   >
@@ -238,6 +258,8 @@ export default function Services() {
           </button>
         </div>
       ) : null}
+      </>
+      )}
 
       {previewOpen ? (
         <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4">
@@ -246,7 +268,7 @@ export default function Services() {
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-3 bg-white border-b border-slate-100">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#0F766E]">Couple view</p>
-                <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-900">{VENDOR_PROFILE.businessName} · Pricing</h3>
+                <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-900">{businessName} · Pricing</h3>
               </div>
               <button type="button" onClick={() => setPreviewOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" aria-label="Close">
                 <Close fontSize="small" />
@@ -269,9 +291,9 @@ export default function Services() {
                           </li>
                         ))}
                       </ul>
-                      <button type="button" className="mt-4 w-full py-2 rounded-xl bg-[#0F766E] text-white text-xs font-bold cursor-pointer">
+                      <div className="mt-4 w-full py-2 rounded-xl bg-[#0F766E] text-white text-xs font-bold text-center">
                         Select package
-                      </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -288,16 +310,18 @@ export default function Services() {
                   ))}
                 </div>
               </section>
-              <button
-                type="button"
-                onClick={() => {
-                  setPreviewOpen(false)
-                  navigate('/couple/vendor/bloom-co')
-                }}
-                className="text-sm font-bold text-[#0F766E] hover:underline cursor-pointer"
-              >
-                Open full public profile →
-              </button>
+              {publicProfilePath ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewOpen(false)
+                    navigate(publicProfilePath)
+                  }}
+                  className="text-sm font-bold text-[#0F766E] hover:underline cursor-pointer"
+                >
+                  Open full public profile →
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -391,7 +415,7 @@ export default function Services() {
               <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200">
                 Cancel
               </button>
-              <button type="button" onClick={save} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#0F766E] hover:bg-[#0D9488]">
+              <button type="button" onClick={() => void save()} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#0F766E] hover:bg-[#0D9488]">
                 Save
               </button>
             </div>

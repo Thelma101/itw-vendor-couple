@@ -1,5 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { notificationsApi, type ServerNotification } from '@/shared/lib/api';
+import { useAccount } from '@/shared/contexts/AccountContext';
 
 export interface Notification {
   id: string;
@@ -74,8 +76,43 @@ const initialNotifications: Notification[] = [
   },
 ];
 
+function fromServer(n: ServerNotification): Notification {
+  return {
+    id: n.id,
+    type: n.type === 'inquiry' ? 'booking' : n.type,
+    title: n.title,
+    message: n.message,
+    timestamp: new Date(n.createdAt),
+    read: n.read,
+    link: n.link || undefined,
+  };
+}
+
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const { isDemo, user } = useAccount();
+  const [notifications, setNotifications] = useState<Notification[]>(() => (isDemo ? initialNotifications : []));
+
+  useEffect(() => {
+    if (isDemo) {
+      setNotifications(initialNotifications);
+      return;
+    }
+    if (!user) return;
+    let cancelled = false;
+    const load = () =>
+      notificationsApi
+        .list()
+        .then((rows) => {
+          if (!cancelled) setNotifications(rows.map(fromServer));
+        })
+        .catch(() => undefined);
+    void load();
+    const timer = window.setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [isDemo, user]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -96,19 +133,25 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
-  }, []);
+    if (!isDemo) void notificationsApi.markRead(id).catch(() => undefined);
+  }, [isDemo]);
 
   const markAllAsRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }, []);
+    if (!isDemo) void notificationsApi.markAllRead().catch(() => undefined);
+  }, [isDemo]);
 
   const removeNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
-  }, []);
+    if (!isDemo) void notificationsApi.remove(id).catch(() => undefined);
+  }, [isDemo]);
 
   const clearAll = useCallback(() => {
-    setNotifications([]);
-  }, []);
+    setNotifications((prev) => {
+      if (!isDemo) prev.forEach((n) => void notificationsApi.remove(n.id).catch(() => undefined));
+      return [];
+    });
+  }, [isDemo]);
 
   return (
     <NotificationContext.Provider

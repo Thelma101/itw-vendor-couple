@@ -35,6 +35,8 @@ import { useShortlist } from '@/shared/contexts/ShortlistContext'
 import VendorPreviewModal from '@/couple/components/VendorPreviewModal'
 import CompareVendorsModal from '@/couple/components/CompareVendorsModal'
 import FloatingNoteButton from '@/couple/components/FloatingNoteButton'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import LiveSearchResults from '@/couple/live/LiveSearchResults'
 
 type VendorCard = (typeof mockVendors)[0] & { images?: string[] }
 
@@ -57,6 +59,11 @@ const statusFor = (id: string, shortlisted: boolean) => {
 }
 
 export default function SearchResults() {
+  const { isDemo } = useAccount()
+  return isDemo ? <DemoSearchResults /> : <LiveSearchResults />
+}
+
+function DemoSearchResults() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const initialCategory = params.get('category')

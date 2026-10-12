@@ -15,6 +15,8 @@ import {
   type PlanId,
 } from '@/shared/data/featureTiers'
 import { getReferralUnlockBonus } from '@/shared/lib/referrals'
+import { scopedKey } from '@/shared/lib/session'
+import { useAccount } from '@/shared/contexts/AccountContext'
 
 const PLAN_KEY = 'userPlan'
 const LEAD_UNLOCKS_KEY = 'itw_lead_unlocks_used'
@@ -52,7 +54,7 @@ function readPlan(): PlanId {
 
 function readLeadUnlocks(): number {
   try {
-    return Number(localStorage.getItem(LEAD_UNLOCKS_KEY)) || 0
+    return Number(localStorage.getItem(scopedKey(LEAD_UNLOCKS_KEY))) || 0
   } catch {
     return 0
   }
@@ -60,7 +62,7 @@ function readLeadUnlocks(): number {
 
 function readBoostUnlockCredits(): number {
   try {
-    return Number(localStorage.getItem(BOOST_UNLOCKS_KEY)) || 0
+    return Number(localStorage.getItem(scopedKey(BOOST_UNLOCKS_KEY))) || 0
   } catch {
     return 0
   }
@@ -68,18 +70,27 @@ function readBoostUnlockCredits(): number {
 
 function readActiveBoost(): string | null {
   try {
-    return localStorage.getItem(ACTIVE_BOOST_KEY)
+    return localStorage.getItem(scopedKey(ACTIVE_BOOST_KEY))
   } catch {
     return null
   }
 }
 
 export function PlanProvider({ children }: { children: ReactNode }) {
-  const [plan, setPlanState] = useState<PlanId>(() => readPlan())
+  const { isDemo, user, refresh } = useAccount()
+  const [demoPlan, setPlanState] = useState<PlanId>(() => readPlan())
+  const plan: PlanId = isDemo ? demoPlan : normalizePlan(user?.plan)
   const [leadUnlocksUsed, setLeadUnlocksUsed] = useState(() => readLeadUnlocks())
   const [referralBonus, setReferralBonus] = useState(() => getReferralUnlockBonus())
   const [boostCredits, setBoostCredits] = useState(() => readBoostUnlockCredits())
   const [activeBoostId, setActiveBoostState] = useState<string | null>(() => readActiveBoost())
+
+  useEffect(() => {
+    setLeadUnlocksUsed(readLeadUnlocks())
+    setBoostCredits(readBoostUnlockCredits())
+    setActiveBoostState(readActiveBoost())
+    setReferralBonus(getReferralUnlockBonus())
+  }, [isDemo, user?.id])
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -100,22 +111,27 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  /** Demo sessions switch freely; live accounts only change plan through Paystack, so re-read it from the server. */
   const setPlan = useCallback((next: PlanId) => {
+    if (!isDemo) {
+      void refresh()
+      return
+    }
     const planId = normalizePlan(next)
     localStorage.setItem(PLAN_KEY, planId)
     setPlanState(planId)
     window.dispatchEvent(new Event('itw-plan-changed'))
-  }, [])
+  }, [isDemo, refresh])
 
   const setActiveBoostId = useCallback((id: string | null) => {
-    if (id) localStorage.setItem(ACTIVE_BOOST_KEY, id)
-    else localStorage.removeItem(ACTIVE_BOOST_KEY)
+    if (id) localStorage.setItem(scopedKey(ACTIVE_BOOST_KEY), id)
+    else localStorage.removeItem(scopedKey(ACTIVE_BOOST_KEY))
     setActiveBoostState(id)
   }, [])
 
   const addUnlockCredits = useCallback((n: number) => {
     const next = Math.max(0, readBoostUnlockCredits() + n)
-    localStorage.setItem(BOOST_UNLOCKS_KEY, String(next))
+    localStorage.setItem(scopedKey(BOOST_UNLOCKS_KEY), String(next))
     setBoostCredits(next)
   }, [])
 
@@ -132,13 +148,13 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       PLAN_LIMITS.standard.leadUnlocksPerMonth + getReferralUnlockBonus() + readBoostUnlockCredits()
     if (leadUnlocksUsed >= cap) return false
     const next = leadUnlocksUsed + 1
-    localStorage.setItem(LEAD_UNLOCKS_KEY, String(next))
+    localStorage.setItem(scopedKey(LEAD_UNLOCKS_KEY), String(next))
     setLeadUnlocksUsed(next)
     return true
   }, [leadUnlocksUsed, plan])
 
   const resetLeadUnlocks = useCallback(() => {
-    localStorage.setItem(LEAD_UNLOCKS_KEY, '0')
+    localStorage.setItem(scopedKey(LEAD_UNLOCKS_KEY), '0')
     setLeadUnlocksUsed(0)
   }, [])
 

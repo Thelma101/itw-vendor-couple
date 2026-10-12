@@ -14,6 +14,8 @@ import { VENDOR_PROFILE } from '@/vendor/lib/vendorProfile'
 import { compressImageToDataUrl } from '@/shared/lib/imageCompress'
 import { showToast } from '@/shared/components/SimpleToast'
 import { usePlan } from '@/shared/contexts/PlanContext'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import LiveOverview from '@/vendor/pages/live/LiveOverview'
 
 type PipelineStage = 'New' | 'Contacted' | 'Quoted' | 'Won' | 'Lost'
 
@@ -77,6 +79,11 @@ function greetingForNow() {
 }
 
 export default function Overview() {
+  const { isDemo } = useAccount()
+  return isDemo ? <DemoOverview /> : <LiveOverview />
+}
+
+function DemoOverview() {
   const navigate = useNavigate()
   const { isPremium } = usePlan()
   const fileRef = useRef<HTMLInputElement>(null)

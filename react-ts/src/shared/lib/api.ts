@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { DEMO_EMAIL, IS_LIVE_APP, SITE_URL } from './session'
 
 /** Prefer env; otherwise same host as the page (so phones on LAN hit your PC API). */
 function resolveApiBaseUrl() {
@@ -82,6 +83,7 @@ function matchesDemo(
   role: 'couple' | 'vendor',
   data: { username?: string; phone_number?: string; email?: string; phone?: string; password: string },
 ) {
+  if (IS_LIVE_APP) return false
   const account = DEMO_ACCOUNTS[role]
   const contact = normalizeContact(data.username || data.email)
   const phone = normalizePhone(data.phone_number || data.phone)
@@ -92,6 +94,13 @@ function matchesDemo(
 }
 
 function persistSession(role: 'couple' | 'vendor', user: object, token: string) {
+  if (IS_LIVE_APP && DEMO_EMAIL.test((user as { email?: string })?.email || '')) {
+    const err = new Error('Demo accounts only work on the preview app.') as Error & {
+      response?: { data: { message: string } }
+    }
+    err.response = { data: { message: 'Demo accounts only work on the preview app. Please sign up with your own email.' } }
+    throw err
+  }
   localStorage.setItem('authToken', token)
   localStorage.setItem('user', JSON.stringify(user))
   localStorage.setItem('userRole', role)
@@ -139,7 +148,7 @@ export function rememberReturnOrigin(origin: string | null) {
 }
 
 function clearSession(): string | null {
-  const returnTo = localStorage.getItem(RETURN_TO_KEY)
+  const returnTo = localStorage.getItem(RETURN_TO_KEY) || (IS_LIVE_APP ? SITE_URL : null)
   localStorage.removeItem('authToken')
   localStorage.removeItem('user')
   localStorage.removeItem('userRole')
@@ -196,7 +205,7 @@ export const authApi = {
       if (isNetworkError(error) && matchesDemo('vendor', data)) {
         return demoSession('vendor')
       }
-      if (isNetworkError(error)) {
+      if (isNetworkError(error) && !IS_LIVE_APP) {
         const err = new Error('Demo login: use vendor@itheewed.demo / Vendor123!') as Error & {
           response?: { data: { message: string } }
         }
@@ -232,7 +241,7 @@ export const authApi = {
       if (isNetworkError(error) && matchesDemo('couple', data)) {
         return demoSession('couple')
       }
-      if (isNetworkError(error)) {
+      if (isNetworkError(error) && !IS_LIVE_APP) {
         const err = new Error('Demo login: use couple@itheewed.demo / Couple123!') as Error & {
           response?: { data: { message: string } }
         }
@@ -262,7 +271,7 @@ export const authApi = {
       if (isNetworkError(error) && matchesDemo('vendor', data)) {
         return demoSession('vendor')
       }
-      if (isNetworkError(error)) {
+      if (isNetworkError(error) && !IS_LIVE_APP) {
         const err = new Error(
           'Demo login: couple@itheewed.demo / Couple123! or vendor@itheewed.demo / Vendor123!',
         ) as Error & { response?: { data: { message: string } } }
@@ -439,6 +448,185 @@ export const planningApi = {
     (await apiClient.post('/api/v1/messages/conversations', body, coupleHeaders())).data,
   sendMessage: async (id: string, text: string) =>
     (await apiClient.post(`/api/v1/messages/conversation/${id}/messages`, { text }, coupleHeaders())).data,
+}
+
+/* ── Live workspace APIs (real accounts) ── */
+
+export type PublicUser = {
+  id: string
+  username: string
+  email: string
+  phone_number?: string
+  role: 'couple' | 'vendor'
+  plan?: string
+  business_name?: string
+}
+export type Profile = Record<string, unknown>
+export type MeResponse = { user: PublicUser; profile: Profile }
+
+export function apiBaseUrl() {
+  return resolveApiBaseUrl()
+}
+
+export const meApi = {
+  get: async () => (await apiClient.get('/api/v1/me')).data as MeResponse,
+  update: async (body: { username?: string; phone_number?: string; business_name?: string; profile?: Profile }) =>
+    (await apiClient.patch('/api/v1/me', body)).data as MeResponse,
+  remove: async () => (await apiClient.delete('/api/v1/me')).data as { ok: boolean },
+  getDoc: async <T>(key: string) =>
+    (await apiClient.get(`/api/v1/me/docs/${key}`)).data as { key: string; value: T | null; updatedAt: string | null },
+  putDoc: async <T>(key: string, value: T) =>
+    (await apiClient.put(`/api/v1/me/docs/${key}`, { value })).data as { key: string; value: T; updatedAt: string },
+}
+
+export const uploadsApi = {
+  /** Stores a data-URL image on the server and returns a URL any device can load. */
+  upload: async (dataUrl: string) => {
+    const { path } = (await apiClient.post('/api/v1/uploads', { dataUrl })).data as { id: string; path: string }
+    return `${resolveApiBaseUrl()}${path}`
+  },
+}
+
+export type DirectoryVendor = {
+  id: string
+  name: string
+  category: string
+  location: string
+  city: string
+  price: number
+  rating: number
+  reviewCount: number
+  image: string
+  avatar: string
+  verified: boolean
+  features: string[]
+  description: string
+}
+export type DirectoryVendorDetail = {
+  card: DirectoryVendor
+  profile: {
+    tagline: string
+    bio: string
+    phone: string
+    whatsapp: string
+    instagram: string
+    website: string
+    yearsInBusiness: number
+    responseTime: string
+    avatar: string
+    cover: string
+  }
+  services: Array<{ id: string; name: string; price: number; description: string; active: boolean; type: 'Package' | 'Add-on'; features: string[]; popular?: boolean }>
+  portfolio: Array<{ id: string; title: string; cover: string; type?: string; gallery?: string[]; items?: number; published?: boolean }>
+}
+
+export const directoryApi = {
+  list: async (params: { q?: string; category?: string; location?: string; maxPrice?: number; limit?: number } = {}) =>
+    (await apiClient.get('/api/v1/directory/vendors', { params })).data as { engine: 'directory'; total: number; results: DirectoryVendor[] },
+  get: async (id: string) => (await apiClient.get(`/api/v1/directory/vendors/${encodeURIComponent(id)}`)).data as DirectoryVendorDetail,
+}
+
+export type InquiryStatus = 'new' | 'contacted' | 'quoted' | 'confirmed' | 'completed' | 'declined' | 'cancelled'
+export type Inquiry = {
+  id: string
+  kind: 'inquiry' | 'booking'
+  status: InquiryStatus
+  source: 'couple' | 'vendor'
+  coupleId: string
+  coupleName: string
+  coupleEmail: string
+  couplePhone: string
+  vendorId: string
+  vendorName: string
+  vendorCategory: string
+  eventDate: string
+  guestCount: number
+  budget: number
+  amount: number
+  location: string
+  packageName: string
+  message: string
+  notes: string
+  createdAt: string
+  updatedAt: string
+}
+type InquiryInput = Partial<Pick<Inquiry, 'kind' | 'eventDate' | 'guestCount' | 'budget' | 'amount' | 'location' | 'packageName' | 'message'>>
+
+export const inquiriesApi = {
+  list: async (kind?: 'inquiry' | 'booking') =>
+    (await apiClient.get('/api/v1/inquiries', { params: kind ? { kind } : {} })).data as Inquiry[],
+  /** Couple → vendor. Also opens a message thread and notifies the vendor. */
+  create: async (body: InquiryInput & { vendorId: string }) => (await apiClient.post('/api/v1/inquiries', body)).data as Inquiry,
+  /** Vendor records an offline client. */
+  createManual: async (
+    body: InquiryInput & { coupleName: string; coupleEmail?: string; couplePhone?: string; notes?: string; status?: InquiryStatus },
+  ) => (await apiClient.post('/api/v1/inquiries/manual', body)).data as Inquiry,
+  update: async (id: string, body: Partial<Omit<Inquiry, 'id' | 'createdAt' | 'updatedAt' | 'source' | 'coupleId' | 'vendorId'>>) =>
+    (await apiClient.patch(`/api/v1/inquiries/${id}`, body)).data as Inquiry,
+  remove: async (id: string) => (await apiClient.delete(`/api/v1/inquiries/${id}`)).data as { ok: boolean },
+}
+
+export type ThreadMessage = { id: string; sender: 'couple' | 'vendor'; text: string; createdAt: string }
+export type ThreadSummary = {
+  id: string
+  coupleId: string
+  coupleName: string
+  vendorId: string
+  vendorName: string
+  vendorCategory: string
+  vendorImage: string
+  lastMessage: string
+  unread: number
+  messageCount: number
+  createdAt: string
+  updatedAt: string
+}
+export type Thread = Omit<ThreadSummary, 'unread' | 'messageCount'> & {
+  messages: ThreadMessage[]
+  unreadCouple: number
+  unreadVendor: number
+}
+
+export const threadsApi = {
+  list: async () => (await apiClient.get('/api/v1/threads')).data as ThreadSummary[],
+  get: async (id: string) => (await apiClient.get(`/api/v1/threads/${id}`)).data as Thread,
+  /** Couples pass vendorId; vendors pass coupleId (only for couples who contacted them). */
+  start: async (body: { vendorId?: string; coupleId?: string; text?: string }) => (await apiClient.post('/api/v1/threads', body)).data as Thread,
+  send: async (id: string, text: string) => (await apiClient.post(`/api/v1/threads/${id}/messages`, { text })).data as Thread,
+}
+
+export type ServerNotification = {
+  id: string
+  type: 'inquiry' | 'booking' | 'message' | 'payment' | 'system'
+  title: string
+  message: string
+  link: string
+  read: boolean
+  createdAt: string
+}
+
+export const notificationsApi = {
+  list: async () => (await apiClient.get('/api/v1/notifications')).data as ServerNotification[],
+  markRead: async (id: string) => (await apiClient.patch(`/api/v1/notifications/${id}/read`)).data,
+  markAllRead: async () => (await apiClient.post('/api/v1/notifications/read-all')).data,
+  remove: async (id: string) => (await apiClient.delete(`/api/v1/notifications/${id}`)).data,
+}
+
+export type WeddingSite = { id: string; coupleId: string; slug: string; published: boolean; data: Record<string, unknown>; updatedAt: string }
+
+export const websiteApi = {
+  mine: async () => ((await apiClient.get('/api/v1/website/me')).data || null) as WeddingSite | null,
+  save: async (body: { data?: Record<string, unknown>; published?: boolean; slug?: string }) =>
+    (await apiClient.put('/api/v1/website/me', body)).data as WeddingSite,
+  public: async (slug: string) =>
+    (await apiClient.get(`/api/v1/website/public/${encodeURIComponent(slug)}`)).data as { slug: string; data: Record<string, unknown>; updatedAt: string },
+}
+
+export const passwordApi = {
+  forgot: async (email: string) =>
+    (await apiClient.post('/api/v1/auth/forgot-password', { email })).data as { ok: boolean; emailEnabled: boolean },
+  reset: async (email: string, code: string, password: string) =>
+    (await apiClient.post('/api/v1/auth/reset-password', { email, code, password })).data as { ok: boolean },
 }
 
 export default apiClient

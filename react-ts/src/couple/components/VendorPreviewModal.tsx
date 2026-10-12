@@ -10,6 +10,8 @@ import {
   ChevronRight,
   ZoomIn,
 } from '@mui/icons-material'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import { VendorImage } from '@/couple/live/liveVendor'
 
 interface VendorModalProps {
   open: boolean
@@ -47,6 +49,7 @@ export default function VendorPreviewModal({
   canGoNext,
 }: VendorModalProps) {
   const navigate = useNavigate()
+  const { isDemo } = useAccount()
   const [imageIndex, setImageIndex] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const images =
@@ -134,6 +137,10 @@ export default function VendorPreviewModal({
         )}
 
         <Box sx={{ position: 'relative', height: { xs: 300, md: '100%' }, bgcolor: '#E2E8F0', overflow: 'hidden' }}>
+          {!isDemo && images.length === 0 ? (
+            <VendorImage name={vendor.name} sx={{ width: '100%', height: '100%', fontSize: 72 }} />
+          ) : (
+          <>
           <Box
             component="img"
             src={images[imageIndex] || vendor.image}
@@ -225,6 +232,8 @@ export default function VendorPreviewModal({
               </Box>
             ))}
           </Stack>
+          </>
+          )}
         </Box>
 
         <Box
@@ -253,17 +262,21 @@ export default function VendorPreviewModal({
               {vendor.name}
             </Typography>
 
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
-              <Rating value={vendor.rating} readOnly precision={0.1} />
-              <Typography sx={{ fontSize: 13, color: '#64748B', fontWeight: 600 }}>
-                {vendor.rating} ({vendor.reviewCount} reviews)
-              </Typography>
-            </Stack>
+            {isDemo || vendor.rating > 0 ? (
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+                <Rating value={vendor.rating} readOnly precision={0.1} />
+                <Typography sx={{ fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+                  {vendor.rating} ({vendor.reviewCount} reviews)
+                </Typography>
+              </Stack>
+            ) : null}
 
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-              <LocationOn sx={{ fontSize: 18, color: '#0F766E' }} />
-              <Typography sx={{ fontSize: 13, color: '#0F172A' }}>{vendor.location}</Typography>
-            </Stack>
+            {isDemo || vendor.location ? (
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                <LocationOn sx={{ fontSize: 18, color: '#0F766E' }} />
+                <Typography sx={{ fontSize: 13, color: '#0F172A' }}>{vendor.location}</Typography>
+              </Stack>
+            ) : null}
 
             <Box sx={{ mb: 1.2, pb: 1.2, borderBottom: '1px solid #EDF2F7' }}>
               <Typography sx={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, mb: 0.5 }}>Starting Price</Typography>
@@ -281,7 +294,9 @@ export default function VendorPreviewModal({
               onClick={() => {
                 onClose()
                 navigate(
-                  `/couple/booking?vendorId=${vendor.id}&vendorName=${encodeURIComponent(vendor.name)}`,
+                  isDemo
+                    ? `/couple/booking?vendorId=${vendor.id}&vendorName=${encodeURIComponent(vendor.name)}`
+                    : `/couple/booking?vendor=${encodeURIComponent(vendor.id)}`,
                 )
               }}
               sx={{
@@ -320,7 +335,7 @@ export default function VendorPreviewModal({
               fullWidth
               onClick={() => {
                 onClose()
-                navigate(`/couple/messages?vendor=${encodeURIComponent(vendor.name)}`)
+                navigate(`/couple/messages?vendor=${encodeURIComponent(isDemo ? vendor.name : vendor.id)}`)
               }}
               sx={{
                 textTransform: 'none',

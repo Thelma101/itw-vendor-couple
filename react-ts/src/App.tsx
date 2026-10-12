@@ -4,10 +4,12 @@ import AppErrorBoundary from '@/shared/components/AppErrorBoundary'
 import DemoBanner from '@/shared/components/DemoBanner'
 import RouteLoader from '@/shared/components/RouteLoader'
 import ProtectedRoute from '@/shared/components/ProtectedRoute'
+import LiveAppGate from '@/shared/components/LiveAppGate'
 import { NotificationProvider } from '@/shared/contexts/NotificationContext'
 import { ShortlistProvider } from '@/shared/contexts/ShortlistContext'
 import { NotesProvider } from '@/shared/contexts/NotesContext'
 import { PlanProvider } from '@/shared/contexts/PlanContext'
+import { AccountProvider } from '@/shared/contexts/AccountContext'
 import { useAuthFromUrl } from '@/shared/hooks/useAuthFromUrl'
 import NavigationTracker from '@/shared/components/NavigationTracker'
 
@@ -63,6 +65,7 @@ function RoutedPage({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
+    <AccountProvider>
     <NotificationProvider>
       <ShortlistProvider>
         <NotesProvider>
@@ -70,6 +73,7 @@ export default function App() {
           <AuthReceiver>
             <NavigationTracker />
             <DemoBanner />
+            <LiveAppGate>
             <Routes>
               {/* Single landing */}
               <Route path="/" element={<RoutedPage><LandingPage /></RoutedPage>} />
@@ -141,10 +145,12 @@ export default function App() {
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </LiveAppGate>
           </AuthReceiver>
           </PlanProvider>
         </NotesProvider>
       </ShortlistProvider>
     </NotificationProvider>
+    </AccountProvider>
   )
 }

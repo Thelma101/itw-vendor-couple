@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
+  CircularProgress,
   Typography,
   Card,
   Button,
@@ -33,7 +34,81 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Nav from '@/couple/components/Nav';
 import ReferralInviteCard from '@/shared/components/ReferralInviteCard';
-import { authApi } from '@/shared/lib/api';
+import { apiErrorMessage, authApi, inquiriesApi, meApi, passwordApi, type Profile as AccountProfile } from '@/shared/lib/api';
+import { profileNumber, profileString, useAccount } from '@/shared/contexts/AccountContext';
+import { useShortlist } from '@/shared/contexts/ShortlistContext';
+import { uploadImage } from '@/shared/lib/imageCompress';
+import { coupleIdentity, joinPartnerNames, parseLocalDate } from '@/couple/planning-live/coupleIdentity';
+
+type NotificationPrefs = {
+  emailBookings: boolean;
+  emailMessages: boolean;
+  emailPromotions: boolean;
+  pushBookings: boolean;
+  pushMessages: boolean;
+  pushReminders: boolean;
+};
+
+type AccountSettings = {
+  notifications: NotificationPrefs;
+  language: string;
+  currency: string;
+};
+
+const DEFAULT_NOTIFICATIONS: NotificationPrefs = {
+  emailBookings: true,
+  emailMessages: true,
+  emailPromotions: false,
+  pushBookings: true,
+  pushMessages: true,
+  pushReminders: true,
+};
+
+type LiveForm = {
+  username: string;
+  phone: string;
+  partnerOne: string;
+  partnerTwo: string;
+  weddingDate: string;
+  location: string;
+  venue: string;
+  guestCount: string;
+  budget: string;
+  bio: string;
+};
+
+function readSettings(profile: AccountProfile): AccountSettings {
+  const raw = (profile.settings && typeof profile.settings === 'object' ? profile.settings : {}) as Partial<AccountSettings>;
+  const notifications = (raw.notifications && typeof raw.notifications === 'object' ? raw.notifications : {}) as Partial<NotificationPrefs>;
+  const merged = { ...DEFAULT_NOTIFICATIONS };
+  (Object.keys(DEFAULT_NOTIFICATIONS) as Array<keyof NotificationPrefs>).forEach((key) => {
+    if (typeof notifications[key] === 'boolean') merged[key] = notifications[key] as boolean;
+  });
+  return {
+    notifications: merged,
+    language: typeof raw.language === 'string' ? raw.language : 'en',
+    currency: typeof raw.currency === 'string' ? raw.currency : 'ngn',
+  };
+}
+
+function formFromAccount(username: string, phone: string, profile: AccountProfile): LiveForm {
+  const guestCount = profileNumber(profile, 'guestCount', 0);
+  const budget = profileNumber(profile, 'budget', 0);
+  return {
+    username,
+    phone,
+    partnerOne: profileString(profile, 'partnerOne'),
+    partnerTwo: profileString(profile, 'partnerTwo'),
+    weddingDate: profileString(profile, 'weddingDate'),
+    location: profileString(profile, 'location'),
+    venue: profileString(profile, 'venue'),
+    guestCount: guestCount ? String(guestCount) : '',
+    budget: budget ? String(budget) : '',
+    bio: profileString(profile, 'bio'),
+  };
+}
+
+const fieldSx = { '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } };
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -72,27 +147,142 @@ const Profile: React.FC = () => {
     avatar: 'https://www.figma.com/api/mcp/asset/bcffd6cc-e39b-4753-8297-cc196391845c'
   });
 
-  const [notifications, setNotifications] = useState({
-    emailBookings: true,
-    emailMessages: true,
-    emailPromotions: false,
-    pushBookings: true,
-    pushMessages: true,
-    pushReminders: true
+  const [demoNotifications, setNotifications] = useState(DEFAULT_NOTIFICATIONS);
+
+  const { isDemo, user, profile: accountProfile, loading: accountLoading, update } = useAccount();
+  const live = !isDemo;
+  const { totalItems: shortlistCount } = useShortlist();
+  const identity = coupleIdentity(user, accountProfile);
+  const settings = useMemo(() => readSettings(accountProfile), [accountProfile]);
+  const notifications = live ? settings.notifications : demoNotifications;
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [liveForm, setLiveForm] = useState<LiveForm>(() =>
+    formFromAccount(user?.username || '', user?.phone_number || '', accountProfile),
+  );
+  const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [bookedCount, setBookedCount] = useState<number | null>(null);
+  const [reset, setReset] = useState<{ step: 'idle' | 'sending' | 'code' | 'saving'; code: string; password: string; confirm: string }>({
+    step: 'idle',
+    code: '',
+    password: '',
+    confirm: '',
   });
 
+  const notify = useCallback((message: string, severity: 'success' | 'error' = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (live && !editMode) {
+      setLiveForm(formFromAccount(user?.username || '', user?.phone_number || '', accountProfile));
+    }
+  }, [live, editMode, user, accountProfile]);
+
+  useEffect(() => {
+    if (!live) return;
+    let cancelled = false;
+    inquiriesApi
+      .list()
+      .then((rows) => {
+        if (!cancelled) setBookedCount(rows.filter((r) => r.status === 'confirmed' || r.status === 'completed').length);
+      })
+      .catch(() => {
+        if (!cancelled) setBookedCount(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [live]);
+
+  const saveSettings = async (next: AccountSettings, message: string) => {
+    try {
+      await update({ profile: { settings: next } });
+      notify(message);
+    } catch (err) {
+      notify(apiErrorMessage(err, 'Could not save your settings. Please try again.'), 'error');
+    }
+  };
+
+  const setNotificationPref = (key: keyof NotificationPrefs, value: boolean) => {
+    if (!live) {
+      setNotifications({ ...demoNotifications, [key]: value });
+      return;
+    }
+    void saveSettings({ ...settings, notifications: { ...settings.notifications, [key]: value } }, 'Notification preferences saved');
+  };
+
+  const handleSaveLiveProfile = async () => {
+    const username = liveForm.username.trim();
+    if (!username) {
+      notify('Please enter a name for your account.', 'error');
+      return;
+    }
+    const guestCount = liveForm.guestCount.trim() === '' ? '' : Number(liveForm.guestCount);
+    const budget = liveForm.budget.trim() === '' ? '' : Number(liveForm.budget);
+    if ((guestCount !== '' && (!Number.isFinite(guestCount) || guestCount < 0)) || (budget !== '' && (!Number.isFinite(budget) || budget < 0))) {
+      notify('Guest count and budget must be positive numbers.', 'error');
+      return;
+    }
+    const partnerOne = liveForm.partnerOne.trim();
+    const partnerTwo = liveForm.partnerTwo.trim();
+    setSaving(true);
+    try {
+      await update({
+        username,
+        phone_number: liveForm.phone.trim() || undefined,
+        profile: {
+          partnerOne,
+          partnerTwo,
+          displayName: joinPartnerNames(partnerOne, partnerTwo) || username,
+          weddingDate: liveForm.weddingDate,
+          location: liveForm.location.trim(),
+          venue: liveForm.venue.trim(),
+          guestCount,
+          budget,
+          bio: liveForm.bio.trim(),
+        },
+      });
+      setEditMode(false);
+      notify('Profile updated successfully!');
+    } catch (err) {
+      notify(apiErrorMessage(err, 'Could not save your profile. Please try again.'), 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSaveProfile = () => {
+    if (live) {
+      void handleSaveLiveProfile();
+      return;
+    }
     setEditMode(false);
     setSnackbarMessage('Profile updated successfully!');
     setSnackbarOpen(true);
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file || !file.type.startsWith('image/')) {
-      setSnackbarMessage('Please choose an image file');
-      setSnackbarOpen(true);
+      notify('Please choose an image file', live ? 'error' : 'success');
+      return;
+    }
+    if (live) {
+      setAvatarUploading(true);
+      try {
+        const avatar = await uploadImage(file);
+        await update({ profile: { avatar } });
+        notify('Profile photo updated');
+      } catch (err) {
+        notify(apiErrorMessage(err, err instanceof Error ? err.message : 'Could not upload your photo. Please try again.'), 'error');
+      } finally {
+        setAvatarUploading(false);
+      }
       return;
     }
     const url = URL.createObjectURL(file);
@@ -109,11 +299,70 @@ const Profile: React.FC = () => {
     if (!authApi.logout()) navigate('/signin');
   };
 
-  const handleDeleteAccount = () => {
-    setDeleteDialog(false);
-    // In a real app, call API to delete account
-    navigate('/');
+  const handleDeleteAccount = async () => {
+    if (!live) {
+      setDeleteDialog(false);
+      navigate('/');
+      return;
+    }
+    setDeleting(true);
+    try {
+      await meApi.remove();
+      setDeleteDialog(false);
+      if (!authApi.logout()) navigate('/');
+    } catch (err) {
+      notify(apiErrorMessage(err, 'Could not delete your account. Please try again.'), 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
+
+  const sendResetCode = async () => {
+    if (!user?.email) {
+      notify('Add an email address to your account to reset your password.', 'error');
+      return;
+    }
+    setReset((r) => ({ ...r, step: 'sending' }));
+    try {
+      const res = await passwordApi.forgot(user.email);
+      if (!res.emailEnabled) {
+        setReset((r) => ({ ...r, step: 'idle' }));
+        notify('Password reset emails are not available right now. Please contact support.', 'error');
+        return;
+      }
+      setReset((r) => ({ ...r, step: 'code' }));
+      notify(`We sent a reset code to ${user.email}`);
+    } catch (err) {
+      setReset((r) => ({ ...r, step: 'idle' }));
+      notify(apiErrorMessage(err, 'Could not send a reset code'), 'error');
+    }
+  };
+
+  const submitReset = async () => {
+    if (!user?.email) return;
+    if (reset.password.length < 8) {
+      notify('Use at least 8 characters for your new password', 'error');
+      return;
+    }
+    if (reset.password !== reset.confirm) {
+      notify('Passwords do not match', 'error');
+      return;
+    }
+    setReset((r) => ({ ...r, step: 'saving' }));
+    try {
+      await passwordApi.reset(user.email, reset.code.trim(), reset.password);
+      setReset({ step: 'idle', code: '', password: '', confirm: '' });
+      notify('Password updated');
+    } catch (err) {
+      setReset((r) => ({ ...r, step: 'code' }));
+      notify(apiErrorMessage(err, 'Could not update your password'), 'error');
+    }
+  };
+
+  const liveWeddingDate = parseLocalDate(identity.weddingDate);
+  const cardAvatar = live ? identity.avatar || undefined : profile.avatar;
+  const cardName = live ? identity.displayName : `${profile.firstName} & ${profile.partnerName}`;
+  const cardBio = live ? profileString(accountProfile, 'bio') : profile.bio;
 
   return (
     <Box sx={{ backgroundColor: '#F4F7F8', minHeight: '100vh', overflowX: 'hidden' }}>
@@ -148,11 +397,14 @@ const Profile: React.FC = () => {
                 onChange={handleAvatarChange}
               />
               <Avatar
-                src={profile.avatar}
-                sx={{ width: 120, height: 120, mx: 'auto' }}
-              />
+                src={cardAvatar}
+                sx={{ width: 120, height: 120, mx: 'auto', bgcolor: '#0F766E', fontSize: 36, fontWeight: 700 }}
+              >
+                {live ? identity.initials : null}
+              </Avatar>
               <IconButton
                 onClick={() => avatarInputRef.current?.click()}
+                disabled={avatarUploading}
                 aria-label="Change profile photo"
                 sx={{
                   position: 'absolute',
@@ -165,7 +417,7 @@ const Profile: React.FC = () => {
                   '&:hover': { backgroundColor: '#006d75' }
                 }}
               >
-                <CameraAltIcon sx={{ fontSize: 18 }} />
+                {avatarUploading ? <CircularProgress size={16} sx={{ color: 'white' }} /> : <CameraAltIcon sx={{ fontSize: 18 }} />}
               </IconButton>
             </Box>
 
@@ -176,8 +428,13 @@ const Profile: React.FC = () => {
               color: '#002528',
               mb: 0.5
             }}>
-              {profile.firstName} & {profile.partnerName}
+              {live && accountLoading && !user ? 'Loading…' : cardName}
             </Typography>
+            {live && user?.email ? (
+              <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#94A3B8', mb: 1, wordBreak: 'break-all' }}>
+                {user.email}
+              </Typography>
+            ) : null}
             
             <Typography sx={{
               fontFamily: "'Open Sans', sans-serif",
@@ -185,7 +442,7 @@ const Profile: React.FC = () => {
               color: '#666',
               mb: 2
             }}>
-              {profile.bio}
+              {cardBio || (live ? 'Add a short bio about the two of you.' : '')}
             </Typography>
 
             <Divider sx={{ my: 2 }} />
@@ -196,7 +453,7 @@ const Profile: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
                   <FavoriteIcon sx={{ fontSize: 16, color: '#EB1948' }} />
                   <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 700, fontSize: 18 }}>
-                    5
+                    {live ? shortlistCount : 5}
                   </Typography>
                 </Box>
                 <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>
@@ -207,7 +464,7 @@ const Profile: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
                   <EventIcon sx={{ fontSize: 16, color: '#00838F' }} />
                   <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 700, fontSize: 18 }}>
-                    3
+                    {live ? (bookedCount ?? '—') : 3}
                   </Typography>
                 </Box>
                 <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 11, color: '#666' }}>
@@ -216,7 +473,29 @@ const Profile: React.FC = () => {
               </Box>
             </Box>
 
-            {profile.weddingDate && (
+            {live ? (
+              <Box sx={{ p: 2, backgroundColor: '#f0fdfa', borderRadius: 2, mt: 2 }}>
+                <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 12, color: '#666' }}>
+                  Wedding Date
+                </Typography>
+                {liveWeddingDate ? (
+                  <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 700, fontSize: 16, color: '#00838F' }}>
+                    {liveWeddingDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </Typography>
+                ) : (
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setTabValue(0);
+                      setEditMode(true);
+                    }}
+                    sx={{ fontFamily: "'Open Sans', sans-serif", textTransform: 'none', fontWeight: 700, color: '#00838F', p: 0, minWidth: 0 }}
+                  >
+                    Add your wedding date
+                  </Button>
+                )}
+              </Box>
+            ) : profile.weddingDate && (
               <Box sx={{
                 p: 2,
                 backgroundColor: '#f0fdfa',
@@ -350,6 +629,7 @@ const Profile: React.FC = () => {
                       <Button
                         variant="contained"
                         onClick={handleSaveProfile}
+                        disabled={saving}
                         sx={{
                           backgroundColor: '#00838F',
                           fontFamily: "'Open Sans', sans-serif",
@@ -357,12 +637,117 @@ const Profile: React.FC = () => {
                           '&:hover': { backgroundColor: '#006d75' }
                         }}
                       >
-                        Save Changes
+                        {saving ? 'Saving…' : 'Save Changes'}
                       </Button>
                     </Box>
                   )}
                 </Box>
 
+                {live ? (
+                  <>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
+                      <TextField
+                        label="Account name"
+                        value={liveForm.username}
+                        onChange={(e) => setLiveForm({ ...liveForm, username: e.target.value })}
+                        disabled={!editMode}
+                        fullWidth
+                        sx={fieldSx}
+                      />
+                      <TextField
+                        label="Email Address"
+                        type="email"
+                        value={user?.email || ''}
+                        disabled
+                        helperText="Email can't be changed here"
+                        fullWidth
+                        sx={fieldSx}
+                      />
+                      <TextField
+                        label="Phone Number"
+                        value={liveForm.phone}
+                        onChange={(e) => setLiveForm({ ...liveForm, phone: e.target.value })}
+                        disabled={!editMode}
+                        fullWidth
+                        sx={fieldSx}
+                      />
+                      <TextField
+                        label="Wedding Date"
+                        type="date"
+                        value={liveForm.weddingDate}
+                        onChange={(e) => setLiveForm({ ...liveForm, weddingDate: e.target.value })}
+                        disabled={!editMode}
+                        fullWidth
+                        InputLabelProps={{ shrink: true }}
+                        sx={fieldSx}
+                      />
+                      <TextField
+                        label="Your first name"
+                        value={liveForm.partnerOne}
+                        onChange={(e) => setLiveForm({ ...liveForm, partnerOne: e.target.value })}
+                        disabled={!editMode}
+                        fullWidth
+                        sx={fieldSx}
+                      />
+                      <TextField
+                        label="Partner's first name"
+                        value={liveForm.partnerTwo}
+                        onChange={(e) => setLiveForm({ ...liveForm, partnerTwo: e.target.value })}
+                        disabled={!editMode}
+                        fullWidth
+                        sx={fieldSx}
+                      />
+                      <TextField
+                        label="City / Location"
+                        value={liveForm.location}
+                        onChange={(e) => setLiveForm({ ...liveForm, location: e.target.value })}
+                        disabled={!editMode}
+                        placeholder="e.g. Lagos"
+                        fullWidth
+                        sx={fieldSx}
+                      />
+                      <TextField
+                        label="Venue"
+                        value={liveForm.venue}
+                        onChange={(e) => setLiveForm({ ...liveForm, venue: e.target.value })}
+                        disabled={!editMode}
+                        fullWidth
+                        sx={fieldSx}
+                      />
+                      <TextField
+                        label="Estimated guest count"
+                        type="number"
+                        value={liveForm.guestCount}
+                        onChange={(e) => setLiveForm({ ...liveForm, guestCount: e.target.value })}
+                        disabled={!editMode}
+                        inputProps={{ min: 0 }}
+                        fullWidth
+                        sx={fieldSx}
+                      />
+                      <TextField
+                        label="Estimated budget (₦)"
+                        type="number"
+                        value={liveForm.budget}
+                        onChange={(e) => setLiveForm({ ...liveForm, budget: e.target.value })}
+                        disabled={!editMode}
+                        inputProps={{ min: 0 }}
+                        fullWidth
+                        sx={fieldSx}
+                      />
+                    </Box>
+                    <TextField
+                      label="Bio"
+                      value={liveForm.bio}
+                      onChange={(e) => setLiveForm({ ...liveForm, bio: e.target.value })}
+                      disabled={!editMode}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      sx={{ mt: 3, ...fieldSx }}
+                    />
+                  </>
+                ) : (
+                <>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
                   <TextField
                     label="First Name"
@@ -435,6 +820,8 @@ const Profile: React.FC = () => {
                   rows={3}
                   sx={{ mt: 3, '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } }}
                 />
+                </>
+                )}
               </Box>
             </TabPanel>
 
@@ -468,7 +855,7 @@ const Profile: React.FC = () => {
                     control={
                       <Switch
                         checked={notifications.emailBookings}
-                        onChange={(e) => setNotifications({ ...notifications, emailBookings: e.target.checked })}
+                        onChange={(e) => setNotificationPref('emailBookings', e.target.checked)}
                         sx={{ '& .Mui-checked': { color: '#00838F' }, '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#00838F' } }}
                       />
                     }
@@ -478,7 +865,7 @@ const Profile: React.FC = () => {
                     control={
                       <Switch
                         checked={notifications.emailMessages}
-                        onChange={(e) => setNotifications({ ...notifications, emailMessages: e.target.checked })}
+                        onChange={(e) => setNotificationPref('emailMessages', e.target.checked)}
                         sx={{ '& .Mui-checked': { color: '#00838F' }, '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#00838F' } }}
                       />
                     }
@@ -488,7 +875,7 @@ const Profile: React.FC = () => {
                     control={
                       <Switch
                         checked={notifications.emailPromotions}
-                        onChange={(e) => setNotifications({ ...notifications, emailPromotions: e.target.checked })}
+                        onChange={(e) => setNotificationPref('emailPromotions', e.target.checked)}
                         sx={{ '& .Mui-checked': { color: '#00838F' }, '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#00838F' } }}
                       />
                     }
@@ -513,7 +900,7 @@ const Profile: React.FC = () => {
                     control={
                       <Switch
                         checked={notifications.pushBookings}
-                        onChange={(e) => setNotifications({ ...notifications, pushBookings: e.target.checked })}
+                        onChange={(e) => setNotificationPref('pushBookings', e.target.checked)}
                         sx={{ '& .Mui-checked': { color: '#00838F' }, '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#00838F' } }}
                       />
                     }
@@ -523,7 +910,7 @@ const Profile: React.FC = () => {
                     control={
                       <Switch
                         checked={notifications.pushMessages}
-                        onChange={(e) => setNotifications({ ...notifications, pushMessages: e.target.checked })}
+                        onChange={(e) => setNotificationPref('pushMessages', e.target.checked)}
                         sx={{ '& .Mui-checked': { color: '#00838F' }, '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#00838F' } }}
                       />
                     }
@@ -533,7 +920,7 @@ const Profile: React.FC = () => {
                     control={
                       <Switch
                         checked={notifications.pushReminders}
-                        onChange={(e) => setNotifications({ ...notifications, pushReminders: e.target.checked })}
+                        onChange={(e) => setNotificationPref('pushReminders', e.target.checked)}
                         sx={{ '& .Mui-checked': { color: '#00838F' }, '& .Mui-checked + .MuiSwitch-track': { backgroundColor: '#00838F' } }}
                       />
                     }
@@ -556,6 +943,51 @@ const Profile: React.FC = () => {
                   Security Settings
                 </Typography>
 
+                {live ? (
+                  <Card sx={{ p: 3, border: '1px solid #e0e0e0' }}>
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontWeight: 600, fontSize: 16, color: '#002528', mb: 1 }}>
+                      Change Password
+                    </Typography>
+                    <Typography sx={{ fontFamily: "'Open Sans', sans-serif", fontSize: 13, color: '#666', mb: 2 }}>
+                      {reset.step === 'idle' || reset.step === 'sending'
+                        ? `We'll email a one-time code to ${user?.email || 'your account email'} so you can set a new password.`
+                        : 'Enter the code from your email and choose a new password.'}
+                    </Typography>
+                    {reset.step === 'idle' || reset.step === 'sending' ? (
+                      <Button
+                        variant="contained"
+                        disabled={reset.step === 'sending' || !user?.email}
+                        onClick={() => void sendResetCode()}
+                        sx={{ backgroundColor: '#00838F', fontFamily: "'Open Sans', sans-serif", textTransform: 'none', '&:hover': { backgroundColor: '#006d75' } }}
+                      >
+                        {reset.step === 'sending' ? 'Sending…' : 'Email me a reset code'}
+                      </Button>
+                    ) : (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <TextField label="Code from your email" value={reset.code} onChange={(e) => setReset((r) => ({ ...r, code: e.target.value }))} fullWidth sx={fieldSx} />
+                        <TextField label="New Password" type="password" value={reset.password} onChange={(e) => setReset((r) => ({ ...r, password: e.target.value }))} fullWidth sx={fieldSx} />
+                        <TextField label="Confirm New Password" type="password" value={reset.confirm} onChange={(e) => setReset((r) => ({ ...r, confirm: e.target.value }))} fullWidth sx={fieldSx} />
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button
+                            variant="contained"
+                            disabled={reset.step === 'saving' || !reset.code.trim()}
+                            onClick={() => void submitReset()}
+                            sx={{ backgroundColor: '#00838F', fontFamily: "'Open Sans', sans-serif", textTransform: 'none', '&:hover': { backgroundColor: '#006d75' } }}
+                          >
+                            {reset.step === 'saving' ? 'Updating…' : 'Update password'}
+                          </Button>
+                          <Button
+                            onClick={() => setReset({ step: 'idle', code: '', password: '', confirm: '' })}
+                            sx={{ fontFamily: "'Open Sans', sans-serif", textTransform: 'none', color: '#666' }}
+                          >
+                            Cancel
+                          </Button>
+                        </Box>
+                      </Box>
+                    )}
+                  </Card>
+                ) : (
+                <>
                 <Card sx={{ p: 3, border: '1px solid #e0e0e0', mb: 3 }}>
                   <Typography sx={{
                     fontFamily: "'Open Sans', sans-serif",
@@ -640,6 +1072,8 @@ const Profile: React.FC = () => {
                     Enable 2FA
                   </Button>
                 </Card>
+                </>
+                )}
               </Box>
             </TabPanel>
 
@@ -682,7 +1116,13 @@ const Profile: React.FC = () => {
                     <TextField
                       select
                       label="Language"
-                      defaultValue="en"
+                      {...(live
+                        ? {
+                            value: settings.language,
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                              void saveSettings({ ...settings, language: e.target.value }, 'Language saved'),
+                          }
+                        : { defaultValue: 'en' })}
                       SelectProps={{ native: true }}
                       sx={{ width: 200, '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } }}
                     >
@@ -692,7 +1132,13 @@ const Profile: React.FC = () => {
                     <TextField
                       select
                       label="Currency"
-                      defaultValue="ngn"
+                      {...(live
+                        ? {
+                            value: settings.currency,
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                              void saveSettings({ ...settings, currency: e.target.value }, 'Currency saved'),
+                          }
+                        : { defaultValue: 'ngn' })}
                       SelectProps={{ native: true }}
                       sx={{ width: 200, '& .MuiInputBase-root': { fontFamily: "'Open Sans', sans-serif" } }}
                     >
@@ -772,11 +1218,11 @@ const Profile: React.FC = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialog(false)} sx={{ fontFamily: "'Open Sans', sans-serif", textTransform: 'none' }}>
+          <Button disabled={deleting} onClick={() => setDeleteDialog(false)} sx={{ fontFamily: "'Open Sans', sans-serif", textTransform: 'none' }}>
             Cancel
           </Button>
-          <Button onClick={handleDeleteAccount} sx={{ fontFamily: "'Open Sans', sans-serif", textTransform: 'none', color: '#dc2626' }}>
-            Delete Permanently
+          <Button disabled={deleting} onClick={() => void handleDeleteAccount()} sx={{ fontFamily: "'Open Sans', sans-serif", textTransform: 'none', color: '#dc2626' }}>
+            {deleting ? 'Deleting…' : 'Delete Permanently'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -788,7 +1234,7 @@ const Profile: React.FC = () => {
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbarOpen(false)} severity="success">
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity}>
           {snackbarMessage}
         </Alert>
       </Snackbar>

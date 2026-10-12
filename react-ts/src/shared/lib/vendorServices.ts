@@ -1,5 +1,7 @@
 /** Shared vendor service catalog — couples read the same shape vendors edit. */
 
+import { useServerState } from '@/shared/hooks/useServerState'
+
 export type ServiceType = 'Package' | 'Add-on'
 
 export type VendorService = {
@@ -98,4 +100,13 @@ export function activePackages(services: VendorService[] = loadVendorServices())
 
 export function activeAddOns(services: VendorService[] = loadVendorServices()) {
   return services.filter((s) => s.type === 'Add-on' && s.active)
+}
+
+/** The signed-in vendor's catalog: server doc `vendor-services` (read by the couple directory) or demo localStorage. */
+export function useVendorServices() {
+  return useServerState<VendorService[]>('vendor-services', {
+    demoKey: VENDOR_SERVICES_KEY,
+    demo: DEFAULT_VENDOR_SERVICES,
+    empty: [],
+  })
 }

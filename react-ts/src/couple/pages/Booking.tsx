@@ -25,6 +25,8 @@ import BookingStep1 from '@/couple/components/booking/BookingStep1';
 import BookingStep2 from '@/couple/components/booking/BookingStep2';
 import BookingStep3 from '@/couple/components/booking/BookingStep3';
 import { mockVendors } from '@/shared/data/mockVendors';
+import { useAccount } from '@/shared/contexts/AccountContext';
+import LiveBooking from '@/couple/live/LiveBooking';
 
 const steps = ['Review Vendors', 'Event Details', 'Payment', 'Confirmation'];
 
@@ -34,6 +36,11 @@ const parsePrice = (value: string | number) => {
 };
 
 const Booking: React.FC = () => {
+  const { isDemo } = useAccount();
+  return isDemo ? <DemoBooking /> : <LiveBooking />;
+};
+
+const DemoBooking: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { items: shortlistItems, clearShortlist, addToShortlist, isInShortlist } = useShortlist();

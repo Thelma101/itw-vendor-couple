@@ -1,6 +1,11 @@
 /** Referral codes + counts for couple + vendor invites. */
 
+import { currentUserId, isLiveSession } from './session'
+
 export type ReferralAudience = 'couple' | 'vendor'
+
+const LIVE_SIGNUP_URL = 'https://itheewed.co/signup'
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 const CODE_KEY = (a: ReferralAudience) => `itw_referral_code_${a}`
 const CODE_VER_KEY = (a: ReferralAudience) => `itw_referral_code_ver_${a}`
@@ -10,7 +15,7 @@ const CREDIT_BONUS_KEY = 'itw_referral_unlock_bonus'
 const CODE_FORMAT_VERSION = '3'
 
 function randomChunk(len: number) {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const alphabet = CODE_ALPHABET
   let out = ''
   const bytes = new Uint8Array(len)
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
@@ -33,7 +38,26 @@ function isCurrentFormat(code: string, audience: ReferralAudience): boolean {
   return new RegExp(`^ITW-${role}-[A-Z0-9]{4}-[A-Z0-9]{4}$`).test(code)
 }
 
+function fnv1a(input: string): number {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  return hash >>> 0
+}
+
+/** Same code on every device for a real account: ITW-CPL-XXXX-XXXX derived from the user id. */
+export function accountReferralCode(audience: ReferralAudience, userId: string): string {
+  const role = audience === 'couple' ? 'CPL' : 'VND'
+  let chars = ''
+  for (let i = 0; i < 8; i++) chars += CODE_ALPHABET[fnv1a(`${userId}:${i}`) % CODE_ALPHABET.length]
+  return `ITW-${role}-${chars.slice(0, 4)}-${chars.slice(4)}`
+}
+
 export function getOrCreateReferralCode(audience: ReferralAudience): string {
+  const userId = isLiveSession() ? currentUserId() : ''
+  if (userId) return accountReferralCode(audience, userId)
   try {
     const ver = localStorage.getItem(CODE_VER_KEY(audience))
     const existing = localStorage.getItem(CODE_KEY(audience))
@@ -80,6 +104,7 @@ export function recordReferralSuccess(audience: ReferralAudience): number {
 }
 
 export function referralLink(audience: ReferralAudience, code: string): string {
+  if (isLiveSession()) return `${LIVE_SIGNUP_URL}?ref=${encodeURIComponent(code)}`
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://itheewed.app'
   if (audience === 'couple') return `${origin}/signup?ref=${code}&role=couple`
   return `${origin}/signup?ref=${code}&role=vendor`

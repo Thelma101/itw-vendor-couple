@@ -27,6 +27,8 @@ interface ConversationListProps {
   searchQuery: string
   onSearchChange: (query: string) => void
   onSelectConversation: (conv: Conversation) => void
+  /** Live threads have no presence data, so the online dot is hidden. */
+  showPresence?: boolean
 }
 
 export default function ConversationList({
@@ -35,6 +37,7 @@ export default function ConversationList({
   searchQuery,
   onSearchChange,
   onSelectConversation,
+  showPresence = true,
 }: ConversationListProps) {
   return (
     <Box
@@ -93,6 +96,7 @@ export default function ConversationList({
                 overlap="circular"
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 variant="dot"
+                invisible={!showPresence}
                 sx={{
                   flexShrink: 0,
                   '& .MuiBadge-badge': {

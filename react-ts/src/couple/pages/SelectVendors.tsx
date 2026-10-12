@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Box, Paper, Typography, Checkbox, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Nav from '@/couple/components/Nav';
+import { useAccount } from '@/shared/contexts/AccountContext';
 
 const imgGroup1 = "https://www.figma.com/api/mcp/asset/cc700c9a-234b-4559-99e9-25bc07b02bb3";
 const imgGroup3 = "https://www.figma.com/api/mcp/asset/9cb7768a-d8b1-4c9d-85e9-4cf8decc7c12";
@@ -71,6 +72,13 @@ const VENDOR_CATEGORIES = [
 ];
 
 export default function SelectVendors() {
+  const { isDemo } = useAccount();
+  const location = useLocation();
+  if (!isDemo) return <Navigate to={`/couple/search-results${location.search}`} replace />;
+  return <DemoSelectVendors />;
+}
+
+function DemoSelectVendors() {
   const navigate = useNavigate();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 

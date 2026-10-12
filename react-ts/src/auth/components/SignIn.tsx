@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { FaGoogle, FaFacebookF, FaApple, FaXTwitter } from 'react-icons/fa6';
 import { HiOutlineEye, HiOutlineEyeOff } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 import { apiErrorMessage, authApi } from '@/shared/lib/api';
+import ForgotPasswordDialog from './ForgotPasswordDialog';
 
 interface SignInProps {
     onToggleSignUp?: () => void;
@@ -18,7 +18,6 @@ const SignIn: React.FC<SignInProps> = ({ onToggleSignUp }) => {
     const [contact, setContact] = useState('');
     const [password, setPassword] = useState('');
     const [showForgotPassword, setShowForgotPassword] = useState(false);
-    const [resetEmail, setResetEmail] = useState('');
 
     // Show session expired toast if redirected from 401 interceptor
     useEffect(() => {
@@ -119,7 +118,7 @@ const SignIn: React.FC<SignInProps> = ({ onToggleSignUp }) => {
                     </button>
                 </div>
                 <div className="mb-3 rounded-xl border border-[#00838F]/25 bg-[#00838F]/5 px-3 py-2 text-left text-xs text-[#006d75]">
-                    <p className="m-0 font-semibold">Demo accounts</p>
+                    <p className="m-0 font-semibold">Demo accounts (preview app only)</p>
                     <p className="m-0 mt-1">Couple: <code>couple@itheewed.demo</code> / <code>Couple123!</code></p>
                     <p className="m-0">Vendor: <code>vendor@itheewed.demo</code> / <code>Vendor123!</code></p>
                 </div>
@@ -194,56 +193,20 @@ const SignIn: React.FC<SignInProps> = ({ onToggleSignUp }) => {
                     </button>
                 </form>
 
-                {/* Forgot Password Modal */}
-                {showForgotPassword && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-                            <h3 className="text-lg font-semibold text-primary-dark mb-2">Reset Password</h3>
-                            <p className="text-sm text-gray-500 mb-4">Enter your email or phone number and we'll send you a reset code.</p>
-                            <input
-                                type="text"
-                                placeholder="Email or Phone Number"
-                                value={resetEmail}
-                                onChange={(e) => setResetEmail(e.target.value)}
-                                className="w-full h-12 px-4 rounded-3xl border border-color-focus focus:ring-2 focus:ring-color-focus focus:outline-none transition text-primary-dark text-sm"
-                            />
-                            <div className="flex gap-3 mt-4">
-                                <button
-                                    onClick={() => { setShowForgotPassword(false); setResetEmail(''); }}
-                                    className="flex-1 h-10 rounded-3xl border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (!resetEmail) { toast.error('Please enter your email or phone'); return; }
-                                        toast.success('Reset code sent! Check your email/phone.');
-                                        setShowForgotPassword(false);
-                                        setResetEmail('');
-                                    }}
-                                    className="flex-1 h-10 rounded-3xl bg-[#00838F] text-white text-sm font-medium hover:bg-[#006d75] transition"
-                                >
-                                    Send Code
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <ForgotPasswordDialog
+                    open={showForgotPassword}
+                    initialEmail={isEmail(contact.trim()) ? contact.trim() : ''}
+                    onClose={() => setShowForgotPassword(false)}
+                    onReset={(email) => {
+                        setContact(email);
+                        setPassword('');
+                    }}
+                />
 
-                <div className="flex items-center my-4">
-                    <div className="flex-grow h-px bg-gray-200" />
-                    <span className="mx-4 text-gray-400 text-xs">or continue with</span>
-                    <div className="flex-grow h-px bg-gray-200" />
-                </div>
-                <div className="flex justify-center gap-3 mb-4 px-5 md:px-0">
-                    <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow border border-gray-200 hover:bg-gray-100 transition" aria-label="Sign in with Google"><FaGoogle className="text-[#EA4335] text-lg" /></button>
-                    <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow border border-gray-200 hover:bg-gray-100 transition" aria-label="Sign in with Facebook"><FaFacebookF className="text-[#1877F3] text-lg" /></button>
-                    <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow border border-gray-200 hover:bg-gray-100 transition" aria-label="Sign in with Apple"><FaApple className="text-black text-lg" /></button>
-                    <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow border border-gray-200 hover:bg-gray-100 transition" aria-label="Sign in with X"><FaXTwitter className="text-black text-lg" /></button>
-                </div>
-                <div className="flex justify-center font-thin px-5 md:px-0 mt-2 text-xs sm:text-sm text-primary-dark">
+                <div className="flex justify-center font-thin px-5 md:px-0 mt-6 text-xs sm:text-sm text-primary-dark">
                     <span>Don't have an account yet? </span>
                     <button
+                        type="button"
                         onClick={handleToggleSignUp}
                         className="text-[#00838F] font-semibold hover:underline ml-1"
                     >

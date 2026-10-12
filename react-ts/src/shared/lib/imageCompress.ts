@@ -1,4 +1,17 @@
+import { uploadsApi } from './api'
+import { isDemoSession } from './session'
+
 const MAX_BYTES = 1_200_000
+
+/**
+ * Compresses a photo and, for live accounts, stores it on the server so the returned URL works
+ * on every device (and for couples viewing a vendor). Demo sessions keep the data URL locally.
+ */
+export async function uploadImage(file: File, maxBytes = MAX_BYTES): Promise<string> {
+  const dataUrl = await compressImageToDataUrl(file, maxBytes)
+  if (isDemoSession()) return dataUrl
+  return uploadsApi.upload(dataUrl)
+}
 
 /** Compress an image File to a JPEG data URL suitable for localStorage banners. */
 export function compressImageToDataUrl(file: File, maxBytes = MAX_BYTES): Promise<string> {

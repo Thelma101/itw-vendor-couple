@@ -14,6 +14,8 @@ import {
 import VendorPageShell from '@/vendor/components/VendorPageShell'
 import { showToast } from '@/shared/components/SimpleToast'
 import { activePackages } from '@/shared/lib/vendorServices'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import LiveBookings from '@/vendor/pages/live/LiveBookings'
 
 type BookingStatus = 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled'
 
@@ -110,6 +112,11 @@ function naira(n: number) {
 }
 
 export default function Bookings() {
+  const { isDemo } = useAccount()
+  return isDemo ? <DemoBookings /> : <LiveBookings />
+}
+
+function DemoBookings() {
   const packages = useMemo(() => activePackages(), [])
   const [tab, setTab] = useState<'All' | BookingStatus>('All')
   const [searchQuery, setSearchQuery] = useState('')

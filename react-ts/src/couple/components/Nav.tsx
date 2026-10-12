@@ -4,8 +4,10 @@ import { Bookmark as BookmarkIcon } from '@mui/icons-material'
 import { useShortlist } from '@/shared/contexts/ShortlistContext'
 import NotificationPanel from './NotificationPanel'
 import Logo from '@/marketing/components/Logo'
+import { useAccount } from '@/shared/contexts/AccountContext'
+import { coupleIdentity } from '@/couple/planning-live/coupleIdentity'
 
-const avatarUrl = 'https://www.figma.com/api/mcp/asset/bcffd6cc-e39b-4753-8297-cc196391845c'
+const demoAvatarUrl = 'https://www.figma.com/api/mcp/asset/bcffd6cc-e39b-4753-8297-cc196391845c'
 
 const links = [
   { label: 'Dashboard', path: '/couple/dashboard' },
@@ -21,6 +23,9 @@ export default function Nav() {
   const { totalItems } = useShortlist()
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { isDemo, user, profile } = useAccount()
+  const identity = coupleIdentity(user, profile)
+  const avatarSrc = isDemo ? demoAvatarUrl : identity.avatar || undefined
 
   return (
     <AppBar
@@ -97,17 +102,24 @@ export default function Nav() {
           </IconButton>
 
           <Avatar
-            src={avatarUrl}
+            src={avatarSrc}
+            alt={isDemo ? undefined : identity.displayName}
+            title={isDemo ? undefined : identity.displayName}
             onClick={() => navigate('/couple/profile')}
             sx={{
               width: 40,
               height: 40,
               cursor: 'pointer',
               border: '2px solid #CCFBF1',
+              bgcolor: '#0F766E',
+              fontSize: 15,
+              fontWeight: 700,
               transition: 'transform 0.2s',
               '&:hover': { transform: 'scale(1.05)' },
             }}
-          />
+          >
+            {isDemo ? null : identity.initials}
+          </Avatar>
         </Box>
       </Toolbar>
     </AppBar>

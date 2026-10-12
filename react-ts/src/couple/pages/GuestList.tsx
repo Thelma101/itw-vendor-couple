@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Accordion,
   AccordionDetails,
@@ -31,7 +31,11 @@ import { useFormDialog } from '@/shared/hooks/useFormDialog'
 import { STATUS_STYLES, STORAGE_KEYS } from '@/shared/lib/constants'
 import { usePlan } from '@/shared/contexts/PlanContext'
 import PlanBadge from '@/shared/components/PlanBadge'
-import { planningApi, isNetworkError } from '@/shared/lib/api'
+import { planningApi, isNetworkError, apiErrorMessage } from '@/shared/lib/api'
+import { scopedKey } from '@/shared/lib/session'
+import { useAccount } from '@/shared/contexts/AccountContext'
+
+type Toast = { message: string; severity: 'success' | 'error' }
 
 interface Guest {
   id: string
@@ -75,19 +79,46 @@ function mapApiGuest(g: any): Guest {
 
 export default function GuestList() {
   const { guestCap, isPremium, setPlan } = usePlan()
-  const { data: guests, save: sync } = useLocalStorage<Guest[]>(STORAGE_KEYS.GUEST_LIST, defaultGuests)
+  const { isDemo } = useAccount()
+  const live = !isDemo
+  const { data: guests, save: sync } = useLocalStorage<Guest[]>(
+    live ? scopedKey(STORAGE_KEYS.GUEST_LIST) : STORAGE_KEYS.GUEST_LIST,
+    live ? [] : defaultGuests,
+  )
+  const guestsRef = useRef(guests)
+  guestsRef.current = guests
   const [apiReady, setApiReady] = useState(false)
+  const [loading, setLoading] = useState(live)
+  const [loadError, setLoadError] = useState('')
   const atGuestCap = !isPremium && guests.length >= guestCap
   const [filter, setFilter] = useState<'All' | Guest['status']>('All')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null)
-  const [toast, setToast] = useState('')
+  const [toast, setToast] = useState<Toast | null>(null)
   const { form, updateForm, dialogOpen, openDialog, closeDialog, handleSave: saveGuest } = useFormDialog(
     { name: '', email: '', phone: '', group: '', notes: '' },
     async (formData) => {
       if (!isPremium && guests.length >= guestCap) return
+      if (live) {
+        try {
+          const created = await planningApi.createGuest({
+            name: formData.name.trim(),
+            email: formData.email.trim() || undefined,
+            phone: formData.phone.trim() || undefined,
+            group: formData.group.trim() || 'Friends',
+            notes: formData.notes.trim() || undefined,
+            rsvp: 'pending',
+            side: 'both',
+          })
+          sync([...guestsRef.current, mapApiGuest(created)])
+          setToast({ message: 'Guest added', severity: 'success' })
+        } catch (error) {
+          setToast({ message: apiErrorMessage(error, 'Could not add this guest. Please try again.'), severity: 'error' })
+        }
+        return
+      }
       if (apiReady) {
         try {
           const created = await planningApi.createGuest({
@@ -119,7 +150,25 @@ export default function GuestList() {
     (formData) => formData.name.trim().length > 0 && (isPremium || guests.length < guestCap)
   )
 
+  const loadLive = useCallback(async () => {
+    setLoading(true)
+    setLoadError('')
+    try {
+      const rows = await planningApi.listGuests()
+      sync(Array.isArray(rows) ? rows.map(mapApiGuest) : [])
+      setApiReady(true)
+    } catch (error) {
+      setLoadError(apiErrorMessage(error, 'Could not load your guest list. Please try again.'))
+    } finally {
+      setLoading(false)
+    }
+  }, [sync])
+
   useEffect(() => {
+    if (live) {
+      void loadLive()
+      return
+    }
     void (async () => {
       try {
         const rows = await planningApi.listGuests()
@@ -132,7 +181,7 @@ export default function GuestList() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [live])
 
   const visible = useMemo(() => {
     const filtered = filter === 'All' ? guests : guests.filter((guest) => guest.status === filter)
@@ -156,7 +205,7 @@ export default function GuestList() {
 
   const addGuest = () => {
     saveGuest()
-    setToast('Guest added')
+    if (!live) setToast({ message: 'Guest added', severity: 'success' })
   }
 
   const openEdit = (guest: Guest) => {
@@ -165,6 +214,24 @@ export default function GuestList() {
 
   const saveEdit = async () => {
     if (!editingGuest?.name.trim()) return
+    if (live) {
+      try {
+        await planningApi.updateGuest(editingGuest.id, {
+          name: editingGuest.name.trim(),
+          email: editingGuest.email.trim() || undefined,
+          phone: editingGuest.phone?.trim() || undefined,
+          group: editingGuest.group,
+          notes: editingGuest.notes || undefined,
+          rsvp: statusToRsvp(editingGuest.status),
+        })
+        sync(guestsRef.current.map((g) => (g.id === editingGuest.id ? editingGuest : g)))
+        setEditingGuest(null)
+        setToast({ message: 'Guest updated', severity: 'success' })
+      } catch (error) {
+        setToast({ message: apiErrorMessage(error, 'Could not update this guest. Please try again.'), severity: 'error' })
+      }
+      return
+    }
     if (apiReady) {
       try {
         await planningApi.updateGuest(editingGuest.id, {
@@ -181,7 +248,7 @@ export default function GuestList() {
     }
     sync(guests.map((g) => (g.id === editingGuest.id ? editingGuest : g)))
     setEditingGuest(null)
-    setToast('Guest updated')
+    setToast({ message: 'Guest updated', severity: 'success' })
   }
 
   const cycleStatus = async (id: string) => {
@@ -189,6 +256,15 @@ export default function GuestList() {
     if (!current) return
     const nextStatus: Guest['status'] =
       current.status === 'Invited' ? 'Pending' : current.status === 'Pending' ? 'Confirmed' : 'Invited'
+    if (live) {
+      try {
+        await planningApi.updateGuest(id, { rsvp: statusToRsvp(nextStatus) })
+        sync(guestsRef.current.map((guest) => (guest.id === id ? { ...guest, status: nextStatus } : guest)))
+      } catch (error) {
+        setToast({ message: apiErrorMessage(error, 'Could not update this guest. Please try again.'), severity: 'error' })
+      }
+      return
+    }
     if (apiReady) {
       try {
         await planningApi.updateGuest(id, { rsvp: statusToRsvp(nextStatus) })
@@ -200,6 +276,17 @@ export default function GuestList() {
   }
 
   const deleteGuest = async (id: string) => {
+    if (live) {
+      try {
+        await planningApi.deleteGuest(id)
+        sync(guestsRef.current.filter((guest) => guest.id !== id))
+        setToast({ message: 'Guest removed', severity: 'success' })
+      } catch (error) {
+        setToast({ message: apiErrorMessage(error, 'Could not remove this guest. Please try again.'), severity: 'error' })
+      }
+      setDeleteConfirm(null)
+      return
+    }
     if (apiReady) {
       try {
         await planningApi.deleteGuest(id)
@@ -448,7 +535,39 @@ export default function GuestList() {
               )
             })}
 
-            {visible.length === 0 && <Typography sx={{ color: '#64748B' }}>No guests match this view right now.</Typography>}
+            {live && loadError ? (
+              <Alert
+                severity="error"
+                action={
+                  <Button color="inherit" size="small" onClick={() => void loadLive()} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                    Retry
+                  </Button>
+                }
+              >
+                {loadError}
+              </Alert>
+            ) : null}
+            {live && loading && guests.length === 0 ? (
+              <Typography sx={{ color: '#64748B' }}>Loading your guest list…</Typography>
+            ) : live && guests.length === 0 ? (
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: '1px dashed #CBD5E1', textAlign: 'center', bgcolor: '#fff' }}>
+                <Typography sx={{ fontWeight: 800, color: '#0F172A', mb: 0.5 }}>No guests yet</Typography>
+                <Typography sx={{ color: '#64748B', fontSize: 14, mb: 2 }}>
+                  Start with close family and the wedding party, then grow the list as invitations go out.
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={openDialog}
+                  disabled={atGuestCap}
+                  sx={{ bgcolor: '#0F766E', textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#0D9488' } }}
+                >
+                  Add your first guest
+                </Button>
+              </Paper>
+            ) : visible.length === 0 ? (
+              <Typography sx={{ color: '#64748B' }}>No guests match this view right now.</Typography>
+            ) : null}
           </Stack>
         </Box>
 
@@ -597,9 +716,14 @@ export default function GuestList() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={!!toast} autoHideDuration={2200} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert severity="success" sx={{ fontWeight: 600 }} onClose={() => setToast('')}>
-          {toast}
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={toast?.severity === 'error' ? 5000 : 2200}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={toast?.severity || 'success'} sx={{ fontWeight: 600 }} onClose={() => setToast(null)}>
+          {toast?.message}
         </Alert>
       </Snackbar>
     </CouplePageShell>

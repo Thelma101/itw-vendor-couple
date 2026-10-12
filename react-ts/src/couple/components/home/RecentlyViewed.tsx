@@ -12,6 +12,7 @@ import React, { useMemo } from 'react';
 import { Box, Typography, Card, Rating } from '@mui/material';
 import { LocationOn, History } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { scopedKey } from '@/shared/lib/session';
 
 /* ------------------------------------------------------------------ */
 /*  Types & Storage                                                    */
@@ -34,14 +35,15 @@ const MAX_RECENT = 10;
 /** Call this when a user views a vendor profile to track it. */
 export function addRecentlyViewed(vendor: RecentVendor): void {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const key = scopedKey(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     const list: RecentVendor[] = raw ? JSON.parse(raw) : [];
     // Remove duplicate
     const filtered = list.filter((v) => v.id !== vendor.id);
     // Prepend
     filtered.unshift(vendor);
     // Trim
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered.slice(0, MAX_RECENT)));
+    localStorage.setItem(key, JSON.stringify(filtered.slice(0, MAX_RECENT)));
   } catch {
     // ignore
   }
@@ -50,7 +52,7 @@ export function addRecentlyViewed(vendor: RecentVendor): void {
 /** Read the recently viewed list. */
 export function getRecentlyViewed(): RecentVendor[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(scopedKey(STORAGE_KEY));
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Box, Grid } from '@mui/material'
-import { useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 import CouplePageShell from '@/couple/components/CouplePageShell'
+import { useAccount } from '@/shared/contexts/AccountContext'
 import { useShortlist } from '@/shared/contexts/ShortlistContext'
 import type { SearchFilters } from '@/couple/components/AdvancedSearchFilters'
 import VendorSearchBar from '@/couple/components/VendorSearchBar'
@@ -125,6 +126,13 @@ const mockVendors: Vendor[] = [
 ];
 
 export default function EnhancedSearchResults() {
+  const { isDemo } = useAccount()
+  const location = useLocation()
+  if (!isDemo) return <Navigate to={`/couple/search-results${location.search}`} replace />
+  return <DemoEnhancedSearchResults />
+}
+
+function DemoEnhancedSearchResults() {
   const [searchParams] = useSearchParams();
   const { items, addToShortlist, removeFromShortlist } = useShortlist();
   

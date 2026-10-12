@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Box,
   Button,
@@ -24,7 +24,11 @@ import { formatCurrency } from '@/shared/lib/formatters'
 import { STORAGE_KEYS } from '@/shared/lib/constants'
 import BudgetSummary from '@/couple/components/budget/BudgetSummary'
 import ExpensesList from '@/couple/components/budget/ExpensesList'
-import { planningApi, isNetworkError } from '@/shared/lib/api'
+import { planningApi, isNetworkError, apiErrorMessage } from '@/shared/lib/api'
+import { scopedKey } from '@/shared/lib/session'
+import { useAccount } from '@/shared/contexts/AccountContext'
+
+type Toast = { message: string; severity: 'success' | 'error' }
 
 interface Expense {
   id: string
@@ -51,20 +55,47 @@ function mapApiExpense(e: any): Expense {
 }
 
 export default function BudgetTracker() {
-  const { data: totalBudgetData, save: syncTotalBudget } = useLocalStorage<number>(STORAGE_KEYS.BUDGET_TOTAL, 2500000)
-  const { data: expenses, save: syncExpenses } = useLocalStorage<Expense[]>(STORAGE_KEYS.BUDGET_EXPENSES, defaultExpenses)
+  const { isDemo } = useAccount()
+  const live = !isDemo
+  const { data: totalBudgetData, save: syncTotalBudget } = useLocalStorage<number>(
+    live ? scopedKey(STORAGE_KEYS.BUDGET_TOTAL) : STORAGE_KEYS.BUDGET_TOTAL,
+    live ? 0 : 2500000,
+  )
+  const { data: expenses, save: syncExpenses } = useLocalStorage<Expense[]>(
+    live ? scopedKey(STORAGE_KEYS.BUDGET_EXPENSES) : STORAGE_KEYS.BUDGET_EXPENSES,
+    live ? [] : defaultExpenses,
+  )
+  const expensesRef = useRef(expenses)
+  expensesRef.current = expenses
   const [totalBudget, setTotalBudget] = useState(totalBudgetData)
   const [apiReady, setApiReady] = useState(false)
+  const [loading, setLoading] = useState(live)
+  const [loadError, setLoadError] = useState('')
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
-  const [toast, setToast] = useState('')
+  const [toast, setToast] = useState<Toast | null>(null)
   const { form, updateForm, dialogOpen, openDialog, closeDialog, handleSave: saveExpense } = useFormDialog(
     { category: '', estimated: '', actual: '' },
     async (formData) => {
       const estimated = Number(formData.estimated) || 0
       const actual = Number(formData.actual) || 0
+      if (live) {
+        try {
+          const created = await planningApi.createExpense({
+            category: formData.category.trim(),
+            title: formData.category.trim(),
+            amount: actual || estimated,
+            status: actual > 0 ? 'committed' : 'planned',
+          })
+          syncExpenses([...expensesRef.current, mapApiExpense(created)])
+          setToast({ message: 'Expense added', severity: 'success' })
+        } catch (error) {
+          setToast({ message: apiErrorMessage(error, 'Could not save this expense. Please try again.'), severity: 'error' })
+        }
+        return
+      }
       if (apiReady) {
         try {
           const created = await planningApi.createExpense({
@@ -90,7 +121,28 @@ export default function BudgetTracker() {
     (formData) => formData.category.trim().length > 0
   )
 
+  const loadLive = useCallback(async () => {
+    setLoading(true)
+    setLoadError('')
+    try {
+      const budget = await planningApi.getBudget()
+      const total = Number(budget?.totalBudget) || 0
+      setTotalBudget(total)
+      syncTotalBudget(total)
+      syncExpenses(Array.isArray(budget?.expenses) ? budget.expenses.map(mapApiExpense) : [])
+      setApiReady(true)
+    } catch (error) {
+      setLoadError(apiErrorMessage(error, 'Could not load your budget. Please try again.'))
+    } finally {
+      setLoading(false)
+    }
+  }, [syncTotalBudget, syncExpenses])
+
   useEffect(() => {
+    if (live) {
+      void loadLive()
+      return
+    }
     void (async () => {
       try {
         const budget = await planningApi.getBudget()
@@ -107,7 +159,7 @@ export default function BudgetTracker() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [live])
 
   const addExpense = () => {
     saveExpense()
@@ -125,6 +177,23 @@ export default function BudgetTracker() {
   }
 
   const handleSaveExpense = async () => {
+    if (editingExpense && editingId && live) {
+      try {
+        await planningApi.updateExpense(editingId, {
+          category: editingExpense.category,
+          title: editingExpense.category,
+          amount: editingExpense.actual || editingExpense.estimated,
+          status: editingExpense.actual > 0 ? 'committed' : 'planned',
+        })
+        syncExpenses(expensesRef.current.map((exp) => (exp.id === editingId ? editingExpense : exp)))
+        setEditingExpense(null)
+        setEditingId(null)
+        setToast({ message: 'Expense updated', severity: 'success' })
+      } catch (error) {
+        setToast({ message: apiErrorMessage(error, 'Could not update this expense. Please try again.'), severity: 'error' })
+      }
+      return
+    }
     if (editingExpense && editingId) {
       if (apiReady) {
         try {
@@ -152,6 +221,21 @@ export default function BudgetTracker() {
   }
 
   const handleDeleteExpense = async (id: string) => {
+    if (live) {
+      try {
+        await planningApi.deleteExpense(id)
+        syncExpenses(expensesRef.current.filter((exp) => exp.id !== id))
+        if (editingId === id) {
+          setEditingExpense(null)
+          setEditingId(null)
+        }
+        setToast({ message: 'Expense deleted', severity: 'success' })
+      } catch (error) {
+        setToast({ message: apiErrorMessage(error, 'Could not delete this expense. Please try again.'), severity: 'error' })
+      }
+      setDeleteConfirm(null)
+      return
+    }
     if (apiReady) {
       try {
         await planningApi.deleteExpense(id)
@@ -164,6 +248,16 @@ export default function BudgetTracker() {
   }
 
   const handleSaveBudget = async () => {
+    if (live) {
+      try {
+        await planningApi.updateBudget({ totalBudget: Math.max(0, Number(totalBudget) || 0) })
+        syncTotalBudget(totalBudget)
+        setToast({ message: 'Budget saved', severity: 'success' })
+      } catch (error) {
+        setToast({ message: apiErrorMessage(error, 'Could not save your budget. Please try again.'), severity: 'error' })
+      }
+      return
+    }
     syncTotalBudget(totalBudget)
     syncExpenses(expenses)
     if (apiReady) {
@@ -173,7 +267,7 @@ export default function BudgetTracker() {
         /* local */
       }
     }
-    setToast('Budget saved')
+    setToast({ message: 'Budget saved', severity: 'success' })
   }
 
   const committed = useMemo(() => expenses.reduce((sum, item) => sum + item.actual, 0), [expenses])
@@ -206,7 +300,7 @@ export default function BudgetTracker() {
       badge={`Remaining ${formatCurrency(remaining)}`}
       actions={
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          <Tooltip title="Persists your total budget envelope on this device">
+          <Tooltip title={live ? 'Saves your total budget to your account' : 'Persists your total budget envelope on this device'}>
             <Button
               onClick={handleSaveBudget}
               variant="contained"
@@ -266,6 +360,19 @@ export default function BudgetTracker() {
         }}
       >
         <Box sx={{ minWidth: 0 }}>
+          {live && loadError ? (
+            <Alert
+              severity="error"
+              sx={{ mb: 2 }}
+              action={
+                <Button color="inherit" size="small" onClick={() => void loadLive()} sx={{ textTransform: 'none', fontWeight: 700 }}>
+                  Retry
+                </Button>
+              }
+            >
+              {loadError}
+            </Alert>
+          ) : null}
           <BudgetSummary
             totalBudget={totalBudget}
             setTotalBudget={setTotalBudget}
@@ -280,12 +387,35 @@ export default function BudgetTracker() {
             onSaveClick={handleSaveBudget}
           />
 
-          <ExpensesList
-            expenses={expenses}
-            onEdit={handleEditClick}
-            onDelete={(id) => setDeleteConfirm(id)}
-            formatCurrency={formatCurrency}
-          />
+          {live && expenses.length === 0 ? (
+            <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: '1px dashed #CBD5E1', textAlign: 'center', bgcolor: '#fff' }}>
+              {loading ? (
+                <Typography sx={{ color: '#64748B' }}>Loading your expenses…</Typography>
+              ) : (
+                <>
+                  <Typography sx={{ fontWeight: 800, color: '#0F172A', mb: 0.5 }}>No expenses yet</Typography>
+                  <Typography sx={{ color: '#64748B', fontSize: 14, mb: 2 }}>
+                    Set your total budget above, then add expenses as you get quotes and pay deposits.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={openDialog}
+                    sx={{ bgcolor: '#0B2D31', textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#134E4A' } }}
+                  >
+                    Add your first expense
+                  </Button>
+                </>
+              )}
+            </Paper>
+          ) : (
+            <ExpensesList
+              expenses={expenses}
+              onEdit={handleEditClick}
+              onDelete={(id) => setDeleteConfirm(id)}
+              formatCurrency={formatCurrency}
+            />
+          )}
         </Box>
 
         <Stack spacing={2.5} sx={{ minWidth: 0 }}>
@@ -379,9 +509,14 @@ export default function BudgetTracker() {
         />
       )}
 
-      <Snackbar open={!!toast} autoHideDuration={2500} onClose={() => setToast('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert severity="success" onClose={() => setToast('')} sx={{ fontWeight: 600 }}>
-          {toast}
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={toast?.severity === 'error' ? 5000 : 2500}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={toast?.severity || 'success'} onClose={() => setToast(null)} sx={{ fontWeight: 600 }}>
+          {toast?.message}
         </Alert>
       </Snackbar>
     </CouplePageShell>

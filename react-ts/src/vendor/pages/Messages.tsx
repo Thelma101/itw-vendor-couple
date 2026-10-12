@@ -25,6 +25,8 @@ import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/shared/contexts/NotificationContext';
 import { showToast } from '@/shared/components/SimpleToast';
 import { compressImageToDataUrl } from '@/shared/lib/imageCompress';
+import { useAccount } from '@/shared/contexts/AccountContext';
+import LiveMessages from '@/vendor/pages/live/LiveMessages';
 
 interface Message {
   id: number | string;
@@ -115,6 +117,11 @@ const initialConversations: Conversation[] = [
 ];
 
 export default function VendorMessages() {
+  const { isDemo } = useAccount();
+  return isDemo ? <DemoVendorMessages /> : <LiveMessages />;
+}
+
+function DemoVendorMessages() {
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [selectedConversation, setSelectedConversation] = useState<Conversation>(conversations[0]);
   const [newMessage, setNewMessage] = useState('');
